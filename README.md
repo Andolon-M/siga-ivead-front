@@ -1,73 +1,177 @@
-# React + TypeScript + Vite
+# SIGA IVEAD - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación frontend desarrollada con React, TypeScript y Vite para el sistema SIGA IVEAD.
 
-Currently, two official plugins are available:
+## 🚀 Tecnologías
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19.1.1** - Biblioteca de interfaz de usuario
+- **TypeScript 5.9.3** - Superset de JavaScript con tipado estático
+- **Vite 7.1.7** - Build tool y servidor de desarrollo
+- **ESLint** - Linter para mantener calidad del código
 
-## React Compiler
+## 📁 Estructura del Proyecto
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+siga-ivead-front/
+├── public/                    # Archivos públicos estáticos
+│   └── vite.svg
+├── src/                       # Código fuente de la aplicación
+│   ├── modules/               # Módulos de la aplicación
+│   │   ├── auth/              # Módulo de autenticación
+│   │   │   ├── components/    # Componentes del módulo auth
+│   │   │   ├── pages/         # Páginas del módulo
+│   │   │   │   ├── private/   # Páginas privadas (requieren auth)
+│   │   │   │   └── public/    # Páginas públicas (login, registro)
+│   │   │   ├── services/      # Servicios y lógica de negocio
+│   │   │   └── types/         # Tipos e interfaces TypeScript
+│   │   └── dashboard/         # Módulo del dashboard
+│   │       ├── components/    # Componentes del dashboard
+│   │       ├── pages/         # Páginas del módulo
+│   │       │   ├── private/   # Páginas privadas
+│   │       │   └── public/    # Páginas públicas
+│   │       ├── services/      # Servicios y lógica de negocio
+│   │       └── types/         # Tipos e interfaces TypeScript
+│   ├── shared/                # Recursos compartidos
+│   │   ├── api/               # Configuración de APIs
+│   │   │   ├── axios.config.ts  # Configuración de Axios
+│   │   │   └── endpoints.ts     # Definición de endpoints
+│   │   ├── components/        # Componentes reutilizables
+│   │   ├── contexts/          # Contextos de React
+│   │   ├── hooks/             # Custom hooks
+│   │   ├── router/            # Configuración de rutas
+│   │   └── styles/            # Estilos globales
+│   ├── assets/                # Recursos estáticos (imágenes, iconos)
+│   ├── App.tsx                # Componente principal
+│   ├── App.css                # Estilos del componente App
+│   ├── main.tsx               # Punto de entrada de la aplicación
+│   └── index.css              # Estilos globales
+├── .env.example               # Variables de entorno de ejemplo
+├── .gitignore                 # Archivos ignorados por Git
+├── eslint.config.js           # Configuración de ESLint
+├── index.html                 # HTML principal
+├── package.json               # Dependencias y scripts
+├── tsconfig.json              # Configuración de TypeScript
+├── tsconfig.app.json          # Configuración de TS para la app
+├── tsconfig.node.json         # Configuración de TS para Node
+└── vite.config.ts             # Configuración de Vite
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📋 Requisitos Previos
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Node.js** >= 18.x
+- **npm** >= 9.x o **yarn** >= 1.22.x
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🔧 Instalación
+
+1. Clona el repositorio:
+```bash
+git clone https://github.com/Andolon-M/siga-ivead-front.git
+cd siga-ivead-front
 ```
+
+2. Instala las dependencias:
+```bash
+npm install
+```
+
+3. Configura las variables de entorno:
+```bash
+# Copia el archivo de ejemplo
+cp .env.example .env
+
+# Edita el archivo .env con tus configuraciones
+```
+
+## 🚀 Comandos Disponibles
+
+### Desarrollo
+
+Inicia el servidor de desarrollo con hot-reload:
+```bash
+npm run dev
+```
+La aplicación estará disponible en `http://localhost:5173`
+
+### Compilación
+
+Compila la aplicación para producción:
+```bash
+npm run build
+```
+Los archivos compilados se generarán en la carpeta `dist/`
+
+### Compilación sin emitir archivos
+
+Verifica errores de TypeScript sin generar archivos:
+```bash
+npm run build:noEmit
+```
+
+### Linting
+
+Ejecuta el linter para verificar calidad del código:
+```bash
+npm run lint
+```
+
+### Vista Previa
+
+Previsualiza la aplicación compilada localmente:
+```bash
+npm run preview
+```
+
+## 🏗️ Arquitectura del Proyecto
+
+### Módulos
+El proyecto utiliza una arquitectura modular donde cada módulo contiene:
+- **components/**: Componentes específicos del módulo
+- **pages/**: Páginas públicas y privadas
+- **services/**: Lógica de negocio y llamadas a APIs
+- **types/**: Definiciones de tipos TypeScript
+
+### Shared
+Recursos compartidos entre módulos:
+- **api/**: Configuración centralizada de Axios y endpoints
+- **components/**: Componentes reutilizables en toda la app
+- **contexts/**: Contextos globales de React
+- **hooks/**: Custom hooks compartidos
+- **router/**: Configuración del enrutamiento
+- **styles/**: Estilos globales y temas
+
+## 🔐 Variables de Entorno
+
+Crea un archivo `.env` en la raíz del proyecto basado en `.env.example`:
+
+```env
+VITE_API_URL=http://localhost:3000/api
+VITE_APP_NAME=SIGA IVEAD
+```
+
+## 📝 Convenciones de Código
+
+- Usar TypeScript para todos los archivos
+- Seguir las reglas de ESLint configuradas
+- Nombrar componentes en PascalCase
+- Nombrar archivos de componentes con extensión `.tsx`
+- Nombrar hooks personalizados con prefijo `use`
+- Mantener la estructura modular del proyecto
+
+## 🤝 Contribución
+
+1. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+2. Realiza tus cambios y haz commit (`git commit -m 'Agrega nueva funcionalidad'`)
+3. Sube los cambios (`git push origin feature/nueva-funcionalidad`)
+4. Abre un Pull Request
+
+## 📄 Licencia
+
+Este proyecto es privado y confidencial.
+
+## 📧 Contacto
+
+Para más información, contacta al equipo de desarrollo.
+
+---
+
+Desarrollado con ❤️ para IVEAD
