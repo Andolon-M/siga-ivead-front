@@ -9,9 +9,10 @@ export function Footer() {
 
   const footerLinks = [
     { to: "#inicio", label: "Inicio" },
-    { to: "#quienes-somos", label: "Quienes somos" },
-    { to: "#donaciones", label: "Donaciones" },
-    { to: "#contactenos", label: "Contactenos" },
+    { to: "#quienes-somos", label: "Quiénes somos" },
+    { to: "#horarios", label: "Horarios" },
+    { to: "#predicas", label: "Prédicas" },
+    { to: "#contactenos", label: "Contáctenos" },
   ]
 
   const iveLogoSrc = theme === "dark" ? "/images/logo-ive-white.png" : "/images/logo-ive-color.png"

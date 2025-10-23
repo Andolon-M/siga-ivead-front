@@ -17,7 +17,7 @@ export function MeetingsSection() {
   ]
 
   return (
-    <section className="py-24 bg-muted/30 relative overflow-hidden">
+    <section id="horarios" className="py-24 bg-muted/30 relative overflow-hidden">
       {/* Decorative leaf elements */}
       <div className="absolute top-10 left-10 w-72 h-72 opacity-5 pointer-events-none -rotate-45">
         <img src="/images/hoja-ive.svg" alt="" className="w-full h-full object-contain" />

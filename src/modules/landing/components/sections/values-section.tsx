@@ -48,7 +48,7 @@ export function ValuesSection() {
   }
 
   return (
-    <section className="py-24 bg-background relative overflow-hidden">
+    <section id="valores" className="py-24 bg-background relative overflow-hidden">
       {/* Decorative leaf elements */}
       <div className="absolute top-1/4 right-0 w-80 h-80 opacity-5 pointer-events-none rotate-12">
         <img src="/images/hoja-ive.svg" alt="" className="w-full h-full object-contain" />

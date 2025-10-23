@@ -12,7 +12,7 @@ export function Navigation() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      setIsScrolled(window.scrollY > 200)
     }
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
@@ -20,10 +20,10 @@ export function Navigation() {
 
   const navLinks = [
     { to: "#inicio", label: "Inicio" },
-    { to: "#quienes-somos", label: "Quienes somos" },
-    { to: "#predicas", label: "Predicas" },
-    { to: "#donaciones", label: "Donaciones" },
-    { to: "#contactenos", label: "Contactenos" },
+    { to: "#quienes-somos", label: "Quiénes somos" },
+    { to: "#horarios", label: "Horarios" },
+    { to: "#predicas", label: "Prédicas" },
+    { to: "#contactenos", label: "Contáctenos" },
   ]
 
   const logoSrc =
@@ -38,7 +38,7 @@ export function Navigation() {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-background/95 backdrop-blur-md shadow-md" : "bg-transparent"
+        isScrolled ? "bg-background/95 backdrop-blur-md shadow-md" : "bg-transparent backdrop-blur-md"
       }`}
     >
       <div className="container mx-auto px-4 lg:px-8">
@@ -105,7 +105,7 @@ export function Navigation() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden pb-4 animate-in slide-in-from-top">
+          <div className="md:hidden pb-4 animate-in slide-in-from-top ">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link

@@ -17,7 +17,7 @@ export function ContentSection() {
   const { videoInfo: recentVideoInfo } = useYouTubeVideoInfo(videoIds.recent)
 
   return (
-    <section className="py-24 bg-background relative overflow-hidden">
+    <section id="predicas" className="py-24 bg-background relative overflow-hidden">
       {/* Decorative leaf elements */}
       <div className="absolute top-0 right-20 w-64 h-64 opacity-5 pointer-events-none rotate-45">
         <img src="/images/hoja-ive.svg" alt="" className="w-full h-full object-contain" />
