@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom"
 import { useState } from "react"
 import { LoginModal } from "./login-modal"
+import { useTheme } from "@/shared/contexts/theme-provider"
 
 export function Footer() {
   const [loginModalOpen, setLoginModalOpen] = useState(false)
+  const { theme } = useTheme()
 
   const footerLinks = [
     { to: "#inicio", label: "Inicio" },
@@ -11,6 +13,9 @@ export function Footer() {
     { to: "#donaciones", label: "Donaciones" },
     { to: "#contactenos", label: "Contactenos" },
   ]
+
+  const iveLogoSrc = theme === "dark" ? "/images/logo-ive-white.png" : "/images/logo-ive-color.png"
+  const adLogoSrc = theme === "dark" ? "/images/logo-ad-white.png" : "/images/logo-ad-color.png"
 
   return (
     <>
@@ -21,17 +26,17 @@ export function Footer() {
             <div className="flex items-center gap-6">
               <div className="flex flex-col items-center">
                 <img
-                  src="/images/logo-ive-color.png"
+                  src={iveLogoSrc || "/placeholder.svg"}
                   alt="IVE Logo"
-                  className="w-20 h-20 object-contain mb-2 dark:brightness-110"
+                  className="w-20 h-20 object-contain mb-2 transition-all duration-300"
                 />
                 <span className="text-xs font-semibold text-center">IGLESIA VIDA Y ESPERANZA</span>
               </div>
               <div className="h-16 w-px bg-border" />
               <img
-                src="/images/logo-ad-color.png"
+                src={adLogoSrc || "/placeholder.svg"}
                 alt="AD Logo"
-                className="w-16 h-16 object-contain dark:brightness-110"
+                className="w-16 h-16 object-contain transition-all duration-300"
               />
             </div>
 
@@ -60,7 +65,7 @@ export function Footer() {
 
             {/* Login */}
             <div className="flex justify-end">
-              <button
+              {/* <button
                 onClick={() => setLoginModalOpen(true)}
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
               >
@@ -79,13 +84,13 @@ export function Footer() {
                   />
                 </svg>
                 Iniciar session
-              </button>
+              </button> */}
             </div>
           </div>
 
           {/* Copyright */}
           <div className="mt-12 pt-8 border-t text-center">
-            <p className="text-sm text-muted-foreground">© 2025 Versión 0.0.2. All Rights Reserved.</p>
+            <p className="text-sm text-muted-foreground">© 2025 Versión 3.0.0 All Rights Reserved.</p>
           </div>
         </div>
       </footer>
