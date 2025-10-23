@@ -18,6 +18,18 @@ export function Footer() {
   const iveLogoSrc = theme === "dark" ? "/images/logo-ive-white.png" : "/images/logo-ive-color.png"
   const adLogoSrc = theme === "dark" ? "/images/logo-ad-white.png" : "/images/logo-ad-color.png"
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault()
+    const target = document.querySelector(targetId)
+    if (target) {
+      const offsetTop = target.getBoundingClientRect().top + window.pageYOffset - 80
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
+      })
+    }
+  }
+
   return (
     <>
       <footer className="bg-card border-t">
@@ -53,13 +65,14 @@ export function Footer() {
               </div>
               <nav className="space-y-2">
                 {footerLinks.map((link) => (
-                  <Link
+                  <a
                     key={link.to}
-                    to={link.to}
-                    className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                    href={link.to}
+                    onClick={(e) => handleNavClick(e, link.to)}
+                    className="block text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                   >
                     {link.label}
-                  </Link>
+                  </a>
                 ))}
               </nav>
             </div>

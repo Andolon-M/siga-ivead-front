@@ -18,6 +18,19 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    e.preventDefault()
+    const target = document.querySelector(targetId)
+    if (target) {
+      const offsetTop = target.getBoundingClientRect().top + window.pageYOffset - 80 // 80px offset for navbar
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
+      })
+      setIsMobileMenuOpen(false)
+    }
+  }
+
   const navLinks = [
     { to: "#inicio", label: "Inicio" },
     { to: "#quienes-somos", label: "Quiénes somos" },
@@ -57,15 +70,16 @@ export function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => (
-              <Link
+              <a
                 key={link.to}
-                to={link.to}
+                href={link.to}
+                onClick={(e) => handleNavClick(e, link.to)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-primary hover:text-primary-foreground ${
                   theme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"
                 } ${link.to === "#inicio" ? "bg-primary text-primary-foreground" : ""}`}
               >
                 {link.label}
-              </Link>
+              </a>
             ))}
             <div
               className={
@@ -105,19 +119,19 @@ export function Navigation() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden pb-4 animate-in slide-in-from-top ">
+          <div className="md:hidden pb-4 animate-in slide-in-from-top">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
-                <Link
+                <a
                   key={link.to}
-                  to={link.to}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  href={link.to}
+                  onClick={(e) => handleNavClick(e, link.to)}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-primary hover:text-primary-foreground ${
                     link.to === "#inicio" ? "bg-primary text-primary-foreground" : "bg-card"
                   }`}
                 >
                   {link.label}
-                </Link>
+                </a>
               ))}
             </div>
           </div>
