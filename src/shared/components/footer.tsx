@@ -1,6 +1,4 @@
-"use client"
-
-import Link from "next/link"
+import { Link } from "react-router-dom"
 import { useState } from "react"
 import { LoginModal } from "./login-modal"
 
@@ -8,10 +6,10 @@ export function Footer() {
   const [loginModalOpen, setLoginModalOpen] = useState(false)
 
   const footerLinks = [
-    { href: "#inicio", label: "Inicio" },
-    { href: "#quienes-somos", label: "Quienes somos" },
-    { href: "#donaciones", label: "Donaciones" },
-    { href: "#contactenos", label: "Contactenos" },
+    { to: "#inicio", label: "Inicio" },
+    { to: "#quienes-somos", label: "Quienes somos" },
+    { to: "#donaciones", label: "Donaciones" },
+    { to: "#contactenos", label: "Contactenos" },
   ]
 
   return (
@@ -40,18 +38,18 @@ export function Footer() {
             {/* Links */}
             <div>
               <div className="space-y-2 mb-4">
-                <Link href="#" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="#" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                   Política de Privasidad
                 </Link>
-                <Link href="#" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="#" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                   Personeria juridica
                 </Link>
               </div>
               <nav className="space-y-2">
                 {footerLinks.map((link) => (
                   <Link
-                    key={link.href}
-                    href={link.href}
+                    key={link.to}
+                    to={link.to}
                     className="block text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}

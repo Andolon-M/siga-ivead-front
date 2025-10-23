@@ -1,7 +1,5 @@
-"use client"
-
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card } from "@/shared/components/ui/card"
+import { Button } from "@/shared/components/ui/button"
 import { Mail, MessageCircle, Youtube, Facebook, Instagram, MapPin } from "lucide-react"
 
 export function ContactSection() {

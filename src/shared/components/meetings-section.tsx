@@ -1,5 +1,3 @@
-"use client"
-
 import { Youtube, Facebook, Instagram, Globe } from "lucide-react"
 
 export function MeetingsSection() {

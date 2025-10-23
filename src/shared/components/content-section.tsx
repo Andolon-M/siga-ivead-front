@@ -1,7 +1,5 @@
-"use client"
-
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Card } from "@/shared/components/ui/card"
+import { Input } from "@/shared/components/ui/input"
 import { Search, Play } from "lucide-react"
 
 export function ContentSection() {

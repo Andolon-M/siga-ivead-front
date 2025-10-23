@@ -1,11 +1,9 @@
-"use client"
-
-import Link from "next/link"
+import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { useTheme } from "next-themes"
+import { Button } from "@/shared/components/ui/button"
+import { ThemeToggle } from "@/shared/components/theme-toggle"
+import { useTheme } from "@/shared/contexts/theme-provider"
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -21,11 +19,11 @@ export function Navigation() {
   }, [])
 
   const navLinks = [
-    { href: "#inicio", label: "Inicio" },
-    { href: "#quienes-somos", label: "Quienes somos" },
-    { href: "#predicas", label: "Predicas" },
-    { href: "#donaciones", label: "Donaciones" },
-    { href: "#contactenos", label: "Contactenos" },
+    { to: "#inicio", label: "Inicio" },
+    { to: "#quienes-somos", label: "Quienes somos" },
+    { to: "#predicas", label: "Predicas" },
+    { to: "#donaciones", label: "Donaciones" },
+    { to: "#contactenos", label: "Contactenos" },
   ]
 
   const logoSrc =
@@ -46,7 +44,7 @@ export function Navigation() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="#inicio" className="flex items-center gap-3 group">
+          <Link to="#inicio" className="flex items-center gap-3 group">
             <div className="relative w-12 h-12 transition-transform group-hover:scale-105">
               <img src={logoSrc || "/placeholder.svg"} alt="IVE Logo" className="w-full h-full object-contain" />
             </div>
@@ -60,11 +58,11 @@ export function Navigation() {
           <div className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => (
               <Link
-                key={link.href}
-                href={link.href}
+                key={link.to}
+                to={link.to}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-primary hover:text-primary-foreground ${
                   theme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"
-                } ${link.href === "#inicio" ? "bg-primary text-primary-foreground" : ""}`}
+                } ${link.to === "#inicio" ? "bg-primary text-primary-foreground" : ""}`}
               >
                 {link.label}
               </Link>
@@ -111,11 +109,11 @@ export function Navigation() {
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <Link
-                  key={link.href}
-                  href={link.href}
+                  key={link.to}
+                  to={link.to}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-primary hover:text-primary-foreground ${
-                    link.href === "#inicio" ? "bg-primary text-primary-foreground" : "bg-card"
+                    link.to === "#inicio" ? "bg-primary text-primary-foreground" : "bg-card"
                   }`}
                 >
                   {link.label}

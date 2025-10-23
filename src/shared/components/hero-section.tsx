@@ -1,8 +1,6 @@
-"use client"
-
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Button } from "@/shared/components/ui/button"
+import { Card } from "@/shared/components/ui/card"
 import { DollarSign, Radio, Clock, Calendar } from "lucide-react"
 
 export function HeroSection() {
