@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AdminLayout } from '@/shared/layouts/admin-layout'
-import { LandingPage } from '@/modules/landing/pages/landing-page'
+import { LandingPage } from '@/modules/landing/pages/public/landing-page'
 import { AdminDashboard } from '@/modules/admin/pages/dashboard'
 import { UsersPage } from '@/modules/admin/pages/users'
 import { MembersPage } from '@/modules/admin/pages/members'

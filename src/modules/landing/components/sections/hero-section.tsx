@@ -31,7 +31,7 @@ export function HeroSection() {
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img src="/images/hero-background.png" alt="Iglesia Vida y Esperanza" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/95 via-teal-950/90 to-green-950/95" />
+        <div className="absolute inset-0 bg-linear-to-br from-emerald-950/95 via-teal-950/90 to-green-950/95" />
       </div>
 
       <div className="relative z-10 container mx-auto px-4 lg:px-8 py-32 w-full min-h-[600px] flex items-center">

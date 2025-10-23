@@ -47,7 +47,7 @@ export function MeetingsSection() {
                     alt="Reuniones de la iglesia"
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/30 to-transparent" />
                 </div>
               </div>
             </div>
@@ -61,7 +61,7 @@ export function MeetingsSection() {
                       key={index}
                       className="flex items-start gap-6 pb-6 border-b border-border last:border-b-0 last:pb-0 hover:translate-x-2 transition-transform duration-300"
                     >
-                      <div className="flex-shrink-0 w-1 h-16 bg-primary rounded-full" />
+                      <div className="flex shrink-0 w-1 h-16 bg-primary rounded-full" />
                       <div className="flex-1 space-y-1">
                         <h3 className="text-lg font-bold text-foreground">{meeting.day}</h3>
                         <p className="text-muted-foreground">{meeting.description}</p>
