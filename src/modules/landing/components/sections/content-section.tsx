@@ -1,25 +1,20 @@
 import { Card } from "@/shared/components/ui/card"
 import { Input } from "@/shared/components/ui/input"
 import { Search, Play } from "lucide-react"
+import { useState } from "react"
+import { useYouTubeVideoInfo } from "../../hooks/useYouTubeVideoInfo"
+import { VideoCard } from "./video-card"
 
 export function ContentSection() {
-  const videos = [
-    {
-      id: 1,
-      thumbnail: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5-R9xjsfjKSYaoPEJq12xDWtSRSmYQGL.jpg",
-      title: "Un Panorama Diferente",
-    },
-    {
-      id: 2,
-      thumbnail: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5-R9xjsfjKSYaoPEJq12xDWtSRSmYQGL.jpg",
-      title: "Un Panorama Diferente",
-    },
-    {
-      id: 3,
-      thumbnail: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5-R9xjsfjKSYaoPEJq12xDWtSRSmYQGL.jpg",
-      title: "Un Panorama Diferente",
-    },
-  ]
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'recent' | 'history'>('recent')
+  
+  const videoIds = {
+    recent: "TAVZDe_7Lsw",
+    history: ["nDEttfd-cmQ", "kpKEpRgO5ks", "0BY6993xoc0"]
+  }
+
+  const { videoInfo: recentVideoInfo } = useYouTubeVideoInfo(videoIds.recent)
 
   return (
     <section className="py-24 bg-background relative overflow-hidden">
@@ -51,53 +46,82 @@ export function ContentSection() {
 
           {/* Tabs */}
           <div className="flex items-center justify-center gap-8 mb-12">
-            <button className="text-lg font-semibold text-foreground border-b-2 border-primary pb-2">
+            <button 
+              onClick={() => {
+                setActiveTab('recent')
+                setPlayingVideo(null)
+              }}
+              className={`text-lg font-semibold transition-colors pb-2 ${
+                activeTab === 'recent' 
+                  ? 'text-foreground border-b-2 border-primary' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
               Video más reciente
             </button>
-            <button className="text-lg font-semibold text-muted-foreground hover:text-foreground transition-colors pb-2">
+            <button 
+              onClick={() => {
+                setActiveTab('history')
+                setPlayingVideo(null)
+              }}
+              className={`text-lg font-semibold transition-colors pb-2 ${
+                activeTab === 'history' 
+                  ? 'text-foreground border-b-2 border-primary' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
               Historial
             </button>
           </div>
 
           {/* Videos Grid */}
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Featured Video */}
-            <Card className="md:col-span-2 overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-300">
-              <div className="relative aspect-video">
-                <img
-                  src={videos[0].thumbnail || "/placeholder.svg"}
-                  alt={videos[0].title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
-                  <div className="w-20 h-20 bg-live rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Play className="h-10 w-10 text-live-foreground fill-current ml-1" />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Smaller Videos */}
-            {videos.slice(1).map((video) => (
-              <Card
-                key={video.id}
-                className="overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300"
+          {activeTab === 'recent' ? (
+            /* Video Más Reciente */
+            <div className="max-w-4xl mx-auto">
+              <Card 
+                className="overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-300"
+                onClick={() => setPlayingVideo(playingVideo === videoIds.recent ? null : videoIds.recent)}
               >
                 <div className="relative aspect-video">
-                  <img
-                    src={video.thumbnail || "/placeholder.svg"}
-                    alt={video.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
-                    <div className="w-16 h-16 bg-live rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Play className="h-8 w-8 text-live-foreground fill-current ml-1" />
-                    </div>
-                  </div>
+                  {playingVideo === videoIds.recent ? (
+                    <iframe
+                      className="w-full h-full"
+                      src={`https://www.youtube.com/embed/${videoIds.recent}?autoplay=1`}
+                      title={recentVideoInfo?.title || "Video"}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <>
+                      <img
+                        src={`https://img.youtube.com/vi/${videoIds.recent}/maxresdefault.jpg`}
+                        alt={recentVideoInfo?.title || "Video más reciente"}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+                        <div className="w-20 h-20 bg-live rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Play className="h-10 w-10 text-live-foreground fill-current ml-1" />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </Card>
-            ))}
-          </div>
+            </div>
+          ) : (
+            /* Historial de Videos */
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {videoIds.history.map((videoId) => (
+                <VideoCard
+                  key={videoId}
+                  videoId={videoId}
+                  onClick={() => window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank')}
+                  showTitle={true}
+                  size="medium"
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
