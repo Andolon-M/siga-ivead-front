@@ -46,7 +46,7 @@ export function UsersTable({ users, searchQuery, onSearchChange, onEdit, onDelet
               {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <Mail className="h-4 w-4 text-muted-foreground flex shrink-0" />
                     <span className="truncate">{user.email}</span>
                   </TableCell>
                   <TableCell>
