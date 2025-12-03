@@ -1,35 +1,33 @@
 import { axiosInstance, API_ENDPOINTS, type ApiResponse } from "@/shared/api"
-import type { LoginCredentials, RegisterData, AuthResponse, ForgotPasswordData, ResetPasswordData } from "../types"
+import type { LoginCredentials, RegisterData, AuthResponse, AuthMeResponse, ForgotPasswordData, ResetPasswordData } from "../types"
 
 export const authService = {
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  async login(credentials: LoginCredentials): Promise<string> {
     const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
       API_ENDPOINTS.AUTH.LOGIN,
       credentials
     )
     
-    const { token, user } = response.data.data
+    const { token } = response.data.data
     
-    // Guardar token y usuario en localStorage
+    // Guardar token en localStorage
     this.setToken(token)
-    localStorage.setItem("user", JSON.stringify(user))
     
-    return response.data.data
+    return token
   },
 
-  async register(data: RegisterData): Promise<AuthResponse> {
+  async register(data: RegisterData): Promise<string> {
     const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
       API_ENDPOINTS.AUTH.REGISTER,
       data
     )
     
-    const { token, user } = response.data.data
+    const { token } = response.data.data
     
-    // Guardar token y usuario en localStorage
+    // Guardar token en localStorage
     this.setToken(token)
-    localStorage.setItem("user", JSON.stringify(user))
     
-    return response.data.data
+    return token
   },
 
   async forgotPassword(data: ForgotPasswordData): Promise<void> {
@@ -53,13 +51,12 @@ export const authService = {
       console.error("Error al cerrar sesión:", error)
     } finally {
       // Limpiar datos locales siempre
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
+      this.clearAuth()
     }
   },
 
-  async getMe(): Promise<AuthResponse["user"]> {
-    const response = await axiosInstance.get<ApiResponse<AuthResponse["user"]>>(
+  async getMe(): Promise<AuthMeResponse> {
+    const response = await axiosInstance.get<ApiResponse<AuthMeResponse>>(
       API_ENDPOINTS.AUTH.ME
     )
     
@@ -74,9 +71,8 @@ export const authService = {
     localStorage.setItem("token", token)
   },
 
-  getUser(): AuthResponse["user"] | null {
-    const userStr = localStorage.getItem("user")
-    return userStr ? JSON.parse(userStr) : null
+  clearAuth(): void {
+    localStorage.removeItem("token")
   },
 
   isAuthenticated(): boolean {

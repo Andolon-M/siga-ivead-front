@@ -18,6 +18,7 @@ import {
   ResetPasswordPage,
   PrivacyPolicyPage,
 } from '@/modules/auth/pages/public'
+import { ProtectedRoute } from '@/shared/components/protected-route'
 
 export default function AppRouter() {
   return (
@@ -32,8 +33,15 @@ export default function AppRouter() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       
-      {/* Rutas de Admin con Layout compartido */}
-      <Route path="/admin" element={<AdminLayout />}> 
+      {/* Rutas de Admin con Layout compartido - Protegidas */}
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      > 
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="members" element={<MembersPage />} />

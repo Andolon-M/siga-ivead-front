@@ -7,11 +7,13 @@ import { Checkbox } from "@/shared/components/ui/checkbox"
 import { AuthLayout } from "../../components/auth-layout"
 import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react"
 import { authService } from "../../services/auth.service"
+import { useAuth } from "@/shared/contexts/auth-context"
 import { toast } from "sonner"
 import type { RegisterData } from "../../types"
 
 export function RegisterPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -40,8 +42,9 @@ export function RegisterPage() {
     setIsLoading(true)
     
     try {
-      await authService.register(formData)
-      navigate("/admin")
+      const token = await authService.register(formData)
+      await login(token)
+      navigate("/admin", { replace: true })
     } catch (error) {
       console.error("Error al registrar:", error)
     } finally {

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -7,10 +7,13 @@ import { Checkbox } from "@/shared/components/ui/checkbox"
 import { AuthLayout } from "../../components/auth-layout"
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react"
 import { authService } from "../../services/auth.service"
+import { useAuth } from "@/shared/contexts/auth-context"
 import type { LoginCredentials } from "../../types"
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<LoginCredentials>({
@@ -24,8 +27,12 @@ export function LoginPage() {
     setIsLoading(true)
     
     try {
-      await authService.login(formData)
-      navigate("/admin")
+      const token = await authService.login(formData)
+      await login(token)
+      
+      // Redirigir a la página anterior o al admin
+      const from = (location.state as any)?.from?.pathname || "/admin"
+      navigate(from, { replace: true })
     } catch (error) {
       console.error("Error al iniciar sesión:", error)
     } finally {

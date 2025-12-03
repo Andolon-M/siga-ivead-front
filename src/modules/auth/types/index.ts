@@ -13,19 +13,34 @@ export interface RegisterData {
   acceptTerms: boolean
 }
 
+export interface Permission {
+  id: string
+  resource: string
+  action: "create" | "read" | "update" | "delete"
+  type: number
+}
+
+export interface Role {
+  id: string
+  name: string
+}
+
 export interface User {
-  id: number
+  userId: string
   email: string
-  firstName: string
-  lastName: string
-  role: string
-  avatar?: string
+  role: Role
+  permissions: Permission[]
 }
 
 export interface AuthResponse {
-  user: User
   token: string
-  refreshToken?: string
+}
+
+export interface AuthMeResponse {
+  userId: string
+  email: string
+  role: Role
+  permissions: Permission[]
 }
 
 export interface ForgotPasswordData {

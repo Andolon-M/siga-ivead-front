@@ -1,13 +1,35 @@
-import { Bell, Search, Menu } from "lucide-react"
+import { Bell, Search, Menu, LogOut, Settings } from "lucide-react"
 import { Input } from "@/shared/components/ui/input"
 import { Button } from "@/shared/components/ui/button"
 import { ThemeToggle } from "@/shared/components/theme-toggle"
+import { useAuth } from "@/shared/contexts/auth-context"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar"
+import { useNavigate } from "react-router-dom"
 
 interface AdminHeaderProps {
   onMenuClick?: () => void
 }
 
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+  }
+
+  const getInitials = (email: string) => {
+    return email.slice(0, 2).toUpperCase()
+  }
+
   return (
     <header className="h-16 border-b bg-card flex items-center justify-between px-4 lg:px-6 gap-4">
       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -26,10 +48,44 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
       {/* Actions */}
       <div className="flex items-center gap-2 lg:gap-4 shrink-0">
         <ThemeToggle />
+        
         <Button variant="ghost" size="icon" className="relative shrink-0">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
         </Button>
+
+        {/* User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {user ? getInitials(user.email) : "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user?.email}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.role.name}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/admin/settings")}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Configuración</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Cerrar Sesión</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   )
