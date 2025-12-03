@@ -6,11 +6,11 @@ import { UsersPage } from '@/modules/users/pages'
 import { MembersPage } from '@/modules/members/pages'
 import { MinistriesPage } from '@/modules/ministries/pages'
 import { EventsPage, EventDetailPage } from '@/modules/events/pages'
-import { TeamsPage } from '@/modules/admin/pages/teams'
-import { ReportsPage } from '@/modules/admin/pages/reports'
-import { FilesPage } from '@/modules/admin/pages/files'
-import { RolesPage } from '@/modules/admin/pages/roles'
-import { SettingsPage } from '@/modules/admin/pages/settings'
+import { TeamsPage } from '@/modules/teams/pages'
+import { ReportsPage } from '@/modules/reports/pages'
+import { FilesPage } from '@/modules/files/pages'
+import { RolesPage } from '@/modules/roles/pages'
+import { SettingsPage } from '@/modules/settings/pages'
 
 export default function AppRouter() {
   return (
