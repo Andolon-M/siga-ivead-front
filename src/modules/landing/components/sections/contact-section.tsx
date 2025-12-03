@@ -104,28 +104,28 @@ export function ContactSection() {
                     href={socialLinks.youtube}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-14 h-14 bg-live hover:bg-live/90 rounded-lg flex items-center justify-center transition-all hover:scale-110 shadow-md"
+                    className="w-12 h-12 rounded-full bg-muted hover:bg-[#FF0000]/10 flex items-center justify-center transition-all hover:scale-110 group"
                     aria-label="YouTube"
                   >
-                    <Youtube className="h-7 w-7 text-white" />
+                    <Youtube className="h-5 w-5 text-muted-foreground group-hover:text-[#FF0000] transition-colors" />
                   </a>
                   <a
                     href={socialLinks.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-14 h-14 bg-[#1877F2] hover:bg-[#1877F2]/90 rounded-lg flex items-center justify-center transition-all hover:scale-110 shadow-md"
+                    className="w-12 h-12 rounded-full bg-muted hover:bg-[#1877F2]/10 flex items-center justify-center transition-all hover:scale-110 group"
                     aria-label="Facebook"
                   >
-                    <Facebook className="h-7 w-7 text-white" />
+                    <Facebook className="h-5 w-5 text-muted-foreground group-hover:text-[#1877F2] transition-colors" />
                   </a>
                   <a
                     href={socialLinks.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-14 h-14 bg-linear-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] hover:opacity-90 rounded-lg flex items-center justify-center transition-all hover:scale-110 shadow-md"
+                    className="w-12 h-12 rounded-full bg-muted hover:bg-[#E4405F]/10 flex items-center justify-center transition-all hover:scale-110 group"
                     aria-label="Instagram"
                   >
-                    <Instagram className="h-7 w-7 text-white" />
+                    <Instagram className="h-5 w-5 text-muted-foreground group-hover:text-[#E4405F] transition-colors" />
                   </a>
                 </div>
               </div>

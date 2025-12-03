@@ -1,41 +1,41 @@
 import { useState } from "react"
 import { Card } from "@/shared/components/ui/card"
 import { Button } from "@/shared/components/ui/button"
-import { ChevronLeft, ChevronRight, Heart, Users, Sprout, BookOpen, Handshake, Crown } from "lucide-react"
+import { ChevronLeft, ChevronRight, Fingerprint, Users, Sprout, BookOpen, Handshake, HeartHandshake } from "lucide-react"
 
 export function ValuesSection() {
   const [currentIndex, setCurrentIndex] = useState(0)
 
   const values = [
     {
-      icon: Heart,
+      icon: Fingerprint,
       title: "Conversion",
-      description: "Hacemos discípulos para Jesús que sirvan a Dios en la familia, iglesia y comunidad.",
-    },
-    {
-      icon: Users,
-      title: "Comunidad social",
-      description: "Cultivamos relaciones significativas y servimos juntos como familia de fe.",
+      description: "Conociendo a Jesús disfrutaremos de su Reino.",
     },
     {
       icon: Sprout,
       title: "Crecimiento",
-      description: "Fomentamos el desarrollo espiritual continuo de cada miembro.",
+      description: "Crecemos sirviendo a Dios",
     },
     {
-      icon: BookOpen,
-      title: "Palabra",
-      description: "Proclamamos y enseñamos la palabra de Dios con fidelidad.",
+      icon: BookOpen ,
+      title: "Devoción",
+      description: "A mayor Devoción, mayor consagración.",
     },
     {
       icon: Handshake,
-      title: "Servicio",
-      description: "Practicamos el servicio activo en nuestra comunidad.",
+      title: "Relación",
+      description: "Las buenas relaciones nos hacen sociables.",
     },
     {
-      icon: Crown,
-      title: "Adoración",
-      description: "Inspiramos a nuestros miembros a la adoración genuina.",
+      icon: Users,
+      title: "Multiplicacion",
+      description: "Somos llamados a multiplicarnos.",
+    },
+    {
+      icon: HeartHandshake,
+      title: "Obra Social",
+      description: "Presentamos el amor de Dios a través de la Obra Social",
     },
   ]
 

@@ -39,8 +39,9 @@ export function AboutSection() {
                   Nuestra <span className="text-primary">Misión</span>
                 </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  somo una iglesia que proclama y enseña la palabra de Dios, practica el servicio, cultiva la comunión e
-                  inspira a sus miembros a la adoración.
+                  Somos una iglesia que proclama la Palabra de Dios,
+                  enseña el evangelio, practica el servicio, cultiva la
+                  comunión e inspira a sus miembros a la adoración.
                 </p>
               </Card>
 

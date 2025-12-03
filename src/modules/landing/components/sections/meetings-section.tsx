@@ -10,10 +10,10 @@ export function MeetingsSection() {
   ]
 
   const socialLinks = [
-    { icon: Globe, label: "IVEAD.org", href: "#" },
-    { icon: Youtube, label: "Iglesia Vida y Esperanza A.D", href: "#" },
-    { icon: Facebook, label: "@Vidayesperanza.AD", href: "#" },
-    { icon: Instagram, label: "@ive.ad", href: "#" },
+    { icon: Globe, label: "IVEAD.org", href: "https://ivead.org" },
+    { icon: Youtube, label: "Iglesia Vida y Esperanza A.D", href: "https://www.youtube.com/@IglesiaVidayEsperanza_A.D" },
+    { icon: Facebook, label: "@Vidayesperanza.AD", href: "https://www.facebook.com/vidayesperanza.AD" },
+    { icon: Instagram, label: "@ive.ad", href: "https://www.instagram.com/ive.ad" },
   ]
 
   return (
@@ -75,16 +75,42 @@ export function MeetingsSection() {
 
           {/* Social Links */}
           <div className="mt-16 flex flex-wrap items-center justify-center gap-6">
-            {socialLinks.map((social, index) => (
-              <a
-                key={index}
-                href={social.href}
-                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
-              >
-                <social.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-medium">{social.label}</span>
-              </a>
-            ))}
+            <a
+              href={socialLinks[0].href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+            >
+              <Globe className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">{socialLinks[0].label}</span>
+            </a>
+            <a
+              href={socialLinks[1].href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-muted-foreground hover:text-[#FF0000] transition-colors group"
+            >
+              <Youtube className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">{socialLinks[1].label}</span>
+            </a>
+            <a
+              href={socialLinks[2].href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-muted-foreground hover:text-[#1877F2] transition-colors group"
+            >
+              <Facebook className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">{socialLinks[2].label}</span>
+            </a>
+            <a
+              href={socialLinks[3].href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-muted-foreground hover:text-[#E4405F] transition-colors group"
+            >
+              <Instagram className="h-5 w-5 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-medium">{socialLinks[3].label}</span>
+            </a>
           </div>
         </div>
       </div>
