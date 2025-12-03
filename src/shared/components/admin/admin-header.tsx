@@ -11,7 +11,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   return (
     <header className="h-16 border-b bg-card flex items-center justify-between px-4 lg:px-6 gap-4">
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <Button variant="ghost" size="icon" className="lg:hidden flex-shrink-0" onClick={onMenuClick}>
+        <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={onMenuClick}>
           <Menu className="h-5 w-5" />
         </Button>
 
@@ -24,9 +24,9 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+      <div className="flex items-center gap-2 lg:gap-4 shrink-0">
         <ThemeToggle />
-        <Button variant="ghost" size="icon" className="relative flex-shrink-0">
+        <Button variant="ghost" size="icon" className="relative shrink-0">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
         </Button>

@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { LandingPage } from '@/modules/landing/pages/public/landing-page'
 import { AdminLayout } from '@/shared/layouts/admin-layout'
-import { AdminDashboard } from '@/modules/admin/pages/dashboard'
+import { AdminDashboard } from '@/modules/dashboard/pages/dashboard'
 import { UsersPage } from '@/modules/users/pages'
 import { MembersPage } from '@/modules/members/pages'
 import { MinistriesPage } from '@/modules/ministries/pages'
