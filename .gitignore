@@ -13,6 +13,8 @@ dist
 dist-ssr
 *.local
 iglesia-landing
+church-landing-page.zip
+church-landing-page
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,17 +1,17 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { LandingPage } from '@/modules/landing/pages/public/landing-page'
-// import { AdminLayout } from '@/shared/layouts/admin-layout'
-// import { AdminDashboard } from '@/modules/admin/pages/dashboard'
-// import { UsersPage } from '@/modules/admin/pages/users'
-// import { MembersPage } from '@/modules/admin/pages/members'
-// import { MinistriesPage } from '@/modules/admin/pages/ministries'
-// import { EventsPage } from '@/modules/admin/pages/events'
-// import { EventDetailPage } from '@/modules/admin/pages/events/[id]'
-// import { TeamsPage } from '@/modules/admin/pages/teams'
-// import { ReportsPage } from '@/modules/admin/pages/reports'
-// import { FilesPage } from '@/modules/admin/pages/files'
-// import { RolesPage } from '@/modules/admin/pages/roles'
-// import { SettingsPage } from '@/modules/admin/pages/settings'
+import { AdminLayout } from '@/shared/layouts/admin-layout'
+import { AdminDashboard } from '@/modules/admin/pages/dashboard'
+import { UsersPage } from '@/modules/admin/pages/users'
+import { MembersPage } from '@/modules/admin/pages/members'
+import { MinistriesPage } from '@/modules/admin/pages/ministries'
+import { EventsPage } from '@/modules/admin/pages/events'
+import { EventDetailPage } from '@/modules/admin/pages/events/[id]'
+import { TeamsPage } from '@/modules/admin/pages/teams'
+import { ReportsPage } from '@/modules/admin/pages/reports'
+import { FilesPage } from '@/modules/admin/pages/files'
+import { RolesPage } from '@/modules/admin/pages/roles'
+import { SettingsPage } from '@/modules/admin/pages/settings'
 
 export default function AppRouter() {
   return (
@@ -20,7 +20,7 @@ export default function AppRouter() {
       <Route path="/" element={<LandingPage />} />
       
       {/* Rutas de Admin con Layout compartido */}
-      {/* <Route path="/admin" element={<AdminLayout />}>
+      <Route path="/admin" element={<AdminLayout />}> 
         <Route index element={<AdminDashboard />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="members" element={<MembersPage />} />
@@ -32,7 +32,7 @@ export default function AppRouter() {
         <Route path="files" element={<FilesPage />} />
         <Route path="roles" element={<RolesPage />} />
         <Route path="settings" element={<SettingsPage />} />
-      </Route> */}
+       </Route>
 
       {/* Ruta por defecto */}
       <Route path="*" element={<Navigate to="/" replace />} />
