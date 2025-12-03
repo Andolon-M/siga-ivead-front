@@ -114,12 +114,12 @@ export function LoginPage() {
           )}
         </Button>
 
-        <div className="text-center text-sm">
+        {/* <div className="text-center text-sm">
           <span className="text-muted-foreground">¿No tienes una cuenta? </span>
           <Link to="/register" className="text-primary hover:underline font-medium">
             Regístrate aquí
           </Link>
-        </div>
+        </div> */}
 
         <div className="text-center text-xs text-muted-foreground">
           Al iniciar sesión, aceptas nuestros{" "}

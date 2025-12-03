@@ -13,7 +13,7 @@ import { RolesPage } from '@/modules/roles/pages'
 import { SettingsPage } from '@/modules/settings/pages'
 import {
   LoginPage,
-  RegisterPage,
+  // RegisterPage,
   ForgotPasswordPage,
   ResetPasswordPage,
   PrivacyPolicyPage,
@@ -28,7 +28,7 @@ export default function AppRouter() {
       
       {/* Rutas de Autenticación */}
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      {/* <Route path="/register" element={<RegisterPage />} /> */}
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
