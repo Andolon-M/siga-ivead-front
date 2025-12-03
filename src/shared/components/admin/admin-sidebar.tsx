@@ -8,7 +8,6 @@ import {
   FileText,
   DollarSign,
   Settings,
-  LogOut,
   LayoutDashboard,
   Shield,
   Briefcase,
@@ -89,7 +88,7 @@ export function AdminSidebar({ isOpen = true, onClose }: AdminSidebarProps) {
         )}
       >
         {/* Logo */}
-        <div className="p-4 lg:p-6 border-b flex items-center justify-between flex-shrink-0">
+        <div className="p-4 lg:p-6 border-b flex items-center justify-between  shrink-0">
           <Link to="/admin" className="flex items-center gap-3">
             <img src="/images/logo-ive-color.png" alt="IVE Logo" className="w-10 h-10 object-contain dark:hidden" />
             <img
@@ -124,35 +123,14 @@ export function AdminSidebar({ isOpen = true, onClose }: AdminSidebarProps) {
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className="h-5 w-5 flex shrink-0" />
                 <span className="truncate">{item.title}</span>
               </Link>
             )
           })}
         </nav>
 
-        {/* User section */}
-        <div className="p-4 border-t flex-shrink-0">
-          <div className="flex items-center gap-3 mb-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Users className="h-4 w-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Admin User</p>
-              <p className="text-xs text-muted-foreground truncate">admin@ivead.org</p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              console.log("Logout clicked")
-              window.location.href = "/"
-            }}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground w-full transition-colors"
-          >
-            <LogOut className="h-5 w-5 flex-shrink-0" />
-            <span className="truncate">Cerrar Sesión</span>
-          </button>
-        </div>
+        
       </aside>
     </>
   )
