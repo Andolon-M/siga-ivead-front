@@ -10,7 +10,7 @@ import App from './App.tsx'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <ThemeProvider attribute="class" defaultTheme="light" storageKey="iglesia-theme" enableSystem={false}>
+      <ThemeProvider attribute="class" defaultTheme="system" storageKey="iglesia-theme" enableSystem={true}>
         <AuthProvider>
           <App />
           <Toaster />

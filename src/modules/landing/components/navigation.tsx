@@ -1,14 +1,17 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
-import { Menu, X, LogIn } from "lucide-react"
+import { Menu, X, LogIn, LayoutDashboard, User } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { ThemeToggle } from "@/shared/components/theme-toggle"
 import { useTheme } from "@/shared/contexts/theme-provider"
+import { useAuth } from "@/shared/contexts/auth-context"
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
+  const { isAuthenticated, user } = useAuth()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -40,13 +43,13 @@ export function Navigation() {
   ]
 
   const logoSrc =
-    theme === "dark"
+    resolvedTheme === "dark"
       ? "/images/logo-ive-white.png"
       : isScrolled
         ? "/images/logo-ive-color.png"
         : "/images/logo-ive-white.png"
-  const textColor = theme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"
-  const subtextColor = theme === "dark" ? "text-white/80" : isScrolled ? "text-muted-foreground" : "text-white/80"
+  const textColor = resolvedTheme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"
+  const subtextColor = resolvedTheme === "dark" ? "text-white/80" : isScrolled ? "text-muted-foreground" : "text-white/80"
 
   return (
     <nav
@@ -75,28 +78,58 @@ export function Navigation() {
                 href={link.to}
                 onClick={(e) => handleNavClick(e, link.to)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-primary hover:text-primary-foreground ${
-                  theme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"
+                  resolvedTheme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"
                 } ${link.to === "#inicio" ? "bg-primary text-primary-foreground" : ""}`}
               >
                 {link.label}
               </a>
             ))}
-            <Link to="/login">
-              <Button
-                size="sm"
-                className={
-                  theme === "dark" || !isScrolled
-                    ? "bg-white text-primary hover:bg-white/90"
-                    : ""
-                }
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Iniciar Sesión
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate("/admin")}
+                  className={
+                    resolvedTheme === "dark" || !isScrolled
+                      ? "border-white text-white hover:bg-white/10"
+                      : ""
+                  }
+                >
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Panel Admin
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={
+                    resolvedTheme === "dark" || !isScrolled
+                      ? "text-white hover:bg-white/10"
+                      : ""
+                  }
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  <span className="max-w-[100px] truncate">{user?.email.split("@")[0]}</span>
+                </Button>
+              </>
+            ) : (
+              <Link to="/login">
+                <Button
+                  size="sm"
+                  className={
+                    resolvedTheme === "dark" || !isScrolled
+                      ? "bg-white text-primary hover:bg-white/90"
+                      : ""
+                  }
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Iniciar Sesión
+                </Button>
+              </Link>
+            )}
             <div
               className={
-                theme === "dark"
+                resolvedTheme === "dark"
                   ? "[&_button]:text-white [&_button]:hover:bg-white/10"
                   : isScrolled
                     ? ""
@@ -111,7 +144,7 @@ export function Navigation() {
           <div className="flex items-center gap-2 md:hidden">
             <div
               className={
-                theme === "dark"
+                resolvedTheme === "dark"
                   ? "[&_button]:text-white [&_button]:hover:bg-white/10"
                   : isScrolled
                     ? ""
@@ -122,9 +155,9 @@ export function Navigation() {
             </div>
             <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
               {isMobileMenuOpen ? (
-                <X className={theme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"} />
+                <X className={resolvedTheme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"} />
               ) : (
-                <Menu className={theme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"} />
+                <Menu className={resolvedTheme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"} />
               )}
             </Button>
           </div>
@@ -146,12 +179,36 @@ export function Navigation() {
                   {link.label}
                 </a>
               ))}
-              <Link to="/login" className="w-full">
-                <Button className="w-full" size="sm">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Iniciar Sesión
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Button 
+                    className="w-full" 
+                    size="sm"
+                    onClick={() => {
+                      navigate("/admin")
+                      setIsMobileMenuOpen(false)
+                    }}
+                  >
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    Panel Admin
+                  </Button>
+                  <Button 
+                    className="w-full" 
+                    size="sm"
+                    variant="outline"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    {user?.email.split("@")[0]}
+                  </Button>
+                </>
+              ) : (
+                <Link to="/login" className="w-full">
+                  <Button className="w-full" size="sm">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         )}

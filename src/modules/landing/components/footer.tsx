@@ -1,10 +1,13 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useTheme } from "@/shared/contexts/theme-provider"
-import { LogIn } from "lucide-react"
+import { useAuth } from "@/shared/contexts/auth-context"
+import { LogIn, LayoutDashboard, User } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 
 export function Footer() {
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme()
+  const { isAuthenticated, user } = useAuth()
+  const navigate = useNavigate()
 
   const navigationLinks = [
     { to: "#inicio", label: "Inicio" },
@@ -19,8 +22,8 @@ export function Footer() {
     { to: "#", label: "Personería Jurídica" },
   ]
 
-  const iveLogoSrc = theme === "dark" ? "/images/logo-ive-white.png" : "/images/logo-ive-color.png"
-  const adLogoSrc = theme === "dark" ? "/images/logo-ad-white.png" : "/images/logo-ad-color.png"
+  const iveLogoSrc = resolvedTheme === "dark" ? "/images/logo-ive-white.png" : "/images/logo-ive-color.png"
+  const adLogoSrc = resolvedTheme === "dark" ? "/images/logo-ad-white.png" : "/images/logo-ad-color.png"
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     e.preventDefault()
@@ -95,16 +98,43 @@ export function Footer() {
 
           {/* Sección 4: Acceso */}
           <div>
-            <h3 className="font-semibold text-sm mb-4">Acceso</h3>
-            <Link to="/login">
-              <Button variant="outline" className="w-full md:w-auto">
-                <LogIn className="h-4 w-4 mr-2" />
-                Iniciar Sesión
-              </Button>
-            </Link>
-            <p className="text-xs text-muted-foreground mt-4">
-              Accede al sistema de gestión administrativa
-            </p>
+            <h3 className="font-semibold text-sm mb-4">
+              {isAuthenticated ? "Mi Cuenta" : "Acceso"}
+            </h3>
+            
+            {isAuthenticated ? (
+              <div className="space-y-3">
+                <Button 
+                  variant="default" 
+                  className="w-full md:w-auto"
+                  onClick={() => navigate("/admin")}
+                >
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Panel Admin
+                </Button>
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    {user?.email}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Rol: <span className="font-medium">{user?.role.name}</span>
+                </p>
+              </div>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" className="w-full md:w-auto">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Iniciar Sesión
+                  </Button>
+                </Link>
+                <p className="text-xs text-muted-foreground mt-4">
+                  Accede al sistema de gestión administrativa
+                </p>
+              </>
+            )}
           </div>
         </div>
 

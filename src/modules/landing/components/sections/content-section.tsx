@@ -10,8 +10,8 @@ export function ContentSection() {
   const [activeTab, setActiveTab] = useState<'recent' | 'history'>('recent')
   
   const videoIds = {
-    recent: "TAVZDe_7Lsw",
-    history: ["nDEttfd-cmQ", "kpKEpRgO5ks", "0BY6993xoc0"]
+    recent: "VkjzWemENVg",
+    history: ["M1kCPzvnTF8", "_Ae4l5wYQKU", "vdNHzYIvljk"]
   }
 
   const { videoInfo: recentVideoInfo } = useYouTubeVideoInfo(videoIds.recent)

@@ -19,6 +19,7 @@ import {
   PrivacyPolicyPage,
 } from '@/modules/auth/pages/public'
 import { ProtectedRoute } from '@/shared/components/protected-route'
+import { GuestRoute } from '@/shared/components/guest-route'
 
 export default function AppRouter() {
   return (
@@ -26,11 +27,13 @@ export default function AppRouter() {
       {/* Rutas Públicas */}
       <Route path="/" element={<LandingPage />} />
       
-      {/* Rutas de Autenticación */}
-      <Route path="/login" element={<LoginPage />} />
-      {/* <Route path="/register" element={<RegisterPage />} /> */}
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      {/* Rutas de Autenticación - Solo para usuarios NO autenticados */}
+      <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+      {/* <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} /> */}
+      <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+      <Route path="/reset-password" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
+      
+      {/* Política de privacidad - Accesible para todos */}
       <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       
       {/* Rutas de Admin con Layout compartido - Protegidas */}
