@@ -56,11 +56,11 @@ export function Footer() {
             {/* Links */}
             <div>
               <div className="space-y-2 mb-4">
-                <Link to="#" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Política de Privasidad
+                <Link to="/privacy-policy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Política de Privacidad
                 </Link>
                 <Link to="#" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Personeria juridica
+                  Personería Jurídica
                 </Link>
               </div>
               <nav className="space-y-2">

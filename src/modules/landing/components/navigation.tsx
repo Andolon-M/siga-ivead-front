@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
-import { Menu, X } from "lucide-react"
+import { Menu, X, LogIn } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { ThemeToggle } from "@/shared/components/theme-toggle"
 import { useTheme } from "@/shared/contexts/theme-provider"
@@ -81,6 +81,19 @@ export function Navigation() {
                 {link.label}
               </a>
             ))}
+            <Link to="/login">
+              <Button
+                size="sm"
+                className={
+                  theme === "dark" || !isScrolled
+                    ? "bg-white text-primary hover:bg-white/90"
+                    : ""
+                }
+              >
+                <LogIn className="h-4 w-4 mr-2" />
+                Iniciar Sesión
+              </Button>
+            </Link>
             <div
               className={
                 theme === "dark"
@@ -133,6 +146,12 @@ export function Navigation() {
                   {link.label}
                 </a>
               ))}
+              <Link to="/login" className="w-full">
+                <Button className="w-full" size="sm">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Iniciar Sesión
+                </Button>
+              </Link>
             </div>
           </div>
         )}

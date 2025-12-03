@@ -11,12 +11,26 @@ import { ReportsPage } from '@/modules/reports/pages'
 import { FilesPage } from '@/modules/files/pages'
 import { RolesPage } from '@/modules/roles/pages'
 import { SettingsPage } from '@/modules/settings/pages'
+import {
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  PrivacyPolicyPage,
+} from '@/modules/auth/pages/public'
 
 export default function AppRouter() {
   return (
     <Routes>
       {/* Rutas Públicas */}
       <Route path="/" element={<LandingPage />} />
+      
+      {/* Rutas de Autenticación */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
       
       {/* Rutas de Admin con Layout compartido */}
       <Route path="/admin" element={<AdminLayout />}> 
