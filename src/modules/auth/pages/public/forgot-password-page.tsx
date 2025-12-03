@@ -4,8 +4,9 @@ import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { AuthLayout } from "../../components/auth-layout"
-import { Mail, ArrowLeft, CheckCircle } from "lucide-react"
+import { Mail, ArrowLeft, CheckCircle, Loader2 } from "lucide-react"
 import { Card, CardContent } from "@/shared/components/ui/card"
+import { authService } from "../../services/auth.service"
 import type { ForgotPasswordData } from "../../types"
 
 export function ForgotPasswordPage() {
@@ -13,12 +14,20 @@ export function ForgotPasswordPage() {
     email: "",
   })
   const [emailSent, setEmailSent] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Forgot password:", formData)
-    // TODO: Implementar solicitud de recuperación
-    setEmailSent(true)
+    setIsLoading(true)
+    
+    try {
+      await authService.forgotPassword(formData)
+      setEmailSent(true)
+    } catch (error) {
+      console.error("Error al solicitar recuperación:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (emailSent) {
@@ -89,8 +98,15 @@ export function ForgotPasswordPage() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full">
-          Enviar Enlace de Recuperación
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Enviando...
+            </>
+          ) : (
+            "Enviar Enlace de Recuperación"
+          )}
         </Button>
 
         <Link to="/login" className="block">

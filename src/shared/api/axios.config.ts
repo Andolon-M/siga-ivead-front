@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from "axios"
+import axios, { AxiosError, type InternalAxiosRequestConfig, type AxiosResponse } from "axios"
 import { toast } from "sonner"
 
 // Interfaz para la respuesta del backend

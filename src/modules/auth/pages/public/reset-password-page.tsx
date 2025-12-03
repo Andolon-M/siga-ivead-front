@@ -4,8 +4,10 @@ import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { AuthLayout } from "../../components/auth-layout"
-import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react"
+import { Lock, Eye, EyeOff, CheckCircle, Loader2 } from "lucide-react"
 import { Card, CardContent } from "@/shared/components/ui/card"
+import { authService } from "../../services/auth.service"
+import { toast } from "sonner"
 import type { ResetPasswordData } from "../../types"
 
 export function ResetPasswordPage() {
@@ -16,23 +18,31 @@ export function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordReset, setPasswordReset] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<ResetPasswordData>({
     token,
     password: "",
     confirmPassword: "",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Las contraseñas no coinciden")
+      toast.error("Las contraseñas no coinciden")
       return
     }
 
-    console.log("Reset password:", formData)
-    // TODO: Implementar recuperación de contraseña
-    setPasswordReset(true)
+    setIsLoading(true)
+    
+    try {
+      await authService.resetPassword(formData)
+      setPasswordReset(true)
+    } catch (error) {
+      console.error("Error al restablecer contraseña:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (passwordReset) {
@@ -120,8 +130,15 @@ export function ResetPasswordPage() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full">
-          Restablecer Contraseña
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Restableciendo...
+            </>
+          ) : (
+            "Restablecer Contraseña"
+          )}
         </Button>
 
         <Link to="/login" className="block">

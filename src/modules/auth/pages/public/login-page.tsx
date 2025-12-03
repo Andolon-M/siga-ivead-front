@@ -5,23 +5,32 @@ import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { AuthLayout } from "../../components/auth-layout"
-import { Mail, Lock, Eye, EyeOff } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react"
+import { authService } from "../../services/auth.service"
 import type { LoginCredentials } from "../../types"
 
 export function LoginPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<LoginCredentials>({
     email: "",
     password: "",
     rememberMe: false,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Login:", formData)
-    // TODO: Implementar login
-    navigate("/admin")
+    setIsLoading(true)
+    
+    try {
+      await authService.login(formData)
+      navigate("/admin")
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -87,8 +96,15 @@ export function LoginPage() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full">
-          Iniciar Sesión
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Iniciando sesión...
+            </>
+          ) : (
+            "Iniciar Sesión"
+          )}
         </Button>
 
         <div className="text-center text-sm">

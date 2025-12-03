@@ -1,4 +1,4 @@
-import { ReactNode } from "react"
+import { type ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { Card } from "@/shared/components/ui/card"
 import { Church, Calendar, Users, Heart } from "lucide-react"

@@ -5,13 +5,16 @@ import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Checkbox } from "@/shared/components/ui/checkbox"
 import { AuthLayout } from "../../components/auth-layout"
-import { Mail, Lock, User, Eye, EyeOff } from "lucide-react"
+import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react"
+import { authService } from "../../services/auth.service"
+import { toast } from "sonner"
 import type { RegisterData } from "../../types"
 
 export function RegisterPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<RegisterData>({
     email: "",
     password: "",
@@ -21,22 +24,29 @@ export function RegisterPage() {
     acceptTerms: false,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (formData.password !== formData.confirmPassword) {
-      alert("Las contraseñas no coinciden")
+      toast.error("Las contraseñas no coinciden")
       return
     }
 
     if (!formData.acceptTerms) {
-      alert("Debes aceptar los términos y condiciones")
+      toast.error("Debes aceptar los términos y condiciones")
       return
     }
 
-    console.log("Register:", formData)
-    // TODO: Implementar registro
-    navigate("/login")
+    setIsLoading(true)
+    
+    try {
+      await authService.register(formData)
+      navigate("/admin")
+    } catch (error) {
+      console.error("Error al registrar:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -153,8 +163,15 @@ export function RegisterPage() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full" disabled={!formData.acceptTerms}>
-          Crear Cuenta
+        <Button type="submit" className="w-full" disabled={!formData.acceptTerms || isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creando cuenta...
+            </>
+          ) : (
+            "Crear Cuenta"
+          )}
         </Button>
 
         <div className="text-center text-sm">
