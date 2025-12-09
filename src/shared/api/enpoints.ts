@@ -15,9 +15,10 @@ export const API_ENDPOINTS = {
   USERS: {
     LIST: "/users",
     CREATE: "/users",
-    UPDATE: (id: number) => `/users/${id}`,
-    DELETE: (id: number) => `/users/${id}`,
-    GET: (id: number) => `/users/${id}`,
+    UPDATE: (id: string) => `/users/${id}`,
+    DELETE: (id: string) => `/users/${id}`,
+    GET: (id: string) => `/users/${id}`,
+    STATS: "/users/stats",
   },
   
   // Members
@@ -60,14 +61,15 @@ export const API_ENDPOINTS = {
     MEMBERS: (teamId: number) => `/teams/${teamId}/members`,
   },
   
-  // Roles
+  // Roles (rutas bajo /auth según documentación)
   ROLES: {
-    LIST: "/roles",
-    CREATE: "/roles",
-    UPDATE: (id: number) => `/roles/${id}`,
-    DELETE: (id: number) => `/roles/${id}`,
-    GET: (id: number) => `/roles/${id}`,
-    PERMISSIONS: (roleId: number) => `/roles/${roleId}/permissions`,
+    LIST: "/auth/roles",
+    CREATE: "/auth/roles",
+    UPDATE: (id: string) => `/auth/roles/${id}`,
+    DELETE: (id: string) => `/auth/roles/${id}`,
+    GET: (id: string) => `/auth/roles/${id}`,
+    PERMISSIONS: (roleId: string) => `/auth/roles/${roleId}/permissions`,
+    STATS: "/auth/roles-permissions/stats",
   },
   
   // Reports

@@ -1,30 +1,43 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
-import { Plus } from "lucide-react"
+import { Plus, Loader2, Users, CheckCircle2, XCircle, Key } from "lucide-react"
 import { CreateUserDialog } from "../components/create-user-dialog"
 import { EditUserDialog } from "../components/edit-user-dialog"
 import { UsersTable } from "../components/users-table"
-import type { User, CreateUserData, UpdateUserData } from "../types"
-
-// Mock data - En producción esto vendría de un hook o servicio
-const mockUsers: User[] = [
-  { id: 1, email: "admin@ivead.org", role: "Administrador", status: "Activo", created: "2024-01-15" },
-  { id: 2, email: "pastor@ivead.org", role: "Pastor", status: "Activo", created: "2024-02-20" },
-  { id: 3, email: "lider@ivead.org", role: "Líder", status: "Activo", created: "2024-03-10" },
-  { id: 4, email: "miembro@ivead.org", role: "Miembro", status: "Inactivo", created: "2024-04-05" },
-]
+import { useUsers } from "../hooks/use-users"
+import { useRoles } from "@/modules/roles/hooks/use-roles"
+import type { User, CreateUserRequest, UpdateUserRequest } from "../types"
 
 export function UsersPage() {
-  const [users] = useState<User[]>(mockUsers)
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(20)
+  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
-  const handleCreateUser = (data: CreateUserData) => {
-    console.log("Creating user:", data)
-    // TODO: Implementar creación de usuario
+  // Usar el hook personalizado con filtros
+  const filters = useMemo(
+    () => ({
+      search: searchQuery || undefined,
+      page: currentPage,
+      pageSize,
+    }),
+    [searchQuery, currentPage, pageSize]
+  )
+
+  const { users, stats, pagination, isLoading, createUser, updateUser, deleteUser } = useUsers(filters)
+  const { roles, isLoading: rolesLoading } = useRoles()
+
+  const handleCreateUser = async (data: CreateUserRequest) => {
+    try {
+      await createUser(data)
+      setIsCreateModalOpen(false)
+    } catch (error) {
+      console.error("Error al crear usuario:", error)
+    }
   }
 
   const handleEditUser = (user: User) => {
@@ -32,20 +45,37 @@ export function UsersPage() {
     setIsEditModalOpen(true)
   }
 
-  const handleUpdateUser = (data: UpdateUserData) => {
-    console.log("Updating user:", selectedUser?.id, data)
-    // TODO: Implementar actualización de usuario
-    setIsEditModalOpen(false)
-    setSelectedUser(null)
+  const handleUpdateUser = async (data: UpdateUserRequest) => {
+    if (!selectedUser) return
+
+    try {
+      await updateUser(selectedUser.id, data)
+      setIsEditModalOpen(false)
+      setSelectedUser(null)
+    } catch (error) {
+      console.error("Error al actualizar usuario:", error)
+    }
   }
 
-  const handleDeleteUser = (userId: number) => {
-    console.log("Deleting user:", userId)
-    // TODO: Implementar eliminación de usuario
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await deleteUser(userId)
+    } catch (error) {
+      console.error("Error al eliminar usuario:", error)
+    }
+  }
+
+  if (isLoading && users.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4 lg:space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Usuarios</h1>
@@ -57,10 +87,68 @@ export function UsersPage() {
         </Button>
       </div>
 
+      {/* Estadísticas */}
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total_users}</div>
+              <p className="text-xs text-muted-foreground">{stats.total_roles} roles distintos</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Email Verificado</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.verified_users}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.total_users > 0
+                  ? ((stats.verified_users / stats.total_users) * 100).toFixed(1)
+                  : 0}
+                % del total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Sin Verificar</CardTitle>
+              <XCircle className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.unverified_users}</div>
+              <p className="text-xs text-muted-foreground">Pendientes de verificación</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Con Contraseña</CardTitle>
+              <Key className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.password_users}</div>
+              <p className="text-xs text-muted-foreground">{stats.google_users} con Google</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Tabla de Usuarios */}
       <Card>
         <CardHeader>
           <CardTitle>Lista de Usuarios</CardTitle>
-          <CardDescription>Todos los usuarios registrados en el sistema</CardDescription>
+          <CardDescription>
+            {pagination.count} usuario{pagination.count !== 1 ? "s" : ""} registrado
+            {pagination.count !== 1 ? "s" : ""} en el sistema
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <UsersTable
@@ -69,14 +157,20 @@ export function UsersPage() {
             onSearchChange={setSearchQuery}
             onEdit={handleEditUser}
             onDelete={handleDeleteUser}
+            isLoading={isLoading}
+            pagination={pagination}
+            onPageChange={setCurrentPage}
           />
         </CardContent>
       </Card>
 
+      {/* Modales */}
       <CreateUserDialog
         open={isCreateModalOpen}
         onOpenChange={setIsCreateModalOpen}
         onSubmit={handleCreateUser}
+        roles={roles}
+        rolesLoading={rolesLoading}
       />
 
       <EditUserDialog
@@ -84,8 +178,9 @@ export function UsersPage() {
         onOpenChange={setIsEditModalOpen}
         user={selectedUser}
         onSubmit={handleUpdateUser}
+        roles={roles}
+        rolesLoading={rolesLoading}
       />
     </div>
   )
 }
-

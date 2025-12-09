@@ -11,32 +11,45 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select"
-import type { CreateUserData, UserRole } from "../types"
+import { Loader2 } from "lucide-react"
+import type { CreateUserRequest, Role } from "../types"
 
 interface CreateUserDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: CreateUserData) => void
-  roles?: UserRole[]
+  onSubmit: (data: CreateUserRequest) => Promise<void>
+  roles: Role[]
+  rolesLoading?: boolean
 }
 
-const defaultRoles: UserRole[] = ["Administrador", "Pastor", "Líder", "Miembro"]
-
-export function CreateUserDialog({ open, onOpenChange, onSubmit, roles = defaultRoles }: CreateUserDialogProps) {
-  const [formData, setFormData] = useState<CreateUserData>({
+export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoading }: CreateUserDialogProps) {
+  const [formData, setFormData] = useState<CreateUserRequest>({
     email: "",
     password: "",
-    role: "Miembro",
+    role_id: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = () => {
-    onSubmit(formData)
-    setFormData({
-      email: "",
-      password: "",
-      role: "Miembro",
-    })
-    onOpenChange(false)
+  const handleSubmit = async () => {
+    if (!formData.email || !formData.password) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await onSubmit(formData)
+      // Resetear formulario
+      setFormData({
+        email: "",
+        password: "",
+        role_id: "",
+      })
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Error al crear usuario:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -48,52 +61,94 @@ export function CreateUserDialog({ open, onOpenChange, onSubmit, roles = default
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">
+              Email <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="email"
               type="email"
               placeholder="usuario@ejemplo.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              disabled={isSubmitting}
+              required
             />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="password">Contraseña</Label>
+            <Label htmlFor="password">
+              Contraseña <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Mínimo 6 caracteres"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              disabled={isSubmitting}
+              minLength={6}
+              required
             />
+            <p className="text-xs text-muted-foreground">Debe tener al menos 6 caracteres</p>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="role">Rol</Label>
-            <Select
-              value={formData.role}
-              onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un rol" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {rolesLoading ? (
+              <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Cargando roles...</span>
+              </div>
+            ) : (
+              <Select
+                value={formData.role_id}
+                onValueChange={(value) => setFormData({ ...formData, role_id: value })}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un rol (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <p className="text-xs text-muted-foreground">Opcional: el rol se puede asignar después</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="image">URL de Imagen</Label>
+            <Input
+              id="image"
+              type="url"
+              placeholder="https://ejemplo.com/imagen.jpg"
+              value={formData.image || ""}
+              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-muted-foreground">Opcional</p>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>Crear Usuario</Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.email || !formData.password}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creando...
+              </>
+            ) : (
+              "Crear Usuario"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
-

@@ -127,6 +127,7 @@ axiosInstance.interceptors.response.use(
   }
 )
 
+export { axiosInstance }
 export default axiosInstance
 export type { ApiResponse }
 
