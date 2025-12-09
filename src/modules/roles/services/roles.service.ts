@@ -1,6 +1,6 @@
 import { axiosInstance } from "@/shared/api/axios.config"
 import { API_ENDPOINTS } from "@/shared/api/enpoints"
-import type { Role, Permission, RolesStats, CreateRoleData, UpdateRoleData, ApiResponse } from "../types"
+import type { Role, Permission, RolesStats, CreateRoleData, UpdateRoleData, ApiResponse, RolesListResponse } from "../types"
 
 export const rolesService = {
   /**
@@ -8,8 +8,9 @@ export const rolesService = {
    * @returns Lista de roles con permisos asociados
    */
   async getAllRoles(): Promise<Role[]> {
-    const response = await axiosInstance.get<ApiResponse<Role[]>>(API_ENDPOINTS.ROLES.LIST)
-    return response.data.data
+    const response = await axiosInstance.get<ApiResponse<RolesListResponse>>(API_ENDPOINTS.ROLES.LIST)
+    // El backend devuelve: { status, message, data: { roles: [...] } }
+    return response.data.data.roles
   },
 
   /**

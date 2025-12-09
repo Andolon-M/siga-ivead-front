@@ -18,17 +18,21 @@ interface CreateUserDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (data: CreateUserRequest) => Promise<void>
-  roles: Role[]
-  rolesLoading?: boolean
+  roles: Role[] // Roles ya cargados desde la vista padre (UsersPage)
+  rolesLoading?: boolean // Estado de carga de roles desde la vista padre
 }
 
 export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoading }: CreateUserDialogProps) {
+  // Estados locales del formulario
   const [formData, setFormData] = useState<CreateUserRequest>({
     email: "",
     password: "",
     role_id: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Nota: Los roles se reciben como props desde UsersPage, no se consultan aquí
+  // Esto evita consultas duplicadas y mejora el rendimiento
 
   const handleSubmit = async () => {
     if (!formData.email || !formData.password) {
@@ -99,6 +103,10 @@ export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoa
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm text-muted-foreground">Cargando roles...</span>
               </div>
+            ) : !Array.isArray(roles) || roles.length === 0 ? (
+              <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted">
+                <span className="text-sm text-muted-foreground">No hay roles disponibles</span>
+              </div>
             ) : (
               <Select
                 value={formData.role_id}
@@ -109,21 +117,19 @@ export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoa
                   <SelectValue placeholder="Selecciona un rol (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles && roles.length > 0 ? (
-                    roles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-sm text-muted-foreground text-center">
-                      No hay roles disponibles
-                    </div>
-                  )}
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}
-            <p className="text-xs text-muted-foreground">Opcional: el rol se puede asignar después</p>
+            <p className="text-xs text-muted-foreground">
+              {rolesLoading 
+                ? "Cargando roles disponibles desde el servidor..." 
+                : "Opcional: el rol se puede asignar después"}
+            </p>
           </div>
 
           <div className="space-y-2">

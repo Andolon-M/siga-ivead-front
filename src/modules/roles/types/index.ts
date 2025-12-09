@@ -36,3 +36,8 @@ export interface ApiResponse<T> {
   message: string
   data: T
 }
+
+// Respuesta específica para la lista de roles desde el backend
+export interface RolesListResponse {
+  roles: Role[]
+}

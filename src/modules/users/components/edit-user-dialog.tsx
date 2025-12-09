@@ -19,13 +19,17 @@ interface EditUserDialogProps {
   onOpenChange: (open: boolean) => void
   user: User | null
   onSubmit: (data: UpdateUserRequest) => Promise<void>
-  roles: Role[]
-  rolesLoading?: boolean
+  roles: Role[] // Roles ya cargados desde la vista padre (UsersPage)
+  rolesLoading?: boolean // Estado de carga de roles desde la vista padre
 }
 
 export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, rolesLoading }: EditUserDialogProps) {
+  // Estados locales del formulario
   const [formData, setFormData] = useState<UpdateUserRequest>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Nota: Los roles se reciben como props desde UsersPage, no se consultan aquí
+  // Esto evita consultas duplicadas y mejora el rendimiento
 
   useEffect(() => {
     if (user) {
@@ -95,6 +99,10 @@ export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, role
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm text-muted-foreground">Cargando roles...</span>
               </div>
+            ) : !Array.isArray(roles) || roles.length === 0 ? (
+              <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted">
+                <span className="text-sm text-muted-foreground">No hay roles disponibles</span>
+              </div>
             ) : (
               <Select
                 value={formData.role_id || user.role_id}
@@ -105,22 +113,18 @@ export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, role
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles && roles.length > 0 ? (
-                    roles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-sm text-muted-foreground text-center">
-                      No hay roles disponibles
-                    </div>
-                  )}
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}
             <p className="text-xs text-muted-foreground">
-              Rol actual: <span className="font-medium">{user.role_name}</span>
+              {rolesLoading 
+                ? "Cargando roles disponibles..." 
+                : `Rol actual: ${user.role_name}`}
             </p>
           </div>
 
@@ -141,9 +145,9 @@ export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, role
             <div className="p-3 bg-muted rounded-lg space-y-1">
               <p className="text-sm font-medium">Miembro Asociado</p>
               <p className="text-sm text-muted-foreground">
-                {user.member_name} {user.member_last_name}
+                {user.name} {user.last_name}
               </p>
-              <p className="text-xs text-muted-foreground">DNI: {user.member_dni}</p>
+              <p className="text-xs text-muted-foreground">DNI: {user.dni}</p>
               <p className="text-xs text-muted-foreground">Estado: {user.member_status}</p>
             </div>
           )}
