@@ -11,9 +11,9 @@ export interface User {
   updated_at: string
   role_name: string
   member_id: string | null
-  member_name: string | null
-  member_last_name: string | null
-  member_dni: string | null
+  name: string | null
+  last_name: string | null
+  dni: string | null
   member_status: "ASISTENTE" | "ACTIVO" | "INACTIVO" | null
   work_teams_count: number
   team_memberships_count: number
@@ -62,11 +62,15 @@ export interface UserFilters {
   pageSize?: number
 }
 
+// Estructura de paginación que devuelve el backend
 export interface PaginatedResponse<T> {
-  rows: T[]
-  count: number
-  totalPages: number
+  previousPage: number | null
   currentPage: number
+  nextPage: number | null
+  total: number
+  totalPages: number
+  limit: number
+  data: T[]
 }
 
 export interface ApiResponse<T> {

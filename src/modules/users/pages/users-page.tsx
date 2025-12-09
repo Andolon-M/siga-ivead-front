@@ -6,7 +6,7 @@ import { CreateUserDialog } from "../components/create-user-dialog"
 import { EditUserDialog } from "../components/edit-user-dialog"
 import { UsersTable } from "../components/users-table"
 import { useUsers } from "../hooks/use-users"
-import { useRoles } from "@/modules/roles/hooks/use-roles"
+import { useRoles } from "../hooks/use-roles"
 import type { User, CreateUserRequest, UpdateUserRequest } from "../types"
 
 export function UsersPage() {

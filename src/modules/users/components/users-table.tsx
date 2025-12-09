@@ -55,10 +55,16 @@ export function UsersTable({
     }
   }
 
-  const getUserInitials = (email: string, memberName?: string | null) => {
-    if (memberName && memberName.length > 0) {
-      return memberName.substring(0, 2).toUpperCase()
+  const getUserInitials = (email: string, name?: string | null, lastName?: string | null) => {
+    // Si tiene nombre y apellido, usar iniciales de ambos
+    if (name && lastName) {
+      return `${name.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
     }
+    // Si solo tiene nombre
+    if (name && name.length > 0) {
+      return name.substring(0, 2).toUpperCase()
+    }
+    // Si solo tiene email
     if (email && email.length > 0) {
       return email.substring(0, 2).toUpperCase()
     }
@@ -119,7 +125,7 @@ export function UsersTable({
                         <Avatar className="h-8 w-8">
                           {user.image && <AvatarImage src={user.image} alt={user.email} />}
                           <AvatarFallback>
-                            {getUserInitials(user.email, user.member_name)}
+                            {getUserInitials(user.email, user.name, user.last_name)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
@@ -161,7 +167,7 @@ export function UsersTable({
                       {user.member_id ? (
                         <div className="flex flex-col">
                           <span className="text-sm font-medium">
-                            {user.member_name} {user.member_last_name}
+                            {user.name} {user.last_name}
                           </span>
                           <Badge
                             variant={

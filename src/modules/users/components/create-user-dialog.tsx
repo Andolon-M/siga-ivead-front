@@ -109,11 +109,17 @@ export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoa
                   <SelectValue placeholder="Selecciona un rol (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.id}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
+                  {roles && roles.length > 0 ? (
+                    roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground text-center">
+                      No hay roles disponibles
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             )}

@@ -34,6 +34,7 @@ export const usersService = {
     const url = queryString ? `${API_ENDPOINTS.USERS.LIST}?${queryString}` : API_ENDPOINTS.USERS.LIST
     
     const response = await axiosInstance.get<ApiResponse<User | PaginatedResponse<User>>>(url)
+    
     return response.data.data
   },
 

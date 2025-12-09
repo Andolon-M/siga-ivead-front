@@ -29,16 +29,16 @@ export function useUsers(filters?: UserFilters) {
       const response = await usersService.getUsers(filters)
       
       // Si es un usuario específico (búsqueda por id o email)
-      if (!("rows" in response)) {
+      if (!("data" in response)) {
         setUsers([response])
         setPagination({ currentPage: 1, totalPages: 1, count: 1 })
       } else {
         // Si es una lista paginada
-        setUsers(response.rows)
+        setUsers(response.data)
         setPagination({
           currentPage: response.currentPage,
           totalPages: response.totalPages,
-          count: response.count,
+          count: response.total,
         })
       }
     } catch (err) {
