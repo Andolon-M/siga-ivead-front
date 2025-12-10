@@ -1,79 +1,117 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 import { CreateMemberDialog } from "../components/create-member-dialog"
 import { EditMemberDialog } from "../components/edit-member-dialog"
 import { MembersTable } from "../components/members-table"
+import { useMembers } from "../hooks/use-members"
+import { membersService } from "../services/members.service"
 import type { Member, CreateMemberData, UpdateMemberData } from "../types"
 
-// Mock data - En producción esto vendría de un hook o servicio
-const mockMembers: Member[] = [
-  {
-    id: 1,
-    name: "Juan Pérez",
-    dni: "1234567890",
-    phone: "300-123-4567",
-    status: "ACTIVO",
-    gender: "MASCULINO",
-    birthdate: "1990-05-15",
-  },
-  {
-    id: 2,
-    name: "María García",
-    dni: "0987654321",
-    phone: "310-987-6543",
-    status: "ACTIVO",
-    gender: "FEMENINO",
-    birthdate: "1985-08-22",
-  },
-  {
-    id: 3,
-    name: "Carlos López",
-    dni: "1122334455",
-    phone: "320-555-1234",
-    status: "ASISTENTE",
-    gender: "MASCULINO",
-    birthdate: "1995-03-10",
-  },
-  {
-    id: 4,
-    name: "Ana Martínez",
-    dni: "5544332211",
-    phone: "315-444-5678",
-    status: "INACTIVO",
-    gender: "FEMENINO",
-    birthdate: "1988-11-30",
-  },
-]
-
 export function MembersPage() {
-  const [members] = useState<Member[]>(mockMembers)
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("") // Estado para el valor confirmado
+  const [isSearching, setIsSearching] = useState(false) // Estado visual de "esperando/buscando"
+
+  // Usar el hook real para obtener miembros con paginación
+  const { members, loading, error, pagination, refetch, setFilters } = useMembers({
+    page: 1,
+    pageSize: 20,
+  })
+  
+  // Efecto de debounce: Espera 1 segundo después de dejar de escribir
+  useEffect(() => {
+    // Si el texto está vacío, actualizar inmediatamente para limpiar
+    if (searchQuery.trim() === "") {
+      setDebouncedSearch("")
+      setIsSearching(false)
+      setFilters({ search: undefined, page: 1, pageSize: 20 })
+      return
+    }
+
+    setIsSearching(true)
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+      setIsSearching(false)
+      // Actualizar filtros solo después del delay
+      setFilters({ search: searchQuery, page: 1, pageSize: 20 })
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, setFilters])
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleCreateMember = (data: CreateMemberData) => {
-    console.log("Creating member:", data)
-    // TODO: Implementar creación de miembro
+  // Crear miembro
+  const handleCreateMember = async (data: CreateMemberData) => {
+    try {
+      setIsSubmitting(true)
+      await membersService.createMember(data)
+      setIsCreateModalOpen(false)
+      // Recargar la lista de miembros
+      await refetch()
+    } catch (error) {
+      console.error("Error al crear miembro:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
+  // Abrir diálogo de edición
   const handleEditMember = (member: Member) => {
     setSelectedMember(member)
     setIsEditModalOpen(true)
   }
 
-  const handleUpdateMember = (data: UpdateMemberData) => {
-    console.log("Updating member:", selectedMember?.id, data)
-    // TODO: Implementar actualización de miembro
-    setIsEditModalOpen(false)
-    setSelectedMember(null)
+  // Actualizar miembro
+  const handleUpdateMember = async (data: UpdateMemberData) => {
+    if (!selectedMember) return
+
+    try {
+      setIsSubmitting(true)
+      await membersService.updateMember(selectedMember.id, data)
+      setIsEditModalOpen(false)
+      setSelectedMember(null)
+      // Recargar la lista de miembros
+      await refetch()
+    } catch (error) {
+      console.error("Error al actualizar miembro:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleDeleteMember = (memberId: number) => {
-    console.log("Deleting member:", memberId)
-    // TODO: Implementar eliminación de miembro
+  // Eliminar miembro
+  const handleDeleteMember = async (memberId: string) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este miembro?")) {
+      return
+    }
+
+    try {
+      await membersService.deleteMember(memberId)
+      // Recargar la lista de miembros
+      await refetch()
+    } catch (error) {
+      console.error("Error al eliminar miembro:", error)
+    }
+  }
+
+  // Manejar cambio en la búsqueda (solo actualiza el input visualmente)
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query)
+  }
+
+  // Mostrar loader centrado en la carga inicial (o primera búsqueda)
+  if ((loading || isSearching) && members.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -83,7 +121,7 @@ export function MembersPage() {
           <h1 className="text-3xl font-bold">Miembros</h1>
           <p className="text-muted-foreground">Gestiona los miembros de la iglesia</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button onClick={() => setIsCreateModalOpen(true)} disabled={loading}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Miembro
         </Button>
@@ -91,17 +129,78 @@ export function MembersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Miembros</CardTitle>
-          <CardDescription>Todos los miembros registrados en la iglesia</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Lista de Miembros</CardTitle>
+              <CardDescription>
+                {isSearching ? (
+                  "Buscando..."
+                ) : pagination ? (
+                  `Mostrando ${members.length} de ${pagination.total} miembros`
+                ) : (
+                  "Todos los miembros registrados en la iglesia"
+                )}
+              </CardDescription>
+            </div>
+            {(loading || isSearching) && (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
-          <MembersTable
-            members={members}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onEdit={handleEditMember}
-            onDelete={handleDeleteMember}
-          />
+          {error ? (
+            <div className="text-center py-8">
+              <p className="text-destructive mb-4">Error al cargar miembros: {error.message}</p>
+              <Button onClick={refetch} variant="outline">
+                Reintentar
+              </Button>
+            </div>
+          ) : (
+            <>
+              <MembersTable
+                members={members}
+                searchQuery={searchQuery}
+                onSearchChange={handleSearchChange}
+                onEdit={handleEditMember}
+                onDelete={handleDeleteMember}
+              />
+              
+              {/* Paginación */}
+              {pagination && pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Página {pagination.currentPage} de {pagination.totalPages}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFilters({ 
+                        search: searchQuery || undefined,
+                        page: pagination.previousPage!, 
+                        pageSize: 20 
+                      })}
+                      disabled={!pagination.previousPage || loading}
+                    >
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFilters({ 
+                        search: searchQuery || undefined,
+                        page: pagination.nextPage!, 
+                        pageSize: 20 
+                      })}
+                      disabled={!pagination.nextPage || loading}
+                    >
+                      Siguiente
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 

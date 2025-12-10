@@ -26,15 +26,16 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
   useEffect(() => {
     if (member) {
       setFormData({
+        user_id: member.user_id,
         name: member.name,
-        lastName: member.lastName,
-        documentType: member.documentType || "CC",
-        dni: member.dni,
+        last_name: member.last_name,
+        tipo_dni: member.tipo_dni,
+        dni_user: member.dni_user,
         birthdate: member.birthdate,
         gender: member.gender,
-        phone: member.phone,
+        cell: member.cell,
+        direccion: member.direccion,
         status: member.status,
-        address: member.address,
       })
     }
   }, [member])
@@ -57,6 +58,14 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
+            <Label htmlFor="edit-user-id">ID de Usuario</Label>
+            <Input
+              id="edit-user-id"
+              value={formData.user_id || ""}
+              onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="edit-name">Nombre</Label>
             <Input
               id="edit-name"
@@ -68,24 +77,27 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
             <Label htmlFor="edit-lastname">Apellido</Label>
             <Input
               id="edit-lastname"
-              value={formData.lastName || ""}
-              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              value={formData.last_name || ""}
+              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-dni-type">Tipo de DNI</Label>
             <Select
-              value={formData.documentType || member.documentType || "CC"}
-              onValueChange={(value) => setFormData({ ...formData, documentType: value as DocumentType })}
+              value={formData.tipo_dni || member.tipo_dni}
+              onValueChange={(value) => setFormData({ ...formData, tipo_dni: value as DocumentType })}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="CC">CC</SelectItem>
-                <SelectItem value="TI">TI</SelectItem>
-                <SelectItem value="CE">CE</SelectItem>
-                <SelectItem value="PP">PP</SelectItem>
+                <SelectItem value="CC">CC - Cédula de Ciudadanía</SelectItem>
+                <SelectItem value="TI">TI - Tarjeta de Identidad</SelectItem>
+                <SelectItem value="RC">RC - Registro Civil</SelectItem>
+                <SelectItem value="PP">PP - Pasaporte</SelectItem>
+                <SelectItem value="CE">CE - Cédula de Extranjería</SelectItem>
+                <SelectItem value="PEP">PEP - Permiso Especial</SelectItem>
+                <SelectItem value="DNI">DNI</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -93,8 +105,8 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
             <Label htmlFor="edit-dni">Número de DNI</Label>
             <Input
               id="edit-dni"
-              value={formData.dni || ""}
-              onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+              value={formData.dni_user || ""}
+              onChange={(e) => setFormData({ ...formData, dni_user: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -125,8 +137,8 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
             <Label htmlFor="edit-phone">Teléfono</Label>
             <Input
               id="edit-phone"
-              value={formData.phone || ""}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              value={formData.cell || ""}
+              onChange={(e) => setFormData({ ...formData, cell: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -149,8 +161,8 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
             <Label htmlFor="edit-address">Dirección</Label>
             <Input
               id="edit-address"
-              value={formData.address || ""}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              value={formData.direccion || ""}
+              onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
             />
           </div>
         </div>

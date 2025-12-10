@@ -21,29 +21,31 @@ interface CreateMemberDialogProps {
 
 export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMemberDialogProps) {
   const [formData, setFormData] = useState<CreateMemberData>({
+    user_id: "",
     name: "",
-    lastName: "",
-    documentType: "CC",
-    dni: "",
+    last_name: "",
+    tipo_dni: "CC",
+    dni_user: "",
     birthdate: "",
     gender: "MASCULINO",
-    phone: "",
+    cell: "",
+    direccion: "",
     status: "ASISTENTE",
-    address: "",
   })
 
   const handleSubmit = () => {
     onSubmit(formData)
     setFormData({
+      user_id: "",
       name: "",
-      lastName: "",
-      documentType: "CC",
-      dni: "",
+      last_name: "",
+      tipo_dni: "CC",
+      dni_user: "",
       birthdate: "",
       gender: "MASCULINO",
-      phone: "",
+      cell: "",
+      direccion: "",
       status: "ASISTENTE",
-      address: "",
     })
     onOpenChange(false)
   }
@@ -57,10 +59,19 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
+            <Label htmlFor="user_id">ID de Usuario</Label>
+            <Input
+              id="user_id"
+              placeholder="ID del usuario"
+              value={formData.user_id}
+              onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="name">Nombre</Label>
             <Input
               id="name"
-              placeholder="Nombre completo"
+              placeholder="Nombre"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
@@ -70,24 +81,27 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
             <Input
               id="lastname"
               placeholder="Apellido"
-              value={formData.lastName}
-              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              value={formData.last_name}
+              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="dni-type">Tipo de DNI</Label>
             <Select
-              value={formData.documentType}
-              onValueChange={(value) => setFormData({ ...formData, documentType: value as DocumentType })}
+              value={formData.tipo_dni}
+              onValueChange={(value) => setFormData({ ...formData, tipo_dni: value as DocumentType })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="CC">CC</SelectItem>
-                <SelectItem value="TI">TI</SelectItem>
-                <SelectItem value="CE">CE</SelectItem>
-                <SelectItem value="PP">PP</SelectItem>
+                <SelectItem value="CC">CC - Cédula de Ciudadanía</SelectItem>
+                <SelectItem value="TI">TI - Tarjeta de Identidad</SelectItem>
+                <SelectItem value="RC">RC - Registro Civil</SelectItem>
+                <SelectItem value="PP">PP - Pasaporte</SelectItem>
+                <SelectItem value="CE">CE - Cédula de Extranjería</SelectItem>
+                <SelectItem value="PEP">PEP - Permiso Especial</SelectItem>
+                <SelectItem value="DNI">DNI</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -96,8 +110,8 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
             <Input
               id="dni"
               placeholder="1234567890"
-              value={formData.dni}
-              onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+              value={formData.dni_user}
+              onChange={(e) => setFormData({ ...formData, dni_user: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -128,9 +142,9 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
             <Label htmlFor="phone">Teléfono</Label>
             <Input
               id="phone"
-              placeholder="300-123-4567"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="3001234567"
+              value={formData.cell}
+              onChange={(e) => setFormData({ ...formData, cell: e.target.value })}
             />
           </div>
           <div className="space-y-2">
@@ -154,8 +168,8 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
             <Input
               id="address"
               placeholder="Calle 123 #45-67"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              value={formData.direccion}
+              onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
             />
           </div>
         </div>

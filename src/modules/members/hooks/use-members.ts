@@ -1,33 +1,84 @@
-import { useState, useEffect } from "react"
-import type { Member } from "../types"
+import { useState, useEffect, useCallback } from "react"
+import type { Member, MemberFilters, PaginatedResponse } from "../types"
 import { membersService } from "../services/members.service"
 
-export function useMembers() {
+interface UseMembersResult {
+  members: Member[]
+  loading: boolean
+  error: Error | null
+  pagination: {
+    currentPage: number
+    totalPages: number
+    total: number
+    nextPage: number | null
+    previousPage: number | null
+    limit: number
+  } | null
+  refetch: () => Promise<void>
+  setFilters: (filters: MemberFilters) => void
+}
+
+export function useMembers(initialFilters?: MemberFilters): UseMembersResult {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const [filters, setFiltersState] = useState<MemberFilters>(initialFilters || {})
+  const [pagination, setPagination] = useState<{
+    currentPage: number
+    totalPages: number
+    total: number
+    nextPage: number | null
+    previousPage: number | null
+    limit: number
+  } | null>(null)
 
-  useEffect(() => {
-    loadMembers()
-  }, [])
-
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await membersService.getAllMembers()
-      setMembers(data)
+      setError(null)
+      const data = await membersService.getMembers(filters)
+      
+      // Si es un solo miembro (búsqueda por id, dni o userId)
+      if (!("data" in data)) {
+        setMembers([data as Member])
+        setPagination(null)
+      } else {
+        // Si es una respuesta paginada
+        const paginatedData = data as PaginatedResponse<Member>
+        setMembers(paginatedData.data)
+        setPagination({
+          currentPage: paginatedData.currentPage,
+          totalPages: paginatedData.totalPages,
+          total: paginatedData.total,
+          nextPage: paginatedData.nextPage,
+          previousPage: paginatedData.previousPage,
+          limit: paginatedData.limit,
+        })
+      }
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Error al cargar miembros"))
+      setMembers([])
+      setPagination(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters])
+
+  useEffect(() => {
+    loadMembers()
+  }, [loadMembers])
+
+  const setFilters = useCallback((newFilters: MemberFilters) => {
+    setFiltersState(newFilters)
+  }, [])
 
   return {
     members,
     loading,
     error,
+    pagination,
     refetch: loadMembers,
+    setFilters,
   }
 }
 

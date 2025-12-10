@@ -25,9 +25,10 @@ export const API_ENDPOINTS = {
   MEMBERS: {
     LIST: "/members",
     CREATE: "/members",
-    UPDATE: (id: number) => `/members/${id}`,
-    DELETE: (id: number) => `/members/${id}`,
-    GET: (id: number) => `/members/${id}`,
+    UPDATE: (id: string) => `/members/${id}`,
+    DELETE: (id: string) => `/members/${id}`,
+    GET: (id: string) => `/members/${id}`,
+    STATS: "/members/stats",
   },
   
   // Events

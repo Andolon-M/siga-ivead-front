@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Plus, Loader2, Users, CheckCircle2, XCircle, Key } from "lucide-react"
@@ -11,6 +11,8 @@ import type { User, CreateUserRequest, UpdateUserRequest } from "../types"
 
 export function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("") // Valor confirmado tras espera
+  const [isSearching, setIsSearching] = useState(false) // Estado visual
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(20)
   
@@ -18,14 +20,32 @@ export function UsersPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
-  // Usar el hook personalizado con filtros
+  // Debounce para la búsqueda (1 segundo)
+  useEffect(() => {
+    // Si está vacío, limpiar inmediatamente
+    if (searchQuery.trim() === "") {
+      setDebouncedSearch("")
+      setIsSearching(false)
+      return
+    }
+
+    setIsSearching(true)
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+      setIsSearching(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Usar el hook personalizado con filtros (usa debouncedSearch en lugar de searchQuery directo)
   const filters = useMemo(
     () => ({
-      search: searchQuery || undefined,
+      search: debouncedSearch || undefined,
       page: currentPage,
       pageSize,
     }),
-    [searchQuery, currentPage, pageSize]
+    [debouncedSearch, currentPage, pageSize]
   )
 
   const { users, stats, pagination, isLoading, createUser, updateUser, deleteUser } = useUsers(filters)
@@ -65,7 +85,7 @@ export function UsersPage() {
     }
   }
 
-  if (isLoading && users.length === 0) {
+  if ((isLoading || isSearching) && users.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -144,11 +164,24 @@ export function UsersPage() {
       {/* Tabla de Usuarios */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Usuarios</CardTitle>
-          <CardDescription>
-            {pagination.count} usuario{pagination.count !== 1 ? "s" : ""} registrado
-            {pagination.count !== 1 ? "s" : ""} en el sistema
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Lista de Usuarios</CardTitle>
+              <CardDescription>
+                {isSearching ? (
+                  "Buscando..."
+                ) : (
+                  <>
+                    {pagination.count} usuario{pagination.count !== 1 ? "s" : ""} registrado
+                    {pagination.count !== 1 ? "s" : ""} en el sistema
+                  </>
+                )}
+              </CardDescription>
+            </div>
+            {(isLoading || isSearching) && (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <UsersTable
@@ -157,7 +190,7 @@ export function UsersPage() {
             onSearchChange={setSearchQuery}
             onEdit={handleEditUser}
             onDelete={handleDeleteUser}
-            isLoading={isLoading}
+            isLoading={isLoading || isSearching} // Pasar estado de búsqueda a la tabla también
             pagination={pagination}
             onPageChange={setCurrentPage}
           />

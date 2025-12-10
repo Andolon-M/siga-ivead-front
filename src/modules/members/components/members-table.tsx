@@ -10,7 +10,7 @@ interface MembersTableProps {
   searchQuery: string
   onSearchChange: (query: string) => void
   onEdit: (member: Member) => void
-  onDelete: (memberId: number) => void
+  onDelete: (memberId: string) => void
 }
 
 const statusColors = {
@@ -23,7 +23,8 @@ export function MembersTable({ members, searchQuery, onSearchChange, onEdit, onD
   const filteredMembers = members.filter(
     (member) =>
       member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.dni.includes(searchQuery),
+      member.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.dni_user.includes(searchQuery),
   )
 
   return (
@@ -54,12 +55,12 @@ export function MembersTable({ members, searchQuery, onSearchChange, onEdit, onD
             <TableRow key={member.id}>
               <TableCell className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                {member.name}
+                {member.name} {member.last_name}
               </TableCell>
-              <TableCell>{member.dni}</TableCell>
+              <TableCell>{member.dni_user}</TableCell>
               <TableCell className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                {member.phone}
+                {member.cell}
               </TableCell>
               <TableCell>
                 <Badge variant={statusColors[member.status] as any}>{member.status}</Badge>
