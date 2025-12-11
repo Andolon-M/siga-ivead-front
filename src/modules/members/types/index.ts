@@ -28,7 +28,7 @@ export interface Member {
 
 // Create member request
 export interface CreateMemberData {
-  user_id: string
+  user_id?: string // Opcional - se puede crear miembro sin usuario asignado
   dni_user: string
   name: string
   last_name: string
