@@ -15,14 +15,12 @@ interface UseMembersResult {
     limit: number
   } | null
   refetch: () => Promise<void>
-  setFilters: (filters: MemberFilters) => void
 }
 
-export function useMembers(initialFilters?: MemberFilters): UseMembersResult {
+export function useMembers(filters?: MemberFilters): UseMembersResult {
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  const [filters, setFiltersState] = useState<MemberFilters>(initialFilters || {})
   const [pagination, setPagination] = useState<{
     currentPage: number
     totalPages: number
@@ -68,17 +66,12 @@ export function useMembers(initialFilters?: MemberFilters): UseMembersResult {
     loadMembers()
   }, [loadMembers])
 
-  const setFilters = useCallback((newFilters: MemberFilters) => {
-    setFiltersState(newFilters)
-  }, [])
-
   return {
     members,
     loading,
     error,
     pagination,
     refetch: loadMembers,
-    setFilters,
   }
 }
 

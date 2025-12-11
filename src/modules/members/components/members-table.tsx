@@ -20,13 +20,6 @@ const statusColors = {
 } as const
 
 export function MembersTable({ members, searchQuery, onSearchChange, onEdit, onDelete }: MembersTableProps) {
-  const filteredMembers = members.filter(
-    (member) =>
-      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.dni_user.includes(searchQuery),
-  )
-
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -51,7 +44,14 @@ export function MembersTable({ members, searchQuery, onSearchChange, onEdit, onD
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredMembers.map((member) => (
+          {members.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                No se encontraron miembros
+              </TableCell>
+            </TableRow>
+          ) : (
+            members.map((member) => (
             <TableRow key={member.id}>
               <TableCell className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
@@ -83,7 +83,8 @@ export function MembersTable({ members, searchQuery, onSearchChange, onEdit, onD
                 </div>
               </TableCell>
             </TableRow>
-          ))}
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

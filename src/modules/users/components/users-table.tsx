@@ -81,7 +81,6 @@ export function UsersTable({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10"
-          disabled={isLoading}
         />
       </div>
 

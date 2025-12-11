@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Plus, Loader2 } from "lucide-react"
@@ -11,22 +11,17 @@ import type { Member, CreateMemberData, UpdateMemberData } from "../types"
 
 export function MembersPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("") // Estado para el valor confirmado
-  const [isSearching, setIsSearching] = useState(false) // Estado visual de "esperando/buscando"
-
-  // Usar el hook real para obtener miembros con paginación
-  const { members, loading, error, pagination, refetch, setFilters } = useMembers({
-    page: 1,
-    pageSize: 20,
-  })
+  const [debouncedSearch, setDebouncedSearch] = useState("") // Valor confirmado tras espera
+  const [isSearching, setIsSearching] = useState(false) // Estado visual
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(20)
   
-  // Efecto de debounce: Espera 1 segundo después de dejar de escribir
+  // Debounce para la búsqueda (1 segundo)
   useEffect(() => {
-    // Si el texto está vacío, actualizar inmediatamente para limpiar
+    // Si está vacío, limpiar inmediatamente
     if (searchQuery.trim() === "") {
       setDebouncedSearch("")
       setIsSearching(false)
-      setFilters({ search: undefined, page: 1, pageSize: 20 })
       return
     }
 
@@ -34,12 +29,23 @@ export function MembersPage() {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery)
       setIsSearching(false)
-      // Actualizar filtros solo después del delay
-      setFilters({ search: searchQuery, page: 1, pageSize: 20 })
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [searchQuery, setFilters])
+  }, [searchQuery])
+
+  // Crear filtros con useMemo basados en debouncedSearch
+  const filters = useMemo(
+    () => ({
+      search: debouncedSearch || undefined,
+      page: currentPage,
+      pageSize,
+    }),
+    [debouncedSearch, currentPage, pageSize]
+  )
+
+  // Usar el hook con los filtros dinámicos
+  const { members, loading, error, pagination, refetch } = useMembers(filters)
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -103,6 +109,8 @@ export function MembersPage() {
   // Manejar cambio en la búsqueda (solo actualiza el input visualmente)
   const handleSearchChange = (query: string) => {
     setSearchQuery(query)
+    // Resetear a la página 1 al buscar
+    setCurrentPage(1)
   }
 
   // Mostrar loader centrado en la carga inicial (o primera búsqueda)
@@ -175,11 +183,7 @@ export function MembersPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setFilters({ 
-                        search: searchQuery || undefined,
-                        page: pagination.previousPage!, 
-                        pageSize: 20 
-                      })}
+                      onClick={() => setCurrentPage(pagination.previousPage!)}
                       disabled={!pagination.previousPage || loading}
                     >
                       Anterior
@@ -187,11 +191,7 @@ export function MembersPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setFilters({ 
-                        search: searchQuery || undefined,
-                        page: pagination.nextPage!, 
-                        pageSize: 20 
-                      })}
+                      onClick={() => setCurrentPage(pagination.nextPage!)}
                       disabled={!pagination.nextPage || loading}
                     >
                       Siguiente
