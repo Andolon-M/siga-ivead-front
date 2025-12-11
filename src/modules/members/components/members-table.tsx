@@ -1,16 +1,16 @@
 import { Button } from "@/shared/components/ui/button"
-import { Input } from "@/shared/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table"
 import { Badge } from "@/shared/components/ui/badge"
-import { Search, Edit, Trash2, User, Phone } from "lucide-react"
+import { SearchInput } from "@/shared/components/search-input"
+import { Edit, Trash2, User, Phone } from "lucide-react"
 import type { Member } from "../types"
 
 interface MembersTableProps {
   members: Member[]
-  searchQuery: string
-  onSearchChange: (query: string) => void
+  onSearch: (query: string) => void
   onEdit: (member: Member) => void
   onDelete: (memberId: string) => void
+  isSearching?: boolean
 }
 
 const statusColors = {
@@ -19,18 +19,14 @@ const statusColors = {
   INACTIVO: "outline",
 } as const
 
-export function MembersTable({ members, searchQuery, onSearchChange, onEdit, onDelete }: MembersTableProps) {
+export function MembersTable({ members, onSearch, onEdit, onDelete, isSearching }: MembersTableProps) {
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre o DNI..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      <SearchInput
+        onSearch={onSearch}
+        placeholder="Buscar por nombre o DNI..."
+        isSearching={isSearching}
+      />
 
       <Table>
         <TableHeader>

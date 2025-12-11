@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Plus, Loader2, Users, CheckCircle2, XCircle, Key } from "lucide-react"
@@ -11,8 +11,6 @@ import type { User, CreateUserRequest, UpdateUserRequest } from "../types"
 
 export function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("") // Valor confirmado tras espera
-  const [isSearching, setIsSearching] = useState(false) // Estado visual
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(20)
   
@@ -20,36 +18,25 @@ export function UsersPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
-  // Debounce para la búsqueda (1 segundo)
-  useEffect(() => {
-    // Si está vacío, limpiar inmediatamente
-    if (searchQuery.trim() === "") {
-      setDebouncedSearch("")
-      setIsSearching(false)
-      return
-    }
-
-    setIsSearching(true)
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery)
-      setIsSearching(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  // Usar el hook personalizado con filtros (usa debouncedSearch en lugar de searchQuery directo)
+  // Crear filtros con useMemo
   const filters = useMemo(
     () => ({
-      search: debouncedSearch || undefined,
+      search: searchQuery || undefined,
       page: currentPage,
       pageSize,
     }),
-    [debouncedSearch, currentPage, pageSize]
+    [searchQuery, currentPage, pageSize]
   )
 
   const { users, stats, pagination, isLoading, createUser, updateUser, deleteUser } = useUsers(filters)
   const { roles, isLoading: rolesLoading } = useRoles()
+
+  // Manejar cambio en la búsqueda
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
+    // Resetear a la página 1 al buscar
+    setCurrentPage(1)
+  }
 
   const handleCreateUser = async (data: CreateUserRequest) => {
     try {
@@ -85,7 +72,7 @@ export function UsersPage() {
     }
   }
 
-  if ((isLoading || isSearching) && users.length === 0) {
+  if (isLoading && users.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -168,29 +155,20 @@ export function UsersPage() {
             <div>
               <CardTitle>Lista de Usuarios</CardTitle>
               <CardDescription>
-                {isSearching ? (
-                  "Buscando..."
-                ) : (
-                  <>
-                    {pagination.count} usuario{pagination.count !== 1 ? "s" : ""} registrado
-                    {pagination.count !== 1 ? "s" : ""} en el sistema
-                  </>
-                )}
+                {pagination.count} usuario{pagination.count !== 1 ? "s" : ""} registrado
+                {pagination.count !== 1 ? "s" : ""} en el sistema
               </CardDescription>
             </div>
-            {(isLoading || isSearching) && (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            )}
+            {isLoading && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
           </div>
         </CardHeader>
         <CardContent>
           <UsersTable
             users={users}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
+            onSearch={handleSearch}
             onEdit={handleEditUser}
             onDelete={handleDeleteUser}
-            isLoading={isLoading || isSearching} // Pasar estado de búsqueda a la tabla también
+            isLoading={isLoading}
             pagination={pagination}
             onPageChange={setCurrentPage}
           />

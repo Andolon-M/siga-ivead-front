@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Plus, Loader2 } from "lucide-react"
@@ -11,37 +11,17 @@ import type { Member, CreateMemberData, UpdateMemberData } from "../types"
 
 export function MembersPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("") // Valor confirmado tras espera
-  const [isSearching, setIsSearching] = useState(false) // Estado visual
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(20)
-  
-  // Debounce para la búsqueda (1 segundo)
-  useEffect(() => {
-    // Si está vacío, limpiar inmediatamente
-    if (searchQuery.trim() === "") {
-      setDebouncedSearch("")
-      setIsSearching(false)
-      return
-    }
 
-    setIsSearching(true)
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery)
-      setIsSearching(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  // Crear filtros con useMemo basados en debouncedSearch
+  // Crear filtros con useMemo
   const filters = useMemo(
     () => ({
-      search: debouncedSearch || undefined,
+      search: searchQuery || undefined,
       page: currentPage,
       pageSize,
     }),
-    [debouncedSearch, currentPage, pageSize]
+    [searchQuery, currentPage, pageSize]
   )
 
   // Usar el hook con los filtros dinámicos
@@ -106,15 +86,15 @@ export function MembersPage() {
     }
   }
 
-  // Manejar cambio en la búsqueda (solo actualiza el input visualmente)
-  const handleSearchChange = (query: string) => {
+  // Manejar cambio en la búsqueda
+  const handleSearch = (query: string) => {
     setSearchQuery(query)
     // Resetear a la página 1 al buscar
     setCurrentPage(1)
   }
 
-  // Mostrar loader centrado en la carga inicial (o primera búsqueda)
-  if ((loading || isSearching) && members.length === 0) {
+  // Mostrar loader centrado en la carga inicial
+  if (loading && members.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -141,18 +121,14 @@ export function MembersPage() {
             <div>
               <CardTitle>Lista de Miembros</CardTitle>
               <CardDescription>
-                {isSearching ? (
-                  "Buscando..."
-                ) : pagination ? (
+                {pagination ? (
                   `Mostrando ${members.length} de ${pagination.total} miembros`
                 ) : (
                   "Todos los miembros registrados en la iglesia"
                 )}
               </CardDescription>
             </div>
-            {(loading || isSearching) && (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            )}
+            {loading && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
           </div>
         </CardHeader>
         <CardContent>
@@ -167,10 +143,10 @@ export function MembersPage() {
             <>
               <MembersTable
                 members={members}
-                searchQuery={searchQuery}
-                onSearchChange={handleSearchChange}
+                onSearch={handleSearch}
                 onEdit={handleEditMember}
                 onDelete={handleDeleteMember}
+                isSearching={loading}
               />
               
               {/* Paginación */}

@@ -1,8 +1,8 @@
 import { Button } from "@/shared/components/ui/button"
-import { Input } from "@/shared/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table"
 import { Badge } from "@/shared/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar"
+import { SearchInput } from "@/shared/components/search-input"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,13 +14,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/components/ui/alert-dialog"
-import { Search, Edit, Trash2, Mail, Shield, CheckCircle2, XCircle, User as UserIcon, Loader2 } from "lucide-react"
+import { Edit, Trash2, Mail, Shield, CheckCircle2, XCircle, User as UserIcon, Loader2 } from "lucide-react"
 import type { User } from "../types"
 
 interface UsersTableProps {
   users: User[]
-  searchQuery: string
-  onSearchChange: (query: string) => void
+  onSearch: (query: string) => void
   onEdit: (user: User) => void
   onDelete: (userId: string) => void
   isLoading?: boolean
@@ -34,8 +33,7 @@ interface UsersTableProps {
 
 export function UsersTable({
   users,
-  searchQuery,
-  onSearchChange,
+  onSearch,
   onEdit,
   onDelete,
   isLoading,
@@ -74,15 +72,11 @@ export function UsersTable({
   return (
     <div className="space-y-4">
       {/* Buscador */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por email o nombre de miembro..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      <SearchInput
+        onSearch={onSearch}
+        placeholder="Buscar por email o nombre de miembro..."
+        isSearching={isLoading}
+      />
 
       {/* Tabla */}
       <div className="overflow-x-auto -mx-6 px-6 lg:mx-0 lg:px-0">
