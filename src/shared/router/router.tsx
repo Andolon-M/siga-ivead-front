@@ -4,7 +4,7 @@ import { AdminLayout } from '@/shared/layouts/admin-layout'
 import { AdminDashboard } from '@/modules/dashboard/pages/dashboard'
 import { UsersPage } from '@/modules/users/pages'
 import { MembersPage } from '@/modules/members/pages'
-import { MinistriesPage } from '@/modules/ministries/pages'
+import { MinistriesPage, MinistryDetailPage } from '@/modules/ministries/pages'
 import { EventsPage, EventDetailPage } from '@/modules/events/pages'
 import { TeamsPage } from '@/modules/teams/pages'
 import { ReportsPage } from '@/modules/reports/pages'
@@ -49,6 +49,7 @@ export default function AppRouter() {
         <Route path="users" element={<UsersPage />} />
         <Route path="members" element={<MembersPage />} />
         <Route path="ministries" element={<MinistriesPage />} />
+        <Route path="ministries/:id" element={<MinistryDetailPage />} />
         <Route path="events" element={<EventsPage />} />
         <Route path="events/:id" element={<EventDetailPage />} />
         <Route path="teams" element={<TeamsPage />} />

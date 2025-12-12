@@ -11,33 +11,39 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog"
-import type { Ministry, UpdateMinistryData } from "../types"
+import type { Ministry, UpdateMinistryRequest } from "../types"
 
 interface EditMinistryDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   ministry: Ministry | null
-  onSubmit: (data: UpdateMinistryData) => void
+  onSubmit: (data: UpdateMinistryRequest) => Promise<void>
 }
 
 export function EditMinistryDialog({ open, onOpenChange, ministry, onSubmit }: EditMinistryDialogProps) {
-  const [formData, setFormData] = useState<UpdateMinistryData>({})
+  const [formData, setFormData] = useState<UpdateMinistryRequest>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (ministry) {
       setFormData({
         name: ministry.name,
-        description: ministry.description,
-        leader: ministry.leader,
-        members: ministry.members,
+        description: ministry.description || "",
       })
     }
   }, [ministry])
 
-  const handleSubmit = () => {
-    if (ministry) {
-      onSubmit(formData)
+  const handleSubmit = async () => {
+    if (!ministry || !formData.name?.trim()) return
+
+    try {
+      setIsSubmitting(true)
+      await onSubmit(formData)
       onOpenChange(false)
+    } catch (error) {
+      console.error("Error al actualizar ministerio:", error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -52,11 +58,12 @@ export function EditMinistryDialog({ open, onOpenChange, ministry, onSubmit }: E
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-name">Nombre del Ministerio</Label>
+            <Label htmlFor="edit-name">Nombre del Ministerio *</Label>
             <Input
               id="edit-name"
               value={formData.name || ""}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -66,22 +73,17 @@ export function EditMinistryDialog({ open, onOpenChange, ministry, onSubmit }: E
               rows={3}
               value={formData.description || ""}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-leader">Líder</Label>
-            <Input
-              id="edit-leader"
-              value={formData.leader || ""}
-              onChange={(e) => setFormData({ ...formData, leader: e.target.value })}
+              disabled={isSubmitting}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>Guardar Cambios</Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.name?.trim()}>
+            {isSubmitting ? "Guardando..." : "Guardar Cambios"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -11,29 +11,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog"
-import type { CreateMinistryData } from "../types"
+import type { CreateMinistryRequest } from "../types"
 
 interface CreateMinistryDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: CreateMinistryData) => void
+  onSubmit: (data: CreateMinistryRequest) => Promise<void>
 }
 
 export function CreateMinistryDialog({ open, onOpenChange, onSubmit }: CreateMinistryDialogProps) {
-  const [formData, setFormData] = useState<CreateMinistryData>({
+  const [formData, setFormData] = useState<CreateMinistryRequest>({
     name: "",
     description: "",
-    leader: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = () => {
-    onSubmit(formData)
-    setFormData({
-      name: "",
-      description: "",
-      leader: "",
-    })
-    onOpenChange(false)
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) return
+
+    try {
+      setIsSubmitting(true)
+      await onSubmit(formData)
+      setFormData({
+        name: "",
+        description: "",
+      })
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Error al crear ministerio:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -45,12 +53,13 @@ export function CreateMinistryDialog({ open, onOpenChange, onSubmit }: CreateMin
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nombre del Ministerio</Label>
+            <Label htmlFor="name">Nombre del Ministerio *</Label>
             <Input
               id="name"
               placeholder="Ej: Ministerio de Alabanza"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -61,14 +70,17 @@ export function CreateMinistryDialog({ open, onOpenChange, onSubmit }: CreateMin
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              disabled={isSubmitting}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit}>Crear Ministerio</Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.name.trim()}>
+            {isSubmitting ? "Creando..." : "Crear Ministerio"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

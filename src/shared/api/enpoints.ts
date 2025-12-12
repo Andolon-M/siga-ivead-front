@@ -47,9 +47,21 @@ export const API_ENDPOINTS = {
   MINISTRIES: {
     LIST: "/ministries",
     CREATE: "/ministries",
-    UPDATE: (id: number) => `/ministries/${id}`,
-    DELETE: (id: number) => `/ministries/${id}`,
-    GET: (id: number) => `/ministries/${id}`,
+    UPDATE: (id: string) => `/ministries/${id}`,
+    DELETE: (id: string) => `/ministries/${id}`,
+    GET: (id: string) => `/ministries/${id}`,
+    STATS: "/ministries/stats",
+    // Ministry Members
+    MEMBERS: {
+      LIST: (ministryId: string) => `/ministries/${ministryId}/members`,
+      ADD: (ministryId: string) => `/ministries/${ministryId}/members`,
+      REMOVE: (ministryId: string, memberId: string) => `/ministries/${ministryId}/members/${memberId}`,
+      UPDATE_ROLE: (ministryId: string, memberId: string) => `/ministries/${ministryId}/members/${memberId}/role`,
+      STATS: (ministryId: string) => `/ministries/${ministryId}/members/stats`,
+    },
+    // Member's Ministries
+    MEMBER_MINISTRIES: (memberId: string) => `/ministries/members/${memberId}/ministries`,
+    MEMBER_STATS: (memberId: string) => `/ministries/members/${memberId}/stats`,
   },
   
   // Teams
