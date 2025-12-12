@@ -2,14 +2,14 @@ import { useState } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Badge } from "@/shared/components/ui/badge"
-import { Shield, Plus, Users, Key } from "lucide-react"
+import { Shield, Plus, Key } from "lucide-react"
 import type { Role } from "../types"
 
 const mockRoles: Role[] = [
-  { id: 1, name: "Administrador", userCount: 3, permissionCount: 25, created_at: "2024-01-01" },
-  { id: 2, name: "Pastor", userCount: 5, permissionCount: 18, created_at: "2024-01-01" },
-  { id: 3, name: "Líder de Ministerio", userCount: 12, permissionCount: 10, created_at: "2024-01-15" },
-  { id: 4, name: "Miembro", userCount: 150, permissionCount: 5, created_at: "2024-01-01" },
+  { id: "1", name: "Administrador", permissions: [], created_at: "2024-01-01", updated_at: "2024-01-01" },
+  { id: "2", name: "Pastor", permissions: [], created_at: "2024-01-01", updated_at: "2024-01-01" },
+  { id: "3", name: "Líder de Ministerio", permissions: [], created_at: "2024-01-15", updated_at: "2024-01-15" },
+  { id: "4", name: "Miembro", permissions: [], created_at: "2024-01-01", updated_at: "2024-01-01" },
 ]
 
 export function RolesPage() {
@@ -43,17 +43,10 @@ export function RolesPage() {
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>Usuarios</span>
-                </div>
-                <Badge variant="secondary">{role.userCount}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm">
                   <Key className="h-4 w-4 text-muted-foreground" />
                   <span>Permisos</span>
                 </div>
-                <Badge variant="secondary">{role.permissionCount}</Badge>
+                <Badge variant="secondary">{role.permissions.length}</Badge>
               </div>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" size="sm" className="flex-1">
