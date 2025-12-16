@@ -68,7 +68,7 @@ export function MembersTable({ members, onSearch, onEdit, onDelete, onViewDetail
                 </TableCell>
                 <TableCell>{member.gender}</TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
                       size="icon"
