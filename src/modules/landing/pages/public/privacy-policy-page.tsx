@@ -150,7 +150,7 @@ export function PrivacyPolicyPage() {
                 </p>
                 <div className="text-muted-foreground space-y-1 mt-2">
                   <p>Email: <strong>contactenos@ivead.org</strong></p>
-                  <p>Teléfono: <strong>+57 300 123 4567</strong></p>
+                  <p>Teléfono: <strong>+57 317 375 6718</strong></p>
                   <p>Dirección: <strong>Cra 12 # 14 Norte - 66 Piso 2 Kennedy, Bucaramanga</strong></p>
                 </div>
               </CardContent>
