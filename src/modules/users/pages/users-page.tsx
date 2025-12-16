@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react"
+import { useNavigate } from "react-router"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Plus, Loader2, Users, CheckCircle2, XCircle, Key } from "lucide-react"
@@ -10,10 +11,11 @@ import { useRoles } from "../hooks/use-roles"
 import type { User, CreateUserRequest, UpdateUserRequest } from "../types"
 
 export function UsersPage() {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(20)
-  
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -70,6 +72,10 @@ export function UsersPage() {
     } catch (error) {
       console.error("Error al eliminar usuario:", error)
     }
+  }
+
+  const handleViewMember = (memberId: string) => {
+    navigate(`/admin/members/${memberId}`)
   }
 
   if (isLoading && users.length === 0) {
@@ -168,6 +174,7 @@ export function UsersPage() {
             onSearch={handleSearch}
             onEdit={handleEditUser}
             onDelete={handleDeleteUser}
+            onViewMember={handleViewMember}
             isLoading={isLoading}
             pagination={pagination}
             onPageChange={setCurrentPage}

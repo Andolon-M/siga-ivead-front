@@ -14,14 +14,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/shared/components/ui/alert-dialog"
-import { Edit, Trash2, Mail, Shield, CheckCircle2, XCircle, User as UserIcon, Loader2 } from "lucide-react"
+import { Edit, Trash2, Mail, Shield, CheckCircle2, XCircle, User as UserIcon, Loader2, Eye, ExternalLink } from "lucide-react"
 import type { User } from "../types"
+import { formatDateShort } from "@/shared/lib/date-utils"
 
 interface UsersTableProps {
   users: User[]
   onSearch: (query: string) => void
   onEdit: (user: User) => void
   onDelete: (userId: string) => void
+  onViewMember?: (memberId: string) => void
   isLoading?: boolean
   pagination?: {
     currentPage: number
@@ -36,22 +38,11 @@ export function UsersTable({
   onSearch,
   onEdit,
   onDelete,
+  onViewMember,
   isLoading,
   pagination,
   onPageChange,
 }: UsersTableProps) {
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString("es-ES", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
-    } catch {
-      return dateString
-    }
-  }
 
   const getUserInitials = (email: string, name?: string | null, lastName?: string | null) => {
     // Si tiene nombre y apellido, usar iniciales de ambos
@@ -156,24 +147,29 @@ export function UsersTable({
                     </TableCell>
 
                     {/* Miembro */}
-                    <TableCell>
+                    <TableCell className={onViewMember ? "cursor-pointer hover:bg-muted/50" : ""} onClick={() => onViewMember?.(user.member_id!)}>
                       {user.member_id ? (
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium">
-                            {user.name} {user.last_name}
-                          </span>
-                          <Badge
-                            variant={
-                              user.member_status === "ACTIVO"
-                                ? "default"
-                                : user.member_status === "INACTIVO"
-                                  ? "secondary"
-                                  : "outline"
-                            }
-                            className="text-xs w-fit"
-                          >
-                            {user.member_status}
-                          </Badge>
+                        <div className="flex flex-col w-full">
+                          
+                              <span className="text-sm font-medium ">
+                                {user.name} {user.last_name}
+                              </span>
+                              <span className="flex items-center justify-start gap-1 w-full">
+                                <Badge
+                                  variant={
+                                    user.member_status === "ACTIVO"
+                                      ? "default"
+                                      : user.member_status === "INACTIVO"
+                                        ? "secondary"
+                                        : "outline"
+                                  }
+                                  className="text-[0.6rem] w-fit"
+                                >
+                                  {user.member_status}
+                                </Badge>
+
+                                <ExternalLink className="h-4 w-4" />
+                              </span>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">Sin miembro</span>
@@ -194,7 +190,7 @@ export function UsersTable({
 
                     {/* Fecha de registro */}
                     <TableCell className="whitespace-nowrap text-sm">
-                      {formatDate(user.created_at)}
+                      {formatDateShort(user.created_at)}
                     </TableCell>
 
                     {/* Acciones */}

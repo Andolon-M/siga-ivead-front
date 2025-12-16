@@ -2,7 +2,7 @@ import { Button } from "@/shared/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table"
 import { Badge } from "@/shared/components/ui/badge"
 import { SearchInput } from "@/shared/components/search-input"
-import { Edit, Trash2, User, Phone } from "lucide-react"
+import { Edit, Trash2, User, Phone, Eye } from "lucide-react"
 import type { Member } from "../types"
 
 interface MembersTableProps {
@@ -10,6 +10,7 @@ interface MembersTableProps {
   onSearch: (query: string) => void
   onEdit: (member: Member) => void
   onDelete: (memberId: string) => void
+  onViewDetails?: (memberId: string) => void
   isSearching?: boolean
 }
 
@@ -19,7 +20,7 @@ const statusColors = {
   INACTIVO: "outline",
 } as const
 
-export function MembersTable({ members, onSearch, onEdit, onDelete, isSearching }: MembersTableProps) {
+export function MembersTable({ members, onSearch, onEdit, onDelete, onViewDetails, isSearching }: MembersTableProps) {
   return (
     <div className="space-y-4">
       <SearchInput
@@ -48,37 +49,47 @@ export function MembersTable({ members, onSearch, onEdit, onDelete, isSearching 
             </TableRow>
           ) : (
             members.map((member) => (
-            <TableRow key={member.id}>
-              <TableCell className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                {member.name} {member.last_name}
-              </TableCell>
-              <TableCell>{member.dni_user}</TableCell>
-              <TableCell className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                {member.cell}
-              </TableCell>
-              <TableCell>
-                <Badge variant={statusColors[member.status] as any}>{member.status}</Badge>
-              </TableCell>
-              <TableCell>{member.gender}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      onEdit(member)
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onDelete(member.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
+              <TableRow
+                key={member.id}
+                className={onViewDetails ? "cursor-pointer hover:bg-muted/50" : ""}
+                onClick={() => onViewDetails?.(member.id)}
+              >
+                <TableCell className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  {member.name} {member.last_name}
+                </TableCell>
+                <TableCell>{member.dni_user}</TableCell>
+                <TableCell className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  {member.cell}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={statusColors[member.status] as any}>{member.status}</Badge>
+                </TableCell>
+                <TableCell>{member.gender}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        onEdit(member)
+                      }}
+                      title="Editar"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDelete(member.id)}
+                      title="Eliminar"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
             ))
           )}
         </TableBody>

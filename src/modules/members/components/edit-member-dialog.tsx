@@ -14,6 +14,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select"
 import { UserSelector } from "./user-selector"
 import type { Member, UpdateMemberData, DocumentType, Gender, MemberStatus } from "../types"
+import { formatDateForInput } from "@/shared/lib/date-utils"
 
 interface EditMemberDialogProps {
   open: boolean
@@ -34,7 +35,7 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
         last_name: member.last_name,
         tipo_dni: member.tipo_dni,
         dni_user: member.dni_user,
-        birthdate: member.birthdate,
+        birthdate: formatDateForInput(member.birthdate),
         gender: member.gender,
         cell: member.cell,
         direccion: member.direccion,
@@ -78,7 +79,7 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
       ...formData,
       user_id: assignUser ? formData.user_id : undefined,
     }
-    
+
     onSubmit(dataToSubmit)
     onOpenChange(false)
   }
@@ -153,23 +154,23 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
               <Label htmlFor="edit-dni-type">
                 Tipo de DNI <span className="text-destructive">*</span>
               </Label>
-            <Select
-              value={formData.tipo_dni || member.tipo_dni}
-              onValueChange={(value) => setFormData({ ...formData, tipo_dni: value as DocumentType })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="CC">CC - Cédula de Ciudadanía</SelectItem>
-                <SelectItem value="TI">TI - Tarjeta de Identidad</SelectItem>
-                <SelectItem value="RC">RC - Registro Civil</SelectItem>
-                <SelectItem value="PP">PP - Pasaporte</SelectItem>
-                <SelectItem value="CE">CE - Cédula de Extranjería</SelectItem>
-                <SelectItem value="PEP">PEP - Permiso Especial</SelectItem>
-                <SelectItem value="DNI">DNI</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select
+                value={formData.tipo_dni || member.tipo_dni}
+                onValueChange={(value) => setFormData({ ...formData, tipo_dni: value as DocumentType })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CC">CC - Cédula de Ciudadanía</SelectItem>
+                  <SelectItem value="TI">TI - Tarjeta de Identidad</SelectItem>
+                  <SelectItem value="RC">RC - Registro Civil</SelectItem>
+                  <SelectItem value="PP">PP - Pasaporte</SelectItem>
+                  <SelectItem value="CE">CE - Cédula de Extranjería</SelectItem>
+                  <SelectItem value="PEP">PEP - Permiso Especial</SelectItem>
+                  <SelectItem value="DNI">DNI</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-dni">
@@ -198,18 +199,18 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
               <Label htmlFor="edit-gender">
                 Género <span className="text-destructive">*</span>
               </Label>
-            <Select
-              value={formData.gender || member.gender}
-              onValueChange={(value) => setFormData({ ...formData, gender: value as Gender })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="MASCULINO">Masculino</SelectItem>
-                <SelectItem value="FEMENINO">Femenino</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select
+                value={formData.gender || member.gender}
+                onValueChange={(value) => setFormData({ ...formData, gender: value as Gender })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MASCULINO">Masculino</SelectItem>
+                  <SelectItem value="FEMENINO">Femenino</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-phone">
@@ -226,19 +227,19 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
               <Label htmlFor="edit-status">
                 Estado <span className="text-destructive">*</span>
               </Label>
-            <Select
-              value={formData.status || member.status}
-              onValueChange={(value) => setFormData({ ...formData, status: value as MemberStatus })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ASISTENTE">Asistente</SelectItem>
-                <SelectItem value="ACTIVO">Activo</SelectItem>
-                <SelectItem value="INACTIVO">Inactivo</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select
+                value={formData.status || member.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value as MemberStatus })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ASISTENTE">Asistente</SelectItem>
+                  <SelectItem value="ACTIVO">Activo</SelectItem>
+                  <SelectItem value="INACTIVO">Inactivo</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="edit-address">

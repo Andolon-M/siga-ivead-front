@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react"
+import { useNavigate } from "react-router"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Plus, Loader2 } from "lucide-react"
@@ -10,6 +11,7 @@ import { membersService } from "../services/members.service"
 import type { Member, CreateMemberData, UpdateMemberData } from "../types"
 
 export function MembersPage() {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(20)
@@ -93,6 +95,11 @@ export function MembersPage() {
     setCurrentPage(1)
   }
 
+  // Ver detalles de un miembro
+  const handleViewDetails = (memberId: string) => {
+    navigate(`/admin/members/${memberId}`)
+  }
+
   // Mostrar loader centrado en la carga inicial
   if (loading && members.length === 0) {
     return (
@@ -146,9 +153,10 @@ export function MembersPage() {
                 onSearch={handleSearch}
                 onEdit={handleEditMember}
                 onDelete={handleDeleteMember}
+                onViewDetails={handleViewDetails}
                 isSearching={loading}
               />
-              
+
               {/* Paginación */}
               {pagination && pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">

@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/shared/components/ui/badge"
 import { Search, Edit, Trash2, Church, Users as UsersIcon } from "lucide-react"
 import type { Ministry } from "../types"
+import { formatDateShort } from "@/shared/lib/date-utils"
 
 interface MinistriesTableProps {
   ministries: Ministry[]
@@ -30,13 +31,6 @@ export function MinistriesTable({
   pagination,
   onPageChange,
 }: MinistriesTableProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-  }
 
   return (
     <div className="space-y-4">
@@ -75,10 +69,14 @@ export function MinistriesTable({
               </TableRow>
             ) : (
               ministries.map((ministry) => (
-                <TableRow key={ministry.id}>
+                <TableRow 
+                  key={ministry.id}
+                  className={onViewMembers ? "cursor-pointer hover:bg-muted/50" : ""}
+                  onClick={() => onViewMembers?.(ministry)}
+                >
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Church className="h-4 w-4 text-primary flex-shrink-0" />
+                      <Church className="h-4 w-4 text-primary shrink-0" />
                       <span className="font-medium">{ministry.name}</span>
                     </div>
                   </TableCell>
@@ -91,9 +89,9 @@ export function MinistriesTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                    {formatDate(ministry.created_at)}
+                    {formatDateShort(ministry.created_at)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
                       {onViewMembers && (
                         <Button
