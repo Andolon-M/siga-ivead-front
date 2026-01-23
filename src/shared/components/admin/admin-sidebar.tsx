@@ -10,7 +10,6 @@ import {
   Settings,
   LayoutDashboard,
   Shield,
-  Briefcase,
   X,
 } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
@@ -40,11 +39,6 @@ const menuItems = [
     title: "Eventos",
     href: "/admin/events",
     icon: Calendar,
-  },
-  {
-    title: "Equipos de Trabajo",
-    href: "/admin/teams",
-    icon: Briefcase,
   },
   {
     title: "Reportes Financieros",
