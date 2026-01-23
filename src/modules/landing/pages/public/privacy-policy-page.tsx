@@ -1,9 +1,52 @@
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Link } from "react-router-dom"
+import { Document, Page, pdfjs } from "react-pdf"
+import "react-pdf/dist/Page/AnnotationLayer.css"
+import "react-pdf/dist/Page/TextLayer.css"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent } from "@/shared/components/ui/card"
-import { ArrowLeft, Shield, Eye, Lock, UserCheck } from "lucide-react"
+import { ArrowLeft, Download, Shield } from "lucide-react"
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
+
+const DRIVE_DOWNLOAD_URL =
+  "https://drive.google.com/file/d/1eGDDeaXb1cwS6AlJgcUgCxpLPfZJoSmk/view?usp=sharing"
+
+// Se excluyen portada y tabla de contenido.
+// Si tu tabla de contenido ocupa más páginas, ajusta este número.
+const FIRST_CONTENT_PAGE = 2
 
 export function PrivacyPolicyPage() {
+  const pdfUrl = useMemo(
+    () => new URL("../../../../../POLÍTICA DE TRATAMIENTO DE DATOS PERSONALES IVE.pdf", import.meta.url).toString(),
+    [],
+  )
+
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [containerWidth, setContainerWidth] = useState(0)
+  const [numPages, setNumPages] = useState<number | null>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      const width = Math.floor(entry?.contentRect?.width ?? 0)
+      setContainerWidth(width)
+    })
+
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const pageWidth = Math.min(containerWidth || 0, 900)
+  const pagesToRender = useMemo(() => {
+    if (!numPages) return []
+    const start = Math.min(Math.max(FIRST_CONTENT_PAGE, 1), numPages)
+    return Array.from({ length: numPages - start + 1 }, (_, idx) => start + idx)
+  }, [numPages])
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -36,126 +79,75 @@ export function PrivacyPolicyPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
               <Shield className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-4xl font-bold">Política de Privacidad</h1>
-            <p className="text-muted-foreground text-lg">
-              Última actualización: Diciembre 2025
-            </p>
+            <h1 className="text-4xl font-bold">Política de Tratamiento de Datos Personales</h1>
+            <p className="text-muted-foreground text-lg">Iglesia Vida y Esperanza (IVE)</p>
           </div>
 
-          {/* Introduction */}
+          {/* Intro + Descarga */}
           <Card>
             <CardContent className="pt-6">
-              <p className="text-muted-foreground leading-relaxed">
-                En la Iglesia Vida y Esperanza (IVE), nos comprometemos a proteger tu privacidad y garantizar la
-                seguridad de tu información personal. Esta política describe cómo recopilamos, usamos y protegemos
-                tus datos.
-              </p>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-muted-foreground leading-relaxed">
+                  A continuación puedes leer el documento completo o descargarlo.
+                </p>
+                <Button asChild className="sm:w-auto">
+                  <a href={DRIVE_DOWNLOAD_URL} target="_blank" rel="noreferrer">
+                    <Download className="h-4 w-4 mr-2" />
+                    Descargar PDF
+                  </a>
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Sections */}
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <Eye className="w-5 h-5 text-primary mt-1 shrink-0" />
-                  <div>
-                    <h2 className="text-xl font-semibold mb-3">1. Información que Recopilamos</h2>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p>Recopilamos la siguiente información:</p>
-                      <ul className="list-disc list-inside space-y-1 ml-4">
-                        <li>Información de contacto (nombre, correo electrónico, teléfono)</li>
-                        <li>Información de identificación (documento de identidad)</li>
-                        <li>Datos de participación en eventos y ministerios</li>
-                        <li>Información financiera relacionada con donaciones y eventos</li>
-                      </ul>
+          {/* Documento (renderizado desde página 3) */}
+          <Card>
+            <CardContent className="pt-6">
+              <div ref={containerRef} className="w-full">
+                <div className="rounded-lg border bg-muted/20 p-3 sm:p-4">
+                  <Document
+                    file={pdfUrl}
+                    onLoadSuccess={({ numPages: total }) => setNumPages(total)}
+                    loading={<p className="text-sm text-muted-foreground">Cargando documento…</p>}
+                    error={
+                      <div className="space-y-2">
+                        <p className="text-sm text-destructive">No se pudo cargar el documento.</p>
+                        <p className="text-sm text-muted-foreground">
+                          Puedes descargarlo desde{" "}
+                          <a className="underline" href={DRIVE_DOWNLOAD_URL} target="_blank" rel="noreferrer">
+                            este enlace
+                          </a>
+                          .
+                        </p>
+                      </div>
+                    }
+                  >
+                    <div className="space-y-6">
+                      {pagesToRender.map((pageNumber) => (
+                        <div key={pageNumber} className="flex justify-center">
+                          <div className="rounded-md bg-background shadow-sm ring-1 ring-border overflow-hidden">
+                            <Page
+                              pageNumber={pageNumber}
+                              width={pageWidth || undefined}
+                              renderTextLayer
+                              renderAnnotationLayer
+                              loading={<div className="p-6 text-sm text-muted-foreground">Cargando página…</div>}
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  </Document>
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <UserCheck className="w-5 h-5 text-primary mt-1 shrink-0" />
-                  <div>
-                    <h2 className="text-xl font-semibold mb-3">2. Uso de la Información</h2>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p>Utilizamos tu información para:</p>
-                      <ul className="list-disc list-inside space-y-1 ml-4">
-                        <li>Gestionar tu membresía en la iglesia</li>
-                        <li>Coordinar eventos y actividades</li>
-                        <li>Enviar comunicaciones importantes sobre la iglesia</li>
-                        <li>Procesar donaciones y pagos de eventos</li>
-                        <li>Mejorar nuestros servicios y programas</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="flex items-start gap-3">
-                  <Lock className="w-5 h-5 text-primary mt-1 shrink-0" />
-                  <div>
-                    <h2 className="text-xl font-semibold mb-3">3. Protección de Datos</h2>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p>Implementamos medidas de seguridad para proteger tu información:</p>
-                      <ul className="list-disc list-inside space-y-1 ml-4">
-                        <li>Encriptación de datos sensibles</li>
-                        <li>Acceso restringido solo a personal autorizado</li>
-                        <li>Copias de seguridad regulares</li>
-                        <li>Auditorías de seguridad periódicas</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <h2 className="text-xl font-semibold mb-3">4. Tus Derechos</h2>
-                <div className="space-y-2 text-muted-foreground">
-                  <p>Tienes derecho a:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li>Acceder a tu información personal</li>
-                    <li>Solicitar corrección de datos inexactos</li>
-                    <li>Solicitar eliminación de tus datos</li>
-                    <li>Oponerte al procesamiento de tu información</li>
-                    <li>Solicitar portabilidad de tus datos</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <h2 className="text-xl font-semibold mb-3">5. Compartir Información</h2>
-                <p className="text-muted-foreground">
-                  No compartimos tu información personal con terceros, excepto cuando sea necesario para el
-                  funcionamiento de la iglesia (ej. procesadores de pago) o cuando lo requiera la ley.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <h2 className="text-xl font-semibold mb-3">6. Contacto</h2>
-                <p className="text-muted-foreground">
-                  Si tienes preguntas sobre esta política de privacidad, puedes contactarnos en:
-                </p>
-                <div className="text-muted-foreground space-y-1 mt-2">
-                  <p>Email: <strong>contactenos@ivead.org</strong></p>
-                  <p>Teléfono: <strong>+57 317 375 6718</strong></p>
-                  <p>Dirección: <strong>Cra 12 # 14 Norte - 66 Piso 2 Kennedy, Bucaramanga</strong></p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                {numPages && numPages >= FIRST_CONTENT_PAGE && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Mostrando páginas {FIRST_CONTENT_PAGE}–{numPages} (portada y tabla de contenido excluidas).
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4">
