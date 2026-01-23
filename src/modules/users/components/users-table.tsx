@@ -147,7 +147,10 @@ export function UsersTable({
                     </TableCell>
 
                     {/* Miembro */}
-                    <TableCell className={onViewMember ? "cursor-pointer hover:bg-muted/50" : ""} onClick={() => onViewMember?.(user.member_id!)}>
+                    <TableCell 
+                      className={onViewMember && user.member_id ? "cursor-pointer hover:bg-muted/50" : ""} 
+                      onClick={() => user.member_id && onViewMember?.(user.member_id)}
+                    >
                       {user.member_id ? (
                         <div className="flex flex-col w-full">
                           
