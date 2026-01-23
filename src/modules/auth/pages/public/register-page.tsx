@@ -159,7 +159,7 @@ export function RegisterPage() {
             <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-relaxed">
               Acepto los{" "}
               <Link to="/privacy-policy" className="text-primary hover:underline">
-                Términos y Condiciones
+                Política de Privacidad y tratamiento de datos
               </Link>{" "}
               y la Política de Privacidad
             </Label>

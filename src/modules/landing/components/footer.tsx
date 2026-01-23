@@ -3,11 +3,20 @@ import { useTheme } from "@/shared/contexts/theme-provider"
 import { useAuth } from "@/shared/contexts/auth-context"
 import { LogIn, LayoutDashboard, User } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog"
+import { useState } from "react"
 
 export function Footer() {
   const { resolvedTheme } = useTheme()
   const { isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
+  const [isLegalPersonDialogOpen, setIsLegalPersonDialogOpen] = useState(false)
 
   const navigationLinks = [
     { to: "#inicio", label: "Inicio" },
@@ -18,8 +27,8 @@ export function Footer() {
   ]
 
   const legalLinks = [
-    { to: "/privacy-policy", label: "Política de Privacidad" },
-    { to: "#", label: "Personería Jurídica" },
+    { to: "/privacy-policy", label: "Política de privacidad y tratamiento de datos" },
+    { to: "", label: "Personería Jurídica" },
   ]
 
   const iveLogoSrc = resolvedTheme === "dark" ? "/images/logo-ive-white.png" : "/images/logo-ive-color.png"
@@ -85,13 +94,23 @@ export function Footer() {
             <h3 className="font-semibold text-sm mb-4">Legal</h3>
             <nav className="space-y-2">
               {legalLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="block text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  {link.label}
-                </Link>
+                link.label === "Personería Jurídica" ? (
+                  <button
+                    key={link.label}
+                    onClick={() => setIsLegalPersonDialogOpen(true)}
+                    className="block text-sm text-muted-foreground hover:text-primary transition-colors text-left w-full"
+                  >
+                    {link.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                )
               ))}
             </nav>
           </div>
@@ -145,11 +164,29 @@ export function Footer() {
               © 2025 Iglesia Vida y Esperanza. Todos los derechos reservados.
             </p>
             <p className="text-xs text-muted-foreground">
-              Versión 3.0.0
+              Versión 3.5.0
             </p>
           </div>
         </div>
       </div>
+
+      {/* Diálogo de Personería Jurídica */}
+      <Dialog open={isLegalPersonDialogOpen} onOpenChange={setIsLegalPersonDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Personería Jurídica</DialogTitle>
+            <DialogDescription>
+              Para solicitar la personería jurídica, por favor contáctenos mediante el correo electrónico:{" "}
+              <a 
+                href="mailto:contactanos@ivead.org" 
+                className="text-primary hover:underline font-medium"
+              >
+                contactanos@ivead.org
+              </a>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </footer>
   )
 }

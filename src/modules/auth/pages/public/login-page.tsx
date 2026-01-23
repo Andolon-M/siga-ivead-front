@@ -124,7 +124,7 @@ export function LoginPage() {
         <div className="text-center text-xs text-muted-foreground">
           Al iniciar sesión, aceptas nuestros{" "}
           <Link to="/privacy-policy" className="text-primary hover:underline">
-            Términos y Política de Privacidad
+            Política de Privacidad y tratamiento de datos
           </Link>
         </div>
       </form>
