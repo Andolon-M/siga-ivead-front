@@ -10,7 +10,7 @@ export function ContentSection() {
   const [activeTab, setActiveTab] = useState<'recent' | 'history'>('recent')
   
   const videoIds = {
-    recent: "VkjzWemENVg",
+    recent: "QNg-SFqqbi0",
     history: ["M1kCPzvnTF8", "_Ae4l5wYQKU", "vdNHzYIvljk"]
   }
 
