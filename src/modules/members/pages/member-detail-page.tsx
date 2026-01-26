@@ -51,7 +51,8 @@ export function MemberDetailPage() {
     const statusColors = {
         ACTIVO: "default",
         ASISTENTE: "secondary",
-        INACTIVO: "outline",
+        INACTIVO: "destructive",
+        VISITANTE: "outline",
     } as const
 
     if (loading) {
