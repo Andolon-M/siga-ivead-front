@@ -33,7 +33,7 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
     gender: "MASCULINO",
     cell: "",
     direccion: "",
-    status: "ASISTENTE",
+    status: "VISITANTE",
   })
 
   const handleSubmit = () => {
@@ -81,7 +81,7 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
       gender: "MASCULINO",
       cell: "",
       direccion: "",
-      status: "ASISTENTE",
+      status: "VISITANTE",
     })
     setAssignUser(false)
     onOpenChange(false)
@@ -243,6 +243,7 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
                   <SelectItem value="ASISTENTE">Asistente</SelectItem>
                   <SelectItem value="ACTIVO">Activo</SelectItem>
                   <SelectItem value="INACTIVO">Inactivo</SelectItem>
+                  <SelectItem value="VISITANTE">Visitante</SelectItem>
                 </SelectContent>
               </Select>
             </div>

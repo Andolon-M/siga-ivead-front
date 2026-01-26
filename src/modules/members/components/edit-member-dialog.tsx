@@ -238,6 +238,7 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
                   <SelectItem value="ASISTENTE">Asistente</SelectItem>
                   <SelectItem value="ACTIVO">Activo</SelectItem>
                   <SelectItem value="INACTIVO">Inactivo</SelectItem>
+                  <SelectItem value="VISITANTE">Visitante</SelectItem>
                 </SelectContent>
               </Select>
             </div>

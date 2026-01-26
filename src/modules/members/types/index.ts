@@ -1,5 +1,5 @@
 // Enums
-export type MemberStatus = "ACTIVO" | "ASISTENTE" | "INACTIVO"
+export type MemberStatus = "ACTIVO" | "ASISTENTE" | "INACTIVO" | "VISITANTE"
 export type Gender = "MASCULINO" | "FEMENINO"
 export type DocumentType = "CC" | "TI" | "RC" | "PP" | "CE" | "PEP" | "DNI"
 
