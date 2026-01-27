@@ -56,8 +56,8 @@ export function MembersTable({ members, onSearch, onEdit, onDelete, onViewDetail
                 onClick={() => onViewDetails?.(member.id)}
               >
                 <TableCell className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  {member.name} {member.last_name}
+                  <User className="h-4 w-4 text-muted-foreground " />
+                  {member.name.charAt(0).toUpperCase() + member.name.slice(1)} {member.last_name.charAt(0).toUpperCase() + member.last_name.slice(1)}
                 </TableCell>
                 <TableCell>{member.dni_user}</TableCell>
                 <TableCell className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Search, Loader2 } from "lucide-react"
 import { Input } from "@/shared/components/ui/input"
 import { cn } from "@/shared/lib/utils"
@@ -43,11 +43,15 @@ export function SearchInput({
 }: SearchInputProps) {
   const [inputValue, setInputValue] = useState(defaultValue)
   const [isDebouncing, setIsDebouncing] = useState(false)
+  
+  // Usar ref para mantener onSearch actualizado sin causar re-ejecuciones del useEffect
+  const onSearchRef = useRef(onSearch)
+  onSearchRef.current = onSearch
 
   useEffect(() => {
     // Si el input está vacío, ejecutar búsqueda inmediatamente
     if (inputValue.trim() === "") {
-      onSearch("")
+      onSearchRef.current("")
       setIsDebouncing(false)
       return
     }
@@ -57,12 +61,12 @@ export function SearchInput({
 
     // Esperar el tiempo configurado antes de ejecutar la búsqueda
     const timer = setTimeout(() => {
-      onSearch(inputValue)
+      onSearchRef.current(inputValue)
       setIsDebouncing(false)
     }, debounceMs)
 
     return () => clearTimeout(timer)
-  }, [inputValue, debounceMs, onSearch])
+  }, [inputValue, debounceMs])
 
   return (
     <div className={cn("relative", className)}>

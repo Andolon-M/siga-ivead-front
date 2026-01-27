@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import type { Member, MemberFilters, PaginatedResponse } from "../types"
 import { membersService } from "../services/members.service"
 
@@ -30,11 +30,15 @@ export function useMembers(filters?: MemberFilters): UseMembersResult {
     limit: number
   } | null>(null)
 
+  // Usar ref para mantener los filtros actualizados sin causar re-renders
+  const filtersRef = useRef(filters)
+  filtersRef.current = filters
+
   const loadMembers = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const data = await membersService.getMembers(filters)
+      const data = await membersService.getMembers(filtersRef.current)
       
       // Si es un solo miembro (búsqueda por id, dni o userId)
       if (!("data" in data)) {
@@ -60,11 +64,15 @@ export function useMembers(filters?: MemberFilters): UseMembersResult {
     } finally {
       setLoading(false)
     }
-  }, [filters])
+  }, []) // Sin dependencias
+
+  // Serializar filtros para usarlos como dependencia del useEffect
+  const filtersKey = JSON.stringify(filters)
 
   useEffect(() => {
     loadMembers()
-  }, [loadMembers])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersKey])
 
   return {
     members,

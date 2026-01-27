@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useNavigate } from "react-router"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
@@ -89,11 +89,11 @@ export function MembersPage() {
   }
 
   // Manejar cambio en la búsqueda
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query)
     // Resetear a la página 1 al buscar
     setCurrentPage(1)
-  }
+  }, [])
 
   // Ver detalles de un miembro
   const handleViewDetails = (memberId: string) => {
