@@ -45,10 +45,11 @@ export const authService = {
   },
 
   async verifyToken(token: string): Promise<VerifyTokenResponse> {
-    const response = await axiosInstance.get<ApiResponse<VerifyTokenResponse>>(
+    const response = await axiosInstance.get<VerifyTokenResponse>(
       API_ENDPOINTS.AUTH.VERIFY_TOKEN(token)
     )
-    return response.data.data
+    // El backend devuelve directamente el objeto, no dentro de data.data
+    return response.data
   },
 
   async logout(): Promise<void> {
