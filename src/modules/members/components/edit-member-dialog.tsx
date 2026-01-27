@@ -53,26 +53,6 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
       alert("El nombre es obligatorio")
       return
     }
-    if (!formData.last_name?.trim()) {
-      alert("El apellido es obligatorio")
-      return
-    }
-    if (!formData.dni_user?.trim()) {
-      alert("El número de DNI es obligatorio")
-      return
-    }
-    if (!formData.birthdate) {
-      alert("La fecha de nacimiento es obligatoria")
-      return
-    }
-    if (!formData.cell?.trim()) {
-      alert("El teléfono es obligatorio")
-      return
-    }
-    if (!formData.direccion?.trim()) {
-      alert("La dirección es obligatoria")
-      return
-    }
 
     // Si no se asignó usuario, enviar sin user_id
     const dataToSubmit: UpdateMemberData = {
@@ -141,18 +121,17 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-lastname">
-                Apellido <span className="text-destructive">*</span>
+                Apellido
               </Label>
               <Input
                 id="edit-lastname"
                 value={formData.last_name || ""}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-dni-type">
-                Tipo de DNI <span className="text-destructive">*</span>
+                Tipo de DNI
               </Label>
               <Select
                 value={formData.tipo_dni || member.tipo_dni}
@@ -174,30 +153,28 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-dni">
-                Número de DNI <span className="text-destructive">*</span>
+                Número de DNI
               </Label>
               <Input
                 id="edit-dni"
                 value={formData.dni_user || ""}
                 onChange={(e) => setFormData({ ...formData, dni_user: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-birthdate">
-                Fecha de Nacimiento <span className="text-destructive">*</span>
+                Fecha de Nacimiento
               </Label>
               <Input
                 id="edit-birthdate"
                 type="date"
                 value={formData.birthdate || ""}
                 onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-gender">
-                Género <span className="text-destructive">*</span>
+                Género
               </Label>
               <Select
                 value={formData.gender || member.gender}
@@ -214,13 +191,12 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-phone">
-                Teléfono <span className="text-destructive">*</span>
+                Teléfono
               </Label>
               <Input
                 id="edit-phone"
                 value={formData.cell || ""}
                 onChange={(e) => setFormData({ ...formData, cell: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
@@ -244,18 +220,17 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
             </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="edit-address">
-                Dirección <span className="text-destructive">*</span>
+                Dirección
               </Label>
               <Input
                 id="edit-address"
                 value={formData.direccion || ""}
                 onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                required
               />
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Los campos marcados con <span className="text-destructive">*</span> son obligatorios
+            Solo el nombre y el estado son obligatorios
           </p>
         </div>
         <DialogFooter>

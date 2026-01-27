@@ -42,26 +42,6 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
       alert("El nombre es obligatorio")
       return
     }
-    if (!formData.last_name?.trim()) {
-      alert("El apellido es obligatorio")
-      return
-    }
-    if (!formData.dni_user?.trim()) {
-      alert("El número de DNI es obligatorio")
-      return
-    }
-    if (!formData.birthdate) {
-      alert("La fecha de nacimiento es obligatoria")
-      return
-    }
-    if (!formData.cell?.trim()) {
-      alert("El teléfono es obligatorio")
-      return
-    }
-    if (!formData.direccion?.trim()) {
-      alert("La dirección es obligatoria")
-      return
-    }
 
     // Si no se asignó usuario, enviar sin user_id
     const dataToSubmit: CreateMemberData = {
@@ -143,19 +123,18 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastname">
-                Apellido <span className="text-destructive">*</span>
+                Apellido
               </Label>
               <Input
                 id="lastname"
                 placeholder="Apellido"
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dni-type">
-                Tipo de DNI <span className="text-destructive">*</span>
+                Tipo de DNI
               </Label>
               <Select
                 value={formData.tipo_dni}
@@ -177,31 +156,29 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
             </div>
             <div className="space-y-2">
               <Label htmlFor="dni">
-                Número de DNI <span className="text-destructive">*</span>
+                Número de DNI
               </Label>
               <Input
                 id="dni"
                 placeholder="1234567890"
                 value={formData.dni_user}
                 onChange={(e) => setFormData({ ...formData, dni_user: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="birthdate">
-                Fecha de Nacimiento <span className="text-destructive">*</span>
+                Fecha de Nacimiento
               </Label>
               <Input
                 id="birthdate"
                 type="date"
                 value={formData.birthdate}
                 onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="gender">
-                Género <span className="text-destructive">*</span>
+                Género
               </Label>
               <Select
                 value={formData.gender}
@@ -218,14 +195,13 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">
-                Teléfono <span className="text-destructive">*</span>
+                Teléfono
               </Label>
               <Input
                 id="phone"
                 placeholder="3001234567"
                 value={formData.cell}
                 onChange={(e) => setFormData({ ...formData, cell: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
@@ -249,19 +225,18 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
             </div>
             <div className="col-span-2 space-y-2">
               <Label htmlFor="address">
-                Dirección <span className="text-destructive">*</span>
+                Dirección
               </Label>
               <Input
                 id="address"
                 placeholder="Calle 123 #45-67"
                 value={formData.direccion}
                 onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                required
               />
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Los campos marcados con <span className="text-destructive">*</span> son obligatorios
+            Solo el nombre y el estado son obligatorios
           </p>
         </div>
         <DialogFooter>
