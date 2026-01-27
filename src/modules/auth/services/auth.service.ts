@@ -1,5 +1,5 @@
 import { axiosInstance, API_ENDPOINTS, type ApiResponse } from "@/shared/api"
-import type { LoginCredentials, RegisterData, AuthResponse, AuthMeResponse, ForgotPasswordData, ResetPasswordData } from "../types"
+import type { LoginCredentials, RegisterData, AuthResponse, AuthMeResponse, ForgotPasswordData, ResetPasswordData, VerifyTokenResponse } from "../types"
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<string> {
@@ -42,6 +42,13 @@ export const authService = {
       API_ENDPOINTS.AUTH.RESET_PASSWORD,
       data
     )
+  },
+
+  async verifyToken(token: string): Promise<VerifyTokenResponse> {
+    const response = await axiosInstance.get<ApiResponse<VerifyTokenResponse>>(
+      API_ENDPOINTS.AUTH.VERIFY_TOKEN(token)
+    )
+    return response.data.data
   },
 
   async logout(): Promise<void> {

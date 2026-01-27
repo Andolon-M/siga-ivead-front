@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
@@ -21,14 +21,63 @@ export function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordReset, setPasswordReset] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isVerifyingToken, setIsVerifyingToken] = useState(true)
+  const [tokenValid, setTokenValid] = useState<boolean | null>(null)
+  const [tokenErrorMessage, setTokenErrorMessage] = useState("")
   const [formData, setFormData] = useState<ResetPasswordData>({
     token,
-    password: "",
+    newPassword: "",
     confirmPassword: "",
   })
 
-  // Validar que existe el token
-  if (!token) {
+  // Verificar el token al cargar el componente
+  useEffect(() => {
+    const verifyToken = async () => {
+      if (!token) {
+        setTokenValid(false)
+        setIsVerifyingToken(false)
+        return
+      }
+
+      try {
+        setIsVerifyingToken(true)
+        const response = await authService.verifyToken(token)
+        
+        if (response.valid) {
+          setTokenValid(true)
+        } else {
+          setTokenValid(false)
+          setTokenErrorMessage(response.message || "Token inválido")
+        }
+      } catch (error) {
+        console.error("Error al verificar token:", error)
+        setTokenValid(false)
+        setTokenErrorMessage("Error al verificar el token")
+      } finally {
+        setIsVerifyingToken(false)
+      }
+    }
+
+    verifyToken()
+  }, [token])
+
+  // Mostrar loader mientras se verifica el token
+  if (isVerifyingToken) {
+    return (
+      <AuthLayout
+        title="Verificando Enlace"
+        subtitle="Por favor espera un momento"
+      >
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Verificando el enlace de restablecimiento...</p>
+        </div>
+      </AuthLayout>
+    )
+  }
+
+  // Validar que el token es válido
+  if (!token || tokenValid === false) {
     return (
       <AuthLayout
         title="Token Inválido"
@@ -43,7 +92,9 @@ export function ResetPasswordPage() {
               <div>
                 <h3 className="font-semibold text-lg mb-2">Enlace Inválido</h3>
                 <p className="text-sm text-muted-foreground">
-                  El enlace de restablecimiento de contraseña no es válido o ha expirado.
+                  {tokenErrorMessage || "El enlace de restablecimiento de contraseña no es válido o ha expirado."}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
                   Por favor, solicita un nuevo enlace.
                 </p>
               </div>
@@ -61,7 +112,7 @@ export function ResetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.newPassword !== formData.confirmPassword) {
       toast.error("Las contraseñas no coinciden")
       return
     }
@@ -123,8 +174,8 @@ export function ResetPasswordPage() {
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 className="pl-10 pr-10"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                value={formData.newPassword}
+                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                 required
                 minLength={8}
               />
