@@ -1,10 +1,10 @@
 import { useState } from "react"
-import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { AuthLayout } from "../../components/auth-layout"
-import { Lock, Eye, EyeOff, CheckCircle, Loader2 } from "lucide-react"
+import { Lock, Eye, EyeOff, CheckCircle, Loader2, XCircle } from "lucide-react"
 import { Card, CardContent } from "@/shared/components/ui/card"
 import { authService } from "../../services/auth.service"
 import { toast } from "sonner"
@@ -12,8 +12,10 @@ import type { ResetPasswordData } from "../../types"
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get("token") || ""
+  const params = useParams<{ token: string }>()
+  
+  // El token es obligatorio y viene del path
+  const token = params.token || ""
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -24,6 +26,37 @@ export function ResetPasswordPage() {
     password: "",
     confirmPassword: "",
   })
+
+  // Validar que existe el token
+  if (!token) {
+    return (
+      <AuthLayout
+        title="Token Inválido"
+        subtitle="El enlace de restablecimiento no es válido"
+      >
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                <XCircle className="w-8 h-8 text-destructive" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-2">Enlace Inválido</h3>
+                <p className="text-sm text-muted-foreground">
+                  El enlace de restablecimiento de contraseña no es válido o ha expirado.
+                  Por favor, solicita un nuevo enlace.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button onClick={() => navigate("/forgot-password")} className="w-full">
+          Solicitar Nuevo Enlace
+        </Button>
+      </AuthLayout>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
