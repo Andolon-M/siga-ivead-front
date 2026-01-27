@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -26,10 +26,11 @@ interface EditMemberDialogProps {
 export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditMemberDialogProps) {
   const [assignUser, setAssignUser] = useState(false)
   const [formData, setFormData] = useState<UpdateMemberData>({})
+  const originalData = useRef<UpdateMemberData>({})
 
   useEffect(() => {
     if (member) {
-      setFormData({
+      const initialData = {
         user_id: member.user_id,
         name: member.name,
         last_name: member.last_name,
@@ -40,7 +41,9 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
         cell: member.cell,
         direccion: member.direccion,
         status: member.status,
-      })
+      }
+      setFormData(initialData)
+      originalData.current = initialData
       setAssignUser(!!member.user_id)
     }
   }, [member])
@@ -54,23 +57,55 @@ export function EditMemberDialog({ open, onOpenChange, member, onSubmit }: EditM
       return
     }
 
-    // Filtrar campos vacíos - solo enviar campos con valores
+    // Solo enviar campos que han sido modificados
     const dataToSubmit: UpdateMemberData = {}
     
-    // Solo incluir campos que tienen valores
-    if (formData.name?.trim()) dataToSubmit.name = formData.name.trim()
-    if (formData.last_name?.trim()) dataToSubmit.last_name = formData.last_name.trim()
-    if (formData.tipo_dni) dataToSubmit.tipo_dni = formData.tipo_dni
-    if (formData.dni_user?.trim()) dataToSubmit.dni_user = formData.dni_user.trim()
-    if (formData.birthdate) dataToSubmit.birthdate = formData.birthdate
-    if (formData.gender) dataToSubmit.gender = formData.gender
-    if (formData.cell?.trim()) dataToSubmit.cell = formData.cell.trim()
-    if (formData.direccion?.trim()) dataToSubmit.direccion = formData.direccion.trim()
-    if (formData.status) dataToSubmit.status = formData.status
+    // Comparar cada campo con el valor original
+    const trimmedName = formData.name?.trim()
+    if (trimmedName && trimmedName !== originalData.current.name?.trim()) {
+      dataToSubmit.name = trimmedName
+    }
     
-    // Si se asignó usuario, incluirlo
-    if (assignUser && formData.user_id) {
-      dataToSubmit.user_id = formData.user_id
+    const trimmedLastName = formData.last_name?.trim()
+    if (trimmedLastName !== originalData.current.last_name?.trim()) {
+      dataToSubmit.last_name = trimmedLastName || ""
+    }
+    
+    if (formData.tipo_dni !== originalData.current.tipo_dni) {
+      dataToSubmit.tipo_dni = formData.tipo_dni
+    }
+    
+    const trimmedDni = formData.dni_user?.trim()
+    if (trimmedDni !== originalData.current.dni_user?.trim()) {
+      dataToSubmit.dni_user = trimmedDni || ""
+    }
+    
+    if (formData.birthdate !== originalData.current.birthdate) {
+      dataToSubmit.birthdate = formData.birthdate || ""
+    }
+    
+    if (formData.gender !== originalData.current.gender) {
+      dataToSubmit.gender = formData.gender
+    }
+    
+    const trimmedCell = formData.cell?.trim()
+    if (trimmedCell !== originalData.current.cell?.trim()) {
+      dataToSubmit.cell = trimmedCell || ""
+    }
+    
+    const trimmedDireccion = formData.direccion?.trim()
+    if (trimmedDireccion !== originalData.current.direccion?.trim()) {
+      dataToSubmit.direccion = trimmedDireccion || ""
+    }
+    
+    if (formData.status !== originalData.current.status) {
+      dataToSubmit.status = formData.status
+    }
+    
+    // Gestionar el campo user_id
+    const currentUserId = assignUser ? formData.user_id : undefined
+    if (currentUserId !== originalData.current.user_id) {
+      dataToSubmit.user_id = currentUserId
     }
 
     onSubmit(dataToSubmit)
