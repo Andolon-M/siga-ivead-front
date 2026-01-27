@@ -43,12 +43,28 @@ export function CreateMemberDialog({ open, onOpenChange, onSubmit }: CreateMembe
       return
     }
 
-    // Si no se asignó usuario, enviar sin user_id
-    const dataToSubmit: CreateMemberData = {
-      ...formData,
-      user_id: assignUser ? formData.user_id : undefined,
+    // Filtrar campos vacíos - solo enviar campos con valores
+    const dataToSubmit: Partial<CreateMemberData> = {
+      // Campos obligatorios
+      name: formData.name.trim(),
+      status: formData.status,
     }
-    onSubmit(dataToSubmit)
+    
+    // Solo incluir campos opcionales que tienen valores
+    if (formData.last_name?.trim()) dataToSubmit.last_name = formData.last_name.trim()
+    if (formData.tipo_dni) dataToSubmit.tipo_dni = formData.tipo_dni
+    if (formData.dni_user?.trim()) dataToSubmit.dni_user = formData.dni_user.trim()
+    if (formData.birthdate) dataToSubmit.birthdate = formData.birthdate
+    if (formData.gender) dataToSubmit.gender = formData.gender
+    if (formData.cell?.trim()) dataToSubmit.cell = formData.cell.trim()
+    if (formData.direccion?.trim()) dataToSubmit.direccion = formData.direccion.trim()
+    
+    // Si se asignó usuario, incluirlo
+    if (assignUser && formData.user_id) {
+      dataToSubmit.user_id = formData.user_id
+    }
+
+    onSubmit(dataToSubmit as CreateMemberData)
     
     // Resetear formulario
     setFormData({
