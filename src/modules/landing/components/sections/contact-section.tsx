@@ -3,7 +3,7 @@ import { Button } from "@/shared/components/ui/button"
 import { Mail, MessageCircle, Youtube, Facebook, Instagram, MapPin } from "lucide-react"
 
 export function ContactSection() {
-  const whatsappNumber = "573173756918"
+  const whatsappNumber = "573118533831"
   const whatsappMessage = "Hola, me gustaría obtener más información sobre la iglesia."
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`
   
@@ -84,7 +84,7 @@ export function ContactSection() {
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">WhatsApp</p>
-                      <p className="text-lg font-semibold">+57 317 375 6918</p>
+                      <p className="text-lg font-semibold">+57 311 853 3831</p>
                     </div>
                   </div>
                   <Button 

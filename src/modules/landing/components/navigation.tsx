@@ -36,9 +36,9 @@ export function Navigation() {
 
   const navLinks = [
     { to: "#inicio", label: "Inicio" },
-    { to: "#quienes-somos", label: "Quiénes somos" },
-    { to: "#horarios", label: "Horarios" },
     { to: "#predicas", label: "Prédicas" },
+    { to: "#horarios", label: "Horarios" },
+    { to: "#quienes-somos", label: "Sobre nosotros" },
     { to: "#contactenos", label: "Contáctenos" },
   ]
 

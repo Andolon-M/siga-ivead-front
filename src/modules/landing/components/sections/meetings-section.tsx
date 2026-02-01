@@ -43,7 +43,7 @@ export function MeetingsSection() {
                 {/* Circular image */}
                 <div className="relative w-full h-full rounded-full overflow-hidden shadow-2xl">
                   <img
-                    src="/images/hero-background.png"
+                    src="/images/hero-background2.jpeg"
                     alt="Reuniones de la iglesia"
                     className="w-full h-full object-cover"
                   />

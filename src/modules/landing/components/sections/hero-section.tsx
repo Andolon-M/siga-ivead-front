@@ -30,7 +30,7 @@ export function HeroSection() {
     <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <img src="/images/hero-background.png" alt="Iglesia Vida y Esperanza" className="w-full h-full object-cover" />
+        <img src="/images/hero-background.jpg" alt="Iglesia Vida y Esperanza" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-linear-to-br from-emerald-950/95 via-teal-950/90 to-green-950/95" />
       </div>
 
