@@ -5,6 +5,7 @@ import {
   UserCircle,
   Church,
   Calendar,
+  CalendarDays,
   FileText,
   DollarSign,
   Settings,
@@ -39,6 +40,11 @@ const menuItems = [
     title: "Eventos",
     href: "/admin/events",
     icon: Calendar,
+  },
+  {
+    title: "Servicios",
+    href: "/admin/services",
+    icon: CalendarDays,
   },
   {
     title: "Reportes Financieros",

@@ -6,6 +6,7 @@ import { UsersPage } from '@/modules/users/pages'
 import { MembersPage, MemberDetailPage } from '@/modules/members/pages'
 import { MinistriesPage, MinistryDetailPage } from '@/modules/ministries/pages'
 import { EventsPage, EventDetailPage } from '@/modules/events/pages'
+import { ServicesPage, SessionDetailPage } from '@/modules/services/pages'
 import { TeamsPage } from '@/modules/teams/pages'
 import { ReportsPage } from '@/modules/reports/pages'
 import { FilesPage } from '@/modules/files/pages'
@@ -52,6 +53,8 @@ export default function AppRouter() {
         <Route path="ministries" element={<MinistriesPage />} />
         <Route path="ministries/:id" element={<MinistryDetailPage />} />
         <Route path="events" element={<EventsPage />} />
+        <Route path="services" element={<ServicesPage />} />
+        <Route path="services/session/:id" element={<SessionDetailPage />} />
         <Route path="events/:id" element={<EventDetailPage />} />
         <Route path="teams" element={<TeamsPage />} />
         <Route path="reports" element={<ReportsPage />} />

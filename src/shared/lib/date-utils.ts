@@ -165,3 +165,33 @@ export function formatDateForInput(dateString: string): string {
   return extractDateOnly(dateString)
 }
 
+/**
+ * Formatea hora de un string ISO (HH:MM)
+ * 
+ * @param dateString - Fecha en formato ISO (ej: "2026-02-02T10:00:00.000Z")
+ * @returns Hora formateada (ej: "10:00")
+ */
+export function formatTimeFromISO(dateString: string): string {
+  try {
+    const date = new Date(dateString)
+    const hours = date.getUTCHours().toString().padStart(2, "0")
+    const minutes = date.getUTCMinutes().toString().padStart(2, "0")
+    return `${hours}:${minutes}`
+  } catch {
+    return ""
+  }
+}
+
+/**
+ * Obtiene el día de la semana abreviado (LUN, MAR, etc.)
+ */
+export function getDayOfWeekShort(date: Date, locale = "es-ES"): string {
+  return date.toLocaleDateString(locale, { weekday: "short" }).toUpperCase().slice(0, 3)
+}
+
+/**
+ * Obtiene el mes abreviado (ene, feb, etc.)
+ */
+export function getMonthShort(date: Date, locale = "es-ES"): string {
+  return date.toLocaleDateString(locale, { month: "short" }).toLowerCase()
+}
