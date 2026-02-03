@@ -195,4 +195,3 @@ export function getDayOfWeekShort(date: Date, locale = "es-ES"): string {
 export function getMonthShort(date: Date, locale = "es-ES"): string {
   return date.toLocaleDateString(locale, { month: "short" }).toLowerCase()
 }
-

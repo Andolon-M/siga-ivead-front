@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/shared/components/ui/button"
 import { Calendar, Plus, Download } from "lucide-react"
 import { DayFilter } from "../components/day-filter"
-import { ServiceFilters } from "../components/service-filters"
 import { ServiceCard } from "../components/service-card"
 import { ServicesStats } from "../components/services-stats"
 import { CreateServiceDialog } from "../components/create-service-dialog"
@@ -10,13 +10,12 @@ import { EditServiceDialog } from "../components/edit-service-dialog"
 import { ApartarFechasDialog } from "../components/apartar-fechas-dialog"
 import { useRecurringMeetings } from "../hooks/use-meetings"
 import { useSessions } from "../hooks/use-sessions"
-import { startOfDay, addDays, isSameDay, format } from "date-fns"
+import { startOfDay, addDays, format } from "date-fns"
 import type { RecurringMeeting, CreateRecurringMeetingRequest, UpdateRecurringMeetingRequest } from "../types"
-import type { ServiceFilterType } from "../components/service-filters"
 
 export function ServicesPage() {
+  const navigate = useNavigate()
   const [selectedDate, setSelectedDate] = useState<Date | null>(startOfDay(new Date()))
-  const [activeFilter, setActiveFilter] = useState<ServiceFilterType>("all")
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isApartarFechasOpen, setIsApartarFechasOpen] = useState(false)
@@ -49,21 +48,8 @@ export function ServicesPage() {
       })
     }
 
-    if (activeFilter !== "all") {
-      result = result.filter((s) => {
-        const meeting = s.recurring_meeting
-        if (!meeting) return false
-        if (activeFilter === meeting.id) return true
-        if (activeFilter === meeting.day_of_week) return true
-        if (activeFilter === "reunion" && meeting.name?.toLowerCase().includes("reunión")) return true
-        if (activeFilter === "jovenes" && meeting.name?.toLowerCase().includes("jóvenes")) return true
-        if (activeFilter === "ensayo" && meeting.name?.toLowerCase().includes("ensayo")) return true
-        return false
-      })
-    }
-
     return result
-  }, [sessions, selectedDate, activeFilter])
+  }, [sessions, selectedDate])
 
   const upcomingCount = sessions.filter((s) => {
     const sessionDate = s.session_date?.split("T")[0]
@@ -94,8 +80,7 @@ export function ServicesPage() {
   }
 
   const handleServiceCardClick = (sessionId: string) => {
-    // Navegar a detalle de sesión (futuro)
-    console.log("Ver sesión:", sessionId)
+    navigate(`/admin/services/session/${sessionId}`)
   }
 
   return (
@@ -141,13 +126,6 @@ export function ServicesPage() {
         selectedDate={selectedDate}
         onDateSelect={setSelectedDate}
         daysToShow={14}
-      />
-
-      {/* Filtros por tipo */}
-      <ServiceFilters
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        meetings={meetings}
       />
 
       {/* Lista de servicios */}

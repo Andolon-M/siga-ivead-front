@@ -14,7 +14,7 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ session, onClick, className }: ServiceCardProps) {
-  const meeting = session.recurring_meeting
+  const meeting = session.recurring_meetings
   const location = session.actual_location || meeting?.location || "Sin ubicación"
   const dateStr = extractDateOnly(session.session_date)
   const timeStr = formatTimeFromISO(session.start_time)

@@ -58,8 +58,9 @@ export interface RequiredRole {
 
 export interface MeetingSession {
   id: string
-  recurring_meeting_id: string
-  recurring_meeting?: {
+  recurring_meeting_id?: string
+  // El backend devuelve "recurring_meetings" (plural)
+  recurring_meetings?: {
     id: string
     name: string
     location: string
@@ -70,10 +71,12 @@ export interface MeetingSession {
   start_time: string
   end_time: string
   status: SessionStatus
+  actual_attendance?: number | null
   actual_location?: string | null
   notes?: string | null
   assignments_count?: number
   attendances_count?: number
+  created_at?: string
 }
 
 export interface MemberRef {
