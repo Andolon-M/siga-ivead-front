@@ -43,7 +43,7 @@ export function MemberSelector({
     [searchQuery]
   )
 
-  const { members, isLoading } = useMembers(filters)
+  const { members, loading } = useMembers(filters)
 
   // Encontrar el miembro seleccionado
   const selectedMember = members.find((member) => member.id === value)
@@ -83,7 +83,7 @@ export function MemberSelector({
             onValueChange={setSearchQuery}
           />
           <CommandList>
-            {isLoading ? (
+            {loading ? (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
@@ -133,9 +133,9 @@ export function MemberSelector({
                           )}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {member.dni && (
+                          {member.dni_user && (
                             <span className="truncate">
-                              {member.tipo_dni}: {member.dni}
+                              {member.tipo_dni}: {member.dni_user}
                             </span>
                           )}
                           {member.cell && (
