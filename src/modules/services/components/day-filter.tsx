@@ -19,7 +19,7 @@ interface DayFilterProps {
 export function DayFilter({
   selectedDate,
   onDateSelect,
-  daysToShow = 14,
+  daysToShow = 30,
   startDate = new Date(),
   className,
 }: DayFilterProps) {
