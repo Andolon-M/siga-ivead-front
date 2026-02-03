@@ -107,5 +107,42 @@ export const API_ENDPOINTS = {
     GET: "/settings",
     UPDATE: "/settings",
   },
+
+  // Meetings (Servicios / Reuniones Recurrentes)
+  MEETINGS: {
+    RECURRING: {
+      LIST: "/meetings/recurring",
+      CREATE: "/meetings/recurring",
+      GET: (id: string) => `/meetings/recurring/${id}`,
+      UPDATE: (id: string) => `/meetings/recurring/${id}`,
+      DELETE: (id: string) => `/meetings/recurring/${id}`,
+      STATS: "/meetings/recurring/stats",
+      ROLES: (recurringMeetingId: string) => `/meetings/recurring/${recurringMeetingId}/roles`,
+    },
+    ROLES: {
+      GET: (id: string) => `/meetings/roles/${id}`,
+      UPDATE: (id: string) => `/meetings/roles/${id}`,
+      DELETE: (id: string) => `/meetings/roles/${id}`,
+    },
+    SESSIONS: {
+      LIST: "/meetings/sessions",
+      CREATE: "/meetings/sessions",
+      GENERATE: "/meetings/sessions/generate",
+      GET: (id: string) => `/meetings/sessions/${id}`,
+      UPDATE: (id: string) => `/meetings/sessions/${id}`,
+      DELETE: (id: string) => `/meetings/sessions/${id}`,
+      ROLES_CHECK: (sessionId: string) => `/meetings/sessions/${sessionId}/roles/check`,
+      ASSIGNMENTS: (sessionId: string) => `/meetings/sessions/${sessionId}/assignments`,
+    },
+    ASSIGNMENTS: {
+      GET: (id: string) => `/meetings/assignments/${id}`,
+      UPDATE: (id: string) => `/meetings/assignments/${id}`,
+      DELETE: (id: string) => `/meetings/assignments/${id}`,
+      CONFIRM: (id: string) => `/meetings/assignments/${id}/confirm`,
+      CANCEL: (id: string) => `/meetings/assignments/${id}/cancel`,
+      MEMBER_LIST: (memberId: string) => `/meetings/assignments/member/${memberId}`,
+      MEMBER_STATS: (memberId: string) => `/meetings/assignments/member/${memberId}/stats`,
+    },
+  },
 }
 
