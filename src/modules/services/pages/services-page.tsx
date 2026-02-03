@@ -125,7 +125,6 @@ export function ServicesPage() {
       <DayFilter
         selectedDate={selectedDate}
         onDateSelect={setSelectedDate}
-        daysToShow={14}
       />
 
       {/* Lista de servicios */}

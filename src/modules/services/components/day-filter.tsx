@@ -9,7 +9,7 @@ interface DayFilterProps {
   selectedDate: Date | null
   /** Callback cuando se selecciona un día */
   onDateSelect: (date: Date) => void
-  /** Número de días a mostrar (por defecto 14) */
+  /** Número de días a mostrar (por defecto 30) */
   daysToShow?: number
   /** Fecha de inicio (por defecto hoy) */
   startDate?: Date
