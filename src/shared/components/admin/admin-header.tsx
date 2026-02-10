@@ -1,8 +1,9 @@
-import { Bell, Search, Menu, LogOut, Settings } from "lucide-react"
+import { Search, Menu, LogOut, Settings } from "lucide-react"
 import { Input } from "@/shared/components/ui/input"
 import { Button } from "@/shared/components/ui/button"
 import { ThemeToggle } from "@/shared/components/theme-toggle"
 import { useAuth } from "@/shared/contexts/auth-context"
+import { NotificationsPanel } from "@/shared/components/admin/notifications-panel"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,11 +49,8 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
       {/* Actions */}
       <div className="flex items-center gap-2 lg:gap-4 shrink-0">
         <ThemeToggle />
-        
-        <Button variant="ghost" size="icon" className="relative shrink-0">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </Button>
+
+        <NotificationsPanel />
 
         {/* User Menu */}
         <DropdownMenu>
