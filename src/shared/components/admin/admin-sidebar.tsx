@@ -63,6 +63,11 @@ const menuItems = [
     icon: Shield,
   },
   {
+    title: "Plantillas WhatsApp",
+    href: "/admin/meta-templates",
+    icon: FileText,
+  },
+  {
     title: "Mensajería Masiva",
     href: "/admin/mass-messaging",
     icon: MessageSquare,

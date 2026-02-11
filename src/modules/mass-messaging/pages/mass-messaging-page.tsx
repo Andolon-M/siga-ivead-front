@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { io, type Socket } from "socket.io-client"
 import { Loader2, Plus, RefreshCw, Send, Trash2 } from "lucide-react"
 import type { Gender, MemberStatus } from "@/modules/members/types"
+import { useMetaTemplates } from "@/modules/meta-templates"
 import { useMembers } from "@/modules/members/hooks/use-members"
+import { getSharedSocket } from "@/shared/lib/socket"
 import { SearchInput } from "@/shared/components/search-input"
 import { Badge } from "@/shared/components/ui/badge"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
-import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Progress } from "@/shared/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select"
 import { Textarea } from "@/shared/components/ui/textarea"
-import { useMetaTemplates } from "../hooks/use-meta-templates"
 import { dedupeRecipients, isTemplatePersonalizableByMessage, normalizePhone } from "../hooks/mass-messaging.utils"
 import { massMessagingService } from "../services/mass-messaging.service"
 import { ManualRecipientDialog } from "../components/manual-recipient-dialog"
@@ -21,11 +20,6 @@ import type { CampaignStatusSummary, ManualRecipientForm, RecipientViewModel } f
 
 const MEMBER_STATUSES: MemberStatus[] = ["ACTIVO", "ASISTENTE", "INACTIVO", "VISITANTE"]
 const GENDERS: Gender[] = ["MASCULINO", "FEMENINO"]
-
-function resolveSocketBaseUrl(): string {
-  const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "")
-  return apiBaseUrl.replace(/\/api\/?$/, "")
-}
 
 export function MassMessagingPage() {
   const { templates, loading: templatesLoading, error: templatesError, refetch: refetchTemplates } = useMetaTemplates()
@@ -241,20 +235,26 @@ export function MassMessagingPage() {
   useEffect(() => {
     if (!activeRequestId) return
 
-    const socketBaseUrl = resolveSocketBaseUrl()
-    let mounted = true
-    const socket: Socket = io(socketBaseUrl, { withCredentials: true })
-
-    socket.on("connect", () => {
-      if (!mounted) return
+    const socket = getSharedSocket()
+    const handleConnect = () => {
       setSocketConnected(true)
       socket.emit("mass_message:subscribe", activeRequestId)
-    })
-
-    socket.on("disconnect", () => {
-      if (!mounted) return
+    }
+    const handleDisconnect = () => {
       setSocketConnected(false)
-    })
+    }
+    const handleMassEvent = (payload: { requestId?: string }) => {
+      if (payload?.requestId !== activeRequestId) return
+      void refreshCampaignStatus(activeRequestId)
+    }
+
+    setSocketConnected(socket.connected)
+    if (socket.connected) {
+      socket.emit("mass_message:subscribe", activeRequestId)
+    }
+
+    socket.on("connect", handleConnect)
+    socket.on("disconnect", handleDisconnect)
 
     const events = [
       "mass_message.queued",
@@ -265,16 +265,16 @@ export function MassMessagingPage() {
     ]
 
     events.forEach((eventName) => {
-      socket.on(eventName, (payload: { requestId?: string }) => {
-        if (payload?.requestId !== activeRequestId) return
-        void refreshCampaignStatus(activeRequestId)
-      })
+      socket.on(eventName, handleMassEvent)
     })
 
     return () => {
-      mounted = false
       socket.emit("mass_message:unsubscribe", activeRequestId)
-      socket.disconnect()
+      socket.off("connect", handleConnect)
+      socket.off("disconnect", handleDisconnect)
+      events.forEach((eventName) => {
+        socket.off(eventName, handleMassEvent)
+      })
     }
   }, [activeRequestId, refreshCampaignStatus])
 

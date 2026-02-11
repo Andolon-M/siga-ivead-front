@@ -49,6 +49,10 @@ export interface MetaTemplateComponentInput {
   type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS"
   format?: MetaTemplateHeaderFormat
   text?: string
+  example?: {
+    header_text?: string[]
+    body_text?: string[][]
+  }
   buttons?: MetaTemplateButtonInput[]
 }
 
