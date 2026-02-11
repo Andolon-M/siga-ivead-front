@@ -15,6 +15,13 @@ import { SettingsPage } from '@/modules/settings/pages'
 import { MassMessagingPage } from '@/modules/mass-messaging/pages'
 import { MetaTemplatesPage, MetaTemplateDetailPage } from '@/modules/meta-templates/pages'
 import {
+  ActivitySlotsBoardPage,
+  MemberVolunteerHistoryPage,
+  TaskOccurrencesPage,
+  VolunteersActivitiesPage,
+  VolunteersTasksPage,
+} from '@/modules/volunteers/pages'
+import {
   LoginPage,
   // RegisterPage,
   ForgotPasswordPage,
@@ -65,6 +72,11 @@ export default function AppRouter() {
         <Route path="meta-templates" element={<MetaTemplatesPage />} />
         <Route path="meta-templates/:id" element={<MetaTemplateDetailPage />} />
         <Route path="mass-messaging" element={<MassMessagingPage />} />
+        <Route path="volunteers" element={<VolunteersTasksPage />} />
+        <Route path="volunteers/occurrences" element={<TaskOccurrencesPage />} />
+        <Route path="volunteers/activities" element={<VolunteersActivitiesPage />} />
+        <Route path="volunteers/activities/:id/slots" element={<ActivitySlotsBoardPage />} />
+        <Route path="volunteers/history" element={<MemberVolunteerHistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

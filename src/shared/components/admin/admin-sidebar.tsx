@@ -73,6 +73,11 @@ const menuItems = [
     icon: MessageSquare,
   },
   {
+    title: "Voluntarios",
+    href: "/admin/volunteers",
+    icon: UserCircle,
+  },
+  {
     title: "Configuración",
     href: "/admin/settings",
     icon: Settings,
