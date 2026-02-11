@@ -29,8 +29,8 @@ export function useActivitySlots(activityId?: string): UseActivitySlotsResult {
         volunteersService.getActivitySlots(activityId),
         volunteersService.getActivityAssignments(activityId),
       ])
-      setSlots(slotsData)
-      setAssignments(assignmentsData)
+      setSlots(Array.isArray(slotsData) ? slotsData : [])
+      setAssignments(Array.isArray(assignmentsData) ? assignmentsData : [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Error al cargar slots"))
       setSlots([])

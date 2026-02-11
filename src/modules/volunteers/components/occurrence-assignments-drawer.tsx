@@ -31,6 +31,7 @@ export function OccurrenceAssignmentsDrawer({ open, onOpenChange, occurrence }: 
   const [loading, setLoading] = useState(false)
   const [assignments, setAssignments] = useState<TaskAssignment[]>([])
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const safeAssignments = Array.isArray(assignments) ? assignments : []
 
   const loadAssignments = async () => {
     if (!occurrence) return
@@ -105,34 +106,40 @@ export function OccurrenceAssignmentsDrawer({ open, onOpenChange, occurrence }: 
 
             {loading ? (
               <p className="text-sm text-muted-foreground">Cargando asignaciones...</p>
-            ) : assignments.length === 0 ? (
+            ) : safeAssignments.length === 0 ? (
               <p className="text-sm text-muted-foreground">No hay asignaciones registradas.</p>
             ) : (
               <div className="space-y-3">
-                {assignments.map((assignment) => (
-                  <div key={assignment.id} className="rounded-lg border p-3 space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="font-medium">{assignment.member_name || assignment.member_id}</p>
-                        <p className="text-xs text-muted-foreground">{assignment.notes || "Sin notas"}</p>
+                {safeAssignments.map((assignment) => {
+                  const memberName = assignment.members
+                    ? `${assignment.members.name}${assignment.members.last_name ? ` ${assignment.members.last_name}` : ""}`
+                    : assignment.member_name || assignment.member_id
+                  
+                  return (
+                    <div key={assignment.id} className="rounded-lg border p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="font-medium">{memberName}</p>
+                          <p className="text-xs text-muted-foreground">{assignment.notes || "Sin notas"}</p>
+                        </div>
+                        <Badge variant={statusVariant[assignment.status] || "outline"}>{assignment.status}</Badge>
                       </div>
-                      <Badge variant={statusVariant[assignment.status] || "outline"}>{assignment.status}</Badge>
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleConfirm(assignment.id)}>
+                          <Check className="h-4 w-4 mr-2" />
+                          Confirmar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleCancel(assignment.id)}>
+                          <X className="h-4 w-4 mr-2" />
+                          Cancelar
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleDelete(assignment.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleConfirm(assignment.id)}>
-                        <Check className="h-4 w-4 mr-2" />
-                        Confirmar
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleCancel(assignment.id)}>
-                        <X className="h-4 w-4 mr-2" />
-                        Cancelar
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(assignment.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

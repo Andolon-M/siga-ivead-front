@@ -24,10 +24,6 @@ export function TasksTable({
   onViewOccurrences,
   isSearching,
 }: TasksTableProps) {
-  // #region agent log
-  const tasksIsArray = Array.isArray(tasks)
-  if (!tasksIsArray) fetch('http://127.0.0.1:7243/ingest/c0bf278e-0b8b-4219-bb6b-8fd73c9ddc56',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tasks-table.tsx:render',message:'TasksTable received non-array tasks',data:{tasksIsArray,typeofTasks:typeof tasks},timestamp:Date.now(),hypothesisId:'H5'})}).catch(()=>{});
-  // #endregion
   const safeTasks = Array.isArray(tasks) ? tasks : []
   return (
     <div className="space-y-4">

@@ -21,6 +21,7 @@ export function ActivitiesTable({
   onViewSlots,
   isSearching,
 }: ActivitiesTableProps) {
+  const safeActivities = Array.isArray(activities) ? activities : []
   return (
     <div className="space-y-4">
       <SearchInput
@@ -40,14 +41,14 @@ export function ActivitiesTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {activities.length === 0 ? (
+          {safeActivities.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                 No hay actividades registradas
               </TableCell>
             </TableRow>
           ) : (
-            activities.map((activity) => (
+            safeActivities.map((activity) => (
               <TableRow key={activity.id}>
                 <TableCell>
                   <div className="font-medium">{activity.name}</div>

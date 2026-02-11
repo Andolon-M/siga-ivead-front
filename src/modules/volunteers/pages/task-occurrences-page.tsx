@@ -35,6 +35,7 @@ export function TaskOccurrencesPage() {
   )
 
   const { occurrences, loading, error, pagination, refetch } = useTaskOccurrences(filters)
+  const safeOccurrences = Array.isArray(occurrences) ? occurrences : []
 
   const openAssignments = (occurrence: TaskOccurrence) => {
     setSelectedOccurrence(occurrence)
@@ -117,14 +118,14 @@ export function TaskOccurrencesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {occurrences.length === 0 ? (
+                  {safeOccurrences.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         No hay ocurrencias para estos filtros.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    occurrences.map((occurrence) => (
+                    safeOccurrences.map((occurrence) => (
                       <TableRow key={occurrence.id}>
                         <TableCell>{occurrence.task_name || occurrence.task_id}</TableCell>
                         <TableCell>{new Date(occurrence.occurrence_date).toLocaleDateString()}</TableCell>

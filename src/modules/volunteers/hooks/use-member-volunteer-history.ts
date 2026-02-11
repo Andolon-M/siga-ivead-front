@@ -30,8 +30,8 @@ export function useMemberVolunteerHistory(memberId?: string): UseMemberVolunteer
         volunteersService.getActivityAssignmentsByMember(memberId),
       ])
 
-      setTaskHistory(tasks.map((item) => ({ ...item, type: "TASK" as const })))
-      setActivityHistory(activities.map((item) => ({ ...item, type: "ACTIVITY" as const })))
+      setTaskHistory(Array.isArray(tasks) ? tasks.map((item) => ({ ...item, type: "TASK" as const })) : [])
+      setActivityHistory(Array.isArray(activities) ? activities.map((item) => ({ ...item, type: "ACTIVITY" as const })) : [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Error al cargar historial de voluntariado"))
       setTaskHistory([])

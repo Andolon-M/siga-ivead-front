@@ -14,7 +14,8 @@ interface SlotsBoardProps {
 }
 
 function findAssignment(slot: ActivitySlot, assignments: ActivityAssignment[]) {
-  return assignments.find((assignment) => assignment.slot_id === slot.id)
+  const safeAssignments = Array.isArray(assignments) ? assignments : []
+  return safeAssignments.find((assignment) => assignment.slot_id === slot.id)
 }
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
@@ -24,14 +25,17 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
 }
 
 export function SlotsBoard({ slots, assignments, onAssign, onConfirm, onCancel, onDelete }: SlotsBoardProps) {
-  if (slots.length === 0) {
+  const safeSlots = Array.isArray(slots) ? slots : []
+  const safeAssignments = Array.isArray(assignments) ? assignments : []
+  
+  if (safeSlots.length === 0) {
     return <p className="text-sm text-muted-foreground">Esta actividad aún no tiene slots generados.</p>
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      {slots.map((slot) => {
-        const assignment = findAssignment(slot, assignments)
+      {safeSlots.map((slot) => {
+        const assignment = findAssignment(slot, safeAssignments)
         const isAssigned = !!assignment
         return (
           <Card key={slot.id}>

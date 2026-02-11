@@ -45,7 +45,7 @@ export function useTaskOccurrences(filters?: TaskOccurrenceFilters): UseTaskOccu
           limit: data.limit,
         })
       } else {
-        setOccurrences(data)
+        setOccurrences(Array.isArray(data) ? data : [])
         setPagination(null)
       }
     } catch (err) {

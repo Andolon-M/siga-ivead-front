@@ -34,27 +34,45 @@ function buildQuery(filters?: Record<string, string | number | boolean | undefin
   return params.toString() ? `?${params.toString()}` : ""
 }
 
+function normalizeListResponse<T>(raw: unknown, arrayKey: string): PaginatedResponse<T> | T[] {
+  // Si ya es array, retornarlo
+  if (Array.isArray(raw)) return raw
+
+  // Si es objeto con la clave del array (ej: { total, tasks })
+  if (raw != null && typeof raw === "object" && arrayKey in raw) {
+    const obj = raw as Record<string, unknown>
+    const items = obj[arrayKey]
+    if (Array.isArray(items)) {
+      const total = typeof obj.total === "number" ? obj.total : items.length
+      return {
+        data: items as T[],
+        total,
+        currentPage: 1,
+        totalPages: 1,
+        nextPage: null,
+        previousPage: null,
+        limit: items.length,
+      }
+    }
+  }
+
+  // Si tiene 'data' con array (ya paginado estándar)
+  if (raw != null && typeof raw === "object" && "data" in raw) {
+    const obj = raw as { data: unknown }
+    if (Array.isArray(obj.data)) return raw as PaginatedResponse<T>
+  }
+
+  // Fallback a array vacío
+  return []
+}
+
 export const volunteersService = {
   async getTasks(filters?: VolunteerTaskFilters): Promise<PaginatedResponse<VolunteerTask> | VolunteerTask[]> {
     const query = buildQuery(filters)
     const response = await axiosInstance.get<ApiResponse<PaginatedResponse<VolunteerTask> | VolunteerTask[]>>(
       `${API_ENDPOINTS.VOLUNTEERS.TASKS.LIST}${query}`
     )
-    const raw = response.data.data
-    // Backend returns { total, tasks } instead of { data: [] }; normalize to PaginatedResponse
-    if (raw != null && typeof raw === "object" && "tasks" in raw && Array.isArray((raw as { tasks: unknown }).tasks)) {
-      const { total, tasks } = raw as { total: number; tasks: VolunteerTask[] }
-      return {
-        data: tasks,
-        total,
-        currentPage: 1,
-        totalPages: 1,
-        nextPage: null,
-        previousPage: null,
-        limit: tasks.length,
-      }
-    }
-    return raw
+    return normalizeListResponse<VolunteerTask>(response.data.data, "tasks")
   },
 
   async getTaskById(id: string): Promise<VolunteerTask> {
@@ -81,7 +99,8 @@ export const volunteersService = {
       API_ENDPOINTS.VOLUNTEERS.OCCURRENCES.GENERATE(taskId),
       data
     )
-    return response.data.data
+    const normalized = normalizeListResponse<TaskOccurrence>(response.data.data, "occurrences")
+    return Array.isArray(normalized) ? normalized : normalized.data
   },
 
   async getOccurrences(filters?: TaskOccurrenceFilters): Promise<PaginatedResponse<TaskOccurrence> | TaskOccurrence[]> {
@@ -89,7 +108,7 @@ export const volunteersService = {
     const response = await axiosInstance.get<ApiResponse<PaginatedResponse<TaskOccurrence> | TaskOccurrence[]>>(
       `${API_ENDPOINTS.VOLUNTEERS.OCCURRENCES.LIST}${query}`
     )
-    return response.data.data
+    return normalizeListResponse<TaskOccurrence>(response.data.data, "occurrences")
   },
 
   async getOccurrenceById(id: string): Promise<TaskOccurrence> {
@@ -101,7 +120,8 @@ export const volunteersService = {
     const response = await axiosInstance.get<ApiResponse<TaskAssignment[]>>(
       API_ENDPOINTS.VOLUNTEERS.TASK_ASSIGNMENTS.BY_OCCURRENCE(occurrenceId)
     )
-    return response.data.data
+    const normalized = normalizeListResponse<TaskAssignment>(response.data.data, "assignments")
+    return Array.isArray(normalized) ? normalized : normalized.data
   },
 
   async createTaskAssignment(occurrenceId: string, data: CreateTaskAssignmentData): Promise<TaskAssignment> {
@@ -143,7 +163,7 @@ export const volunteersService = {
     const response = await axiosInstance.get<ApiResponse<PaginatedResponse<VolunteerActivity> | VolunteerActivity[]>>(
       `${API_ENDPOINTS.VOLUNTEERS.ACTIVITIES.LIST}${query}`
     )
-    return response.data.data
+    return normalizeListResponse<VolunteerActivity>(response.data.data, "activities")
   },
 
   async getActivityById(id: string): Promise<VolunteerActivity> {
@@ -175,7 +195,8 @@ export const volunteersService = {
     const response = await axiosInstance.get<ApiResponse<ActivitySlot[]>>(
       API_ENDPOINTS.VOLUNTEERS.ACTIVITY_SLOTS.LIST(activityId)
     )
-    return response.data.data
+    const normalized = normalizeListResponse<ActivitySlot>(response.data.data, "slots")
+    return Array.isArray(normalized) ? normalized : normalized.data
   },
 
   async assignActivitySlot(activityId: string, data: CreateActivitySlotAssignmentData): Promise<ActivityAssignment> {
@@ -190,7 +211,8 @@ export const volunteersService = {
     const response = await axiosInstance.get<ApiResponse<ActivityAssignment[]>>(
       API_ENDPOINTS.VOLUNTEERS.ACTIVITY_ASSIGNMENTS.BY_ACTIVITY(activityId)
     )
-    return response.data.data
+    const normalized = normalizeListResponse<ActivityAssignment>(response.data.data, "assignments")
+    return Array.isArray(normalized) ? normalized : normalized.data
   },
 
   async updateActivityAssignment(id: string, data: UpdateActivityAssignmentData): Promise<ActivityAssignment> {
@@ -223,13 +245,15 @@ export const volunteersService = {
     const response = await axiosInstance.get<ApiResponse<MemberVolunteerHistoryItem[]>>(
       API_ENDPOINTS.VOLUNTEERS.TASK_ASSIGNMENTS.BY_MEMBER(memberId)
     )
-    return response.data.data
+    const normalized = normalizeListResponse<MemberVolunteerHistoryItem>(response.data.data, "assignments")
+    return Array.isArray(normalized) ? normalized : normalized.data
   },
 
   async getActivityAssignmentsByMember(memberId: string): Promise<MemberVolunteerHistoryItem[]> {
     const response = await axiosInstance.get<ApiResponse<MemberVolunteerHistoryItem[]>>(
       API_ENDPOINTS.VOLUNTEERS.ACTIVITY_ASSIGNMENTS.BY_MEMBER(memberId)
     )
-    return response.data.data
+    const normalized = normalizeListResponse<MemberVolunteerHistoryItem>(response.data.data, "assignments")
+    return Array.isArray(normalized) ? normalized : normalized.data
   },
 }

@@ -45,7 +45,7 @@ export function useVolunteerActivities(filters?: VolunteerActivityFilters): UseV
           limit: data.limit,
         })
       } else {
-        setActivities(data)
+        setActivities(Array.isArray(data) ? data : [])
         setPagination(null)
       }
     } catch (err) {

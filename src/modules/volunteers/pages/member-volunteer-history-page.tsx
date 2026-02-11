@@ -18,7 +18,8 @@ export function MemberVolunteerHistoryPage() {
   const { history, loading, error, refetch } = useMemberVolunteerHistory(memberId)
 
   const filteredHistory = useMemo(() => {
-    return history.filter((item) => {
+    const safeHistory = Array.isArray(history) ? history : []
+    return safeHistory.filter((item) => {
       if (statusFilter !== "all" && item.status !== statusFilter) return false
       if (typeFilter !== "all" && item.type !== typeFilter) return false
       if (textFilter.trim()) {
