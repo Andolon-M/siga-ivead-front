@@ -37,6 +37,11 @@ export function SlotsBoard({ slots, assignments, onAssign, onConfirm, onCancel, 
       {safeSlots.map((slot) => {
         const assignment = findAssignment(slot, safeAssignments)
         const isAssigned = !!assignment
+        
+        const memberName = assignment?.members
+          ? `${assignment.members.name}${assignment.members.last_name ? ` ${assignment.members.last_name}` : ""}`
+          : assignment?.member_name || assignment?.member_id
+        
         return (
           <Card key={slot.id}>
             <CardHeader className="pb-3">
@@ -52,7 +57,7 @@ export function SlotsBoard({ slots, assignments, onAssign, onConfirm, onCancel, 
               {isAssigned ? (
                 <>
                   <div>
-                    <p className="font-medium">{assignment?.member_name || assignment?.member_id}</p>
+                    <p className="font-medium">{memberName}</p>
                     <p className="text-xs text-muted-foreground">{assignment?.notes || "Sin notas"}</p>
                   </div>
                   <div className="flex gap-2">
