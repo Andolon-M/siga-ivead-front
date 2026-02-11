@@ -40,7 +40,21 @@ export const volunteersService = {
     const response = await axiosInstance.get<ApiResponse<PaginatedResponse<VolunteerTask> | VolunteerTask[]>>(
       `${API_ENDPOINTS.VOLUNTEERS.TASKS.LIST}${query}`
     )
-    return response.data.data
+    const raw = response.data.data
+    // Backend returns { total, tasks } instead of { data: [] }; normalize to PaginatedResponse
+    if (raw != null && typeof raw === "object" && "tasks" in raw && Array.isArray((raw as { tasks: unknown }).tasks)) {
+      const { total, tasks } = raw as { total: number; tasks: VolunteerTask[] }
+      return {
+        data: tasks,
+        total,
+        currentPage: 1,
+        totalPages: 1,
+        nextPage: null,
+        previousPage: null,
+        limit: tasks.length,
+      }
+    }
+    return raw
   },
 
   async getTaskById(id: string): Promise<VolunteerTask> {

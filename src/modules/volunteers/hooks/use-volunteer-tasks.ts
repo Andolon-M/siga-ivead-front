@@ -34,21 +34,29 @@ export function useVolunteerTasks(filters?: VolunteerTaskFilters): UseVolunteerT
       setLoading(true)
       setError(null)
       const data = await volunteersService.getTasks(filtersRef.current)
-      if (isPaginatedResponse(data)) {
-        setTasks(data.data)
+      // #region agent log
+      const isPaginated = isPaginatedResponse(data)
+      const willSetTasks = isPaginated ? (data as PaginatedResponse<VolunteerTask>).data : data
+      fetch('http://127.0.0.1:7243/ingest/c0bf278e-0b8b-4219-bb6b-8fd73c9ddc56',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-volunteer-tasks.ts:loadTasks',message:'hook after getTasks',data:{isPaginated,willSetTasksIsArray:Array.isArray(willSetTasks),willSetTasksType:typeof willSetTasks},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
+      if (isPaginated) {
+        setTasks((data as PaginatedResponse<VolunteerTask>).data)
         setPagination({
-          currentPage: data.currentPage,
-          totalPages: data.totalPages,
-          total: data.total,
-          nextPage: data.nextPage,
-          previousPage: data.previousPage,
-          limit: data.limit,
+          currentPage: (data as PaginatedResponse<VolunteerTask>).currentPage,
+          totalPages: (data as PaginatedResponse<VolunteerTask>).totalPages,
+          total: (data as PaginatedResponse<VolunteerTask>).total,
+          nextPage: (data as PaginatedResponse<VolunteerTask>).nextPage,
+          previousPage: (data as PaginatedResponse<VolunteerTask>).previousPage,
+          limit: (data as PaginatedResponse<VolunteerTask>).limit,
         })
       } else {
-        setTasks(data)
+        setTasks(Array.isArray(data) ? data : [])
         setPagination(null)
       }
     } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/c0bf278e-0b8b-4219-bb6b-8fd73c9ddc56',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'use-volunteer-tasks.ts:catch',message:'hook catch branch',data:{errMessage:err instanceof Error?err.message:String(err)},timestamp:Date.now(),hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
       setError(err instanceof Error ? err : new Error("Error al cargar tareas de voluntariado"))
       setTasks([])
       setPagination(null)
