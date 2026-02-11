@@ -22,7 +22,9 @@ import type {
   VolunteerTaskFilters,
 } from "../types"
 
-function buildQuery(filters?: Record<string, string | number | boolean | undefined>) {
+function buildQuery(
+  filters?: VolunteerTaskFilters | TaskOccurrenceFilters | VolunteerActivityFilters
+) {
   const params = new URLSearchParams()
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
