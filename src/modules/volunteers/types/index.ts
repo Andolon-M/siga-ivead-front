@@ -93,6 +93,12 @@ export interface TaskAssignment {
   status: AssignmentStatus
   created_at?: string
   updated_at?: string
+  members?: {
+    id: string
+    name: string
+    last_name?: string | null
+    cell?: string
+  }
 }
 
 export interface CreateTaskAssignmentData {
@@ -174,6 +180,12 @@ export interface ActivityAssignment {
   status: AssignmentStatus
   created_at?: string
   updated_at?: string
+  members?: {
+    id: string
+    name: string
+    last_name?: string | null
+    cell?: string
+  }
 }
 
 export interface UpdateActivityAssignmentData {
