@@ -12,6 +12,8 @@ import { ReportsPage } from '@/modules/reports/pages'
 import { FilesPage } from '@/modules/files/pages'
 import { RolesPage } from '@/modules/roles/pages'
 import { SettingsPage } from '@/modules/settings/pages'
+import { MassMessagingPage } from '@/modules/mass-messaging/pages'
+import { MetaTemplatesPage, MetaTemplateDetailPage } from '@/modules/meta-templates/pages'
 import {
   LoginPage,
   // RegisterPage,
@@ -60,6 +62,9 @@ export default function AppRouter() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="files" element={<FilesPage />} />
         <Route path="roles" element={<RolesPage />} />
+        <Route path="meta-templates" element={<MetaTemplatesPage />} />
+        <Route path="meta-templates/:id" element={<MetaTemplateDetailPage />} />
+        <Route path="mass-messaging" element={<MassMessagingPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

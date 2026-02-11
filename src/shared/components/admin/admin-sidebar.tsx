@@ -11,6 +11,7 @@ import {
   Settings,
   LayoutDashboard,
   Shield,
+  MessageSquare,
   X,
 } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
@@ -60,6 +61,16 @@ const menuItems = [
     title: "Roles y Permisos",
     href: "/admin/roles",
     icon: Shield,
+  },
+  {
+    title: "Plantillas WhatsApp",
+    href: "/admin/meta-templates",
+    icon: FileText,
+  },
+  {
+    title: "Mensajería Masiva",
+    href: "/admin/mass-messaging",
+    icon: MessageSquare,
   },
   {
     title: "Configuración",

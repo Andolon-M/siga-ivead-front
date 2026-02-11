@@ -31,6 +31,21 @@ export const API_ENDPOINTS = {
     GET: (id: string) => `/members/${id}`,
     STATS: "/members/stats",
   },
+
+  // Meta Templates
+  META_TEMPLATES: {
+    LIST: "/meta-templates",
+    GET: (id: string) => `/meta-templates/${id}`,
+    CREATE: "/meta-templates",
+    UPDATE: (id: string) => `/meta-templates/${id}`,
+    DELETE: (id: string) => `/meta-templates/${id}`,
+  },
+
+  // Mass Messaging
+  MASS_MESSAGING: {
+    SEND_TEMPLATE: "/mass-messaging/sendtemplate",
+    STATUS: (requestId: string) => `/mass-messaging/requests/${requestId}/status`,
+  },
   
   // Events
   EVENTS: {

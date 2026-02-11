@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from '@/shared/contexts/theme-provider'
 import { AuthProvider } from '@/shared/contexts/auth-context'
+import { NotificationsProvider } from '@/shared/contexts/notifications-context'
 import { Toaster } from '@/shared/components/ui/sonner'
 import '@/shared/styles/globals.css'
 import App from './App.tsx'
@@ -12,8 +13,10 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <ThemeProvider attribute="class" defaultTheme="system" storageKey="iglesia-theme" enableSystem={true}>
         <AuthProvider>
-          <App />
-          <Toaster />
+          <NotificationsProvider>
+            <App />
+            <Toaster />
+          </NotificationsProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

@@ -1,7 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Badge } from "@/shared/components/ui/badge"
+import { useNotifications } from "@/shared/contexts/notifications-context"
 import { Users, UserCircle, Calendar, DollarSign, TrendingUp, TrendingDown } from "lucide-react"
 
 export function AdminDashboard() {
+  const { notifications } = useNotifications()
+  const recentNotifications = notifications.slice(0, 6)
+
   const stats = [
     {
       title: "Total Usuarios",
@@ -69,26 +74,27 @@ export function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-            <CardDescription>Últimas acciones en el sistema</CardDescription>
+            <CardTitle>Notificaciones de mensajería</CardTitle>
+            <CardDescription>Eventos recientes de campañas masivas</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { action: "Nuevo miembro registrado", user: "Juan Pérez", time: "Hace 5 minutos" },
-                { action: "Evento creado", user: "María García", time: "Hace 1 hora" },
-                { action: "Reporte financiero generado", user: "Admin", time: "Hace 2 horas" },
-              ].map((activity, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.user} • {activity.time}
+              {recentNotifications.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay notificaciones recientes.</p>
+              ) : (
+                recentNotifications.map((notification) => (
+                  <div key={notification.id} className="rounded-md border p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-sm font-medium">{notification.title}</p>
+                      <Badge variant="outline">{notification.event}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{notification.message}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {new Date(notification.createdAt).toLocaleString("es-CO")}
                     </p>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
