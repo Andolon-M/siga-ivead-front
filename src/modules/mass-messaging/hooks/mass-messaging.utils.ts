@@ -1,8 +1,16 @@
-import type { MetaTemplate, RecipientInput, RecipientViewModel } from "../types"
+import type { RecipientInput, RecipientViewModel } from "../types"
 
-export function isTemplatePersonalizableByMessage(template?: MetaTemplate | null): boolean {
+type PersonalizableTemplate = {
+  components?: Array<{
+    type?: string
+    text?: string
+    example?: Record<string, unknown>
+  }>
+}
+
+export function isTemplatePersonalizableByMessage(template?: PersonalizableTemplate | null): boolean {
   if (!template) return false
-  const body = template.components.find((component) => component.type === "BODY")
+  const body = template.components?.find((component) => component.type === "BODY")
   if (!body) return false
 
   const bodyText = (body.text ?? "").toLowerCase()
