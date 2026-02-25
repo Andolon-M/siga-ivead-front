@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/shared/components/ui/select"
 import { MemberSelector } from "./member-selector"
-import type { CreateAssignmentRequest, RequiredRole, AssignmentStatus } from "../types"
+import type { CreateAssignmentRequest, RequiredRole } from "../types"
 
 interface AssignMemberDialogProps {
   open: boolean
@@ -26,11 +26,6 @@ interface AssignMemberDialogProps {
   roles: RequiredRole[]
   onSubmit: (data: CreateAssignmentRequest) => Promise<void>
 }
-
-const ASSIGNMENT_STATUSES: { value: AssignmentStatus; label: string }[] = [
-  { value: "PENDIENTE", label: "Pendiente" },
-  { value: "CONFIRMADO", label: "Confirmado" },
-]
 
 const ROLE_LABELS: Record<string, string> = {
   DIACONADO: "Diácono/Ujier",
@@ -53,7 +48,6 @@ export function AssignMemberDialog({
   const [formData, setFormData] = useState<CreateAssignmentRequest>({
     required_role_id: "",
     member_id: "",
-    status: "PENDIENTE",
     notes: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -73,7 +67,6 @@ export function AssignMemberDialog({
       setFormData({
         required_role_id: roles[0]?.id ?? "",
         member_id: "",
-        status: "PENDIENTE",
         notes: "",
       })
       onOpenChange(false)
@@ -130,26 +123,6 @@ export function AssignMemberDialog({
             <p className="text-xs text-muted-foreground">
               Busca por nombre, DNI o teléfono
             </p>
-          </div>
-          <div className="grid gap-2">
-            <Label>Estado</Label>
-            <Select
-              value={formData.status ?? "PENDIENTE"}
-              onValueChange={(value: AssignmentStatus) =>
-                setFormData({ ...formData, status: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ASSIGNMENT_STATUSES.map((status) => (
-                  <SelectItem key={status.value} value={status.value}>
-                    {status.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="notes">Notas</Label>

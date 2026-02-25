@@ -121,7 +121,7 @@ export function SessionDetailPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">{meeting?.name ?? "Sesión"}</h1>
+          <h1 className="text-3xl font-bold">{meeting?.name ?? "Sesión"} <span className="text-primary">{session.is_santa_cena ? "Santa Cena" : ""}</span></h1>
           <p className="text-muted-foreground capitalize">{formattedDate}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -141,6 +141,7 @@ export function SessionDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>Información de la Sesión</CardTitle>
+          <p className="text-sm text-muted-foreground">{meeting?.description}</p>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
@@ -157,6 +158,19 @@ export function SessionDetailPage() {
                 <p className="text-sm font-medium">Hora</p>
                 <p className="text-sm text-muted-foreground">{timeStr}</p>
               </div>
+              <div>
+                <p className="text-sm font-medium">Duración</p>
+                <p className="text-sm text-muted-foreground">
+                  {(() => {
+                    const mins = meeting?.duration_minutes ?? 0
+                    const h = Math.floor(mins / 60)
+                    const m = mins % 60
+                    if (h > 0 && m > 0) return `${h} h ${m} min`
+                    if (h > 0) return `${h} ${h === 1 ? "hora" : "horas"}`
+                    return `${mins} min`
+                  })()}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-muted-foreground" />
@@ -172,12 +186,6 @@ export function SessionDetailPage() {
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span>{assignments.length} asignaciones</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>
-                {assignments.filter((a) => a.status === "CONFIRMADO").length} confirmados
-              </span>
             </div>
           </div>
         </CardContent>

@@ -24,6 +24,7 @@ import { EditMemberDialog } from "../components/edit-member-dialog"
 import { membersService } from "../services/members.service"
 import type { UpdateMemberData } from "../types"
 import { formatDateLong, calculateAge } from "@/shared/lib/date-utils"
+import { PhoneWhatsAppLink } from "@/shared/components/phone-whatsapp-link"
 
 export function MemberDetailPage() {
     const { id } = useParams<{ id: string }>()
@@ -160,7 +161,8 @@ export function MemberDetailPage() {
                                 <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Género</p>
-                                    <p className="text-base font-semibold">{member.gender}</p>
+                                         
+                                        <p className="text-base font-semibold">{member.gender === "MASCULINO" ? "♂" : "♀"} {member.gender}</p>
                                 </div>
                             </div>
 
@@ -168,7 +170,8 @@ export function MemberDetailPage() {
                                 <Phone className="h-5 w-5 text-muted-foreground mt-0.5" />
                                 <div>
                                     <p className="text-sm font-medium text-muted-foreground">Teléfono</p>
-                                    <p className="text-base font-semibold">{member.cell}</p>
+                                    <PhoneWhatsAppLink phone={member.cell} className="text-base font-semibold"    />
+                                    
                                 </div>
                             </div>
 
