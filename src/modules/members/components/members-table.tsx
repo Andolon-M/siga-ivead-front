@@ -27,7 +27,7 @@ export function MembersTable({ members, onSearch, onEdit, onDelete, onViewDetail
     <div className="space-y-4">
       <SearchInput
         onSearch={onSearch}
-        placeholder="Buscar por nombre o DNI..."
+        placeholder="Buscar por nombre, cedula o telefono..."
         isSearching={isSearching}
       />
 
