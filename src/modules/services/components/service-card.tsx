@@ -1,11 +1,19 @@
-import { Church, Calendar, Clock, MapPin } from "lucide-react"
+import { Church, Calendar, Clock, MapPin, Wheat, SignpostBig, Badge } from "lucide-react"
 import { Card, CardContent } from "@/shared/components/ui/card"
-import { Badge } from "@/shared/components/ui/badge"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { formatTimeFromISO, extractDateOnly } from "@/shared/lib/date-utils"
 import { cn } from "@/shared/lib/utils"
-import type { MeetingSession } from "../types"
+import type { MeetingSession, SessionStatus } from "../types"
+
+const SESSION_STATUS_ORDER: SessionStatus[] = ["PLANIFICADO", "ACTIVO", "FINALIZADO", "CANCELADO"]
+
+const STATUS_STYLES: Record<SessionStatus, string> = {
+  PLANIFICADO: "bg-primary",
+  ACTIVO: "bg-emerald-500",
+  FINALIZADO: "bg-muted-foreground",
+  CANCELADO: "bg-destructive",
+}
 
 interface ServiceCardProps {
   session: MeetingSession
@@ -41,21 +49,17 @@ export function ServiceCard({ session, onClick, className }: ServiceCardProps) {
           </div>
 
           {/* Contenido */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-start justify-between gap-2 mb-2">
               <h3 className="font-semibold text-foreground truncate">
-                {meeting?.name ?? "Sin nombre"}
+                {meeting?.name ?? "Sin nombre"} <span className="text-primary">{session.is_santa_cena ? "Santa Cena" : ""}</span>
               </h3>
-              <div className="flex gap-1 shrink-0">
-                <Badge variant="secondary" className="text-xs">
-                  servicio
-                </Badge>
-                {meeting?.name && (
-                  <Badge variant="outline" className="text-xs">
-                    {meeting.name.split(" ")[0]}
-                  </Badge>
-                )}
-              </div>
+              {session.is_santa_cena && (
+                <span className="flex items-center gap-1.5 text-primary" title="Santa Cena">
+                  <SignpostBig className="h-4 w-4" />
+                  <Wheat className="h-4 w-4" />
+                </span>
+              )}
             </div>
 
             <div className="space-y-1.5 text-sm text-muted-foreground">
@@ -72,23 +76,22 @@ export function ServiceCard({ session, onClick, className }: ServiceCardProps) {
                 <span className="truncate">{location}</span>
               </div>
             </div>
-          </div>
-
-          {/* Indicadores de roles (círculos de colores como en el diseño) */}
-          <div className="flex shrink-0 flex-col gap-1 justify-center">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className={cn(
-                  "w-2 h-2 rounded-full",
-                  i === 1 && "bg-blue-500",
-                  i === 2 && "bg-violet-500",
-                  i === 3 && "bg-rose-500",
-                  i === 4 && "bg-orange-500",
-                  i === 5 && "bg-amber-500"
-                )}
-              />
-            ))}
+            {/* Indicadores de estado: PLANIFICADO | ACTIVO | FINALIZADO | CANCELADO */}
+            <div className="flex pl-1 shrink-0 gap-1 justify-start" title={session.status}>
+              {SESSION_STATUS_ORDER.map((status) => {
+                const isActive = session.status === status
+                return (
+                  <div
+                    key={status}
+                    className={cn(
+                      "w-2 h-2 rounded-full transition-colors",
+                      isActive ? STATUS_STYLES[status] : "bg-muted"
+                    )}
+                    title={status}
+                  />
+                )
+              })}
+            </div>
           </div>
         </div>
       </CardContent>

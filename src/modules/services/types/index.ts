@@ -64,6 +64,8 @@ export interface MeetingSession {
     id: string
     name: string
     location: string
+    duration_minutes: number
+    description?: string | null
     start_time?: string
     day_of_week?: DayOfWeek
   }
@@ -71,6 +73,7 @@ export interface MeetingSession {
   start_time: string
   end_time: string
   status: SessionStatus
+  is_santa_cena?: boolean
   actual_attendance?: number | null
   actual_location?: string | null
   notes?: string | null
