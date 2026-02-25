@@ -114,7 +114,7 @@ const mockAttendees: Attendee[] = [
     id: 2,
     member: { id: 2, name: "Carlos Rodríguez", dni: "0987654321", cell: "3009876543" },
     status: "REGISTRADO",
-    paidStatus: "PENDIENTE",
+    paidStatus: "ASIGNADO",
     amountPaid: 0,
     qrCode: null,
     confirmedAt: null,
@@ -148,7 +148,7 @@ const statusColors = {
 } as const
 
 const paymentStatusColors = {
-  PENDIENTE: "destructive",
+  ASIGNADO: "destructive",
   PARCIAL: "secondary",
   COMPLETO: "default",
   EXONERADO: "outline",
@@ -197,7 +197,7 @@ export function EventDetailPage() {
   const paymentDistribution = {
     full: attendees.filter((a) => a.paidStatus === "COMPLETO").length,
     partial: attendees.filter((a) => a.paidStatus === "PARCIAL").length,
-    pending: attendees.filter((a) => a.paidStatus === "PENDIENTE").length,
+    pending: attendees.filter((a) => a.paidStatus === "ASIGNADO").length,
     exempt: attendees.filter((a) => a.paidStatus === "EXONERADO").length,
   }
 
@@ -345,7 +345,7 @@ export function EventDetailPage() {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
+                <CardTitle className="text-sm font-medium">ASIGNADOs</CardTitle>
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -501,7 +501,7 @@ export function EventDetailPage() {
                                   <CheckCircle className="h-4 w-4 mr-2" />
                                   Registrar Pago
                                 </Button>
-                                {attendee.paidStatus === "PENDIENTE" && (
+                                {attendee.paidStatus === "ASIGNADO" && (
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -587,7 +587,7 @@ export function EventDetailPage() {
                     <span className="font-semibold">${totalExpected.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Pendiente:</span>
+                    <span className="text-sm text-muted-foreground">ASIGNADO:</span>
                     <span className="font-semibold text-destructive">
                       ${(totalExpected - totalCollected).toLocaleString()}
                     </span>
@@ -655,7 +655,7 @@ export function EventDetailPage() {
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-destructive" />
-                      <span className="text-sm">Pendiente</span>
+                      <span className="text-sm">ASIGNADO</span>
                     </div>
                     <span className="font-semibold">{paymentDistribution.pending}</span>
                   </div>
@@ -917,7 +917,7 @@ export function EventDetailPage() {
                         <SelectValue placeholder="Selecciona" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="PENDIENTE">Pendiente</SelectItem>
+                        <SelectItem value="ASIGNADO">ASIGNADO</SelectItem>
                         <SelectItem value="PARCIAL">Parcial</SelectItem>
                         <SelectItem value="COMPLETO">Completo</SelectItem>
                         <SelectItem value="EXONERADO">Exonerado</SelectItem>
@@ -1049,7 +1049,7 @@ export function EventDetailPage() {
               )}
               {paymentType === "PARCIAL" && selectedAttendeeForPayment && (
                 <p className="text-xs text-muted-foreground">
-                  Pagado: ${selectedAttendeeForPayment.amountPaid.toLocaleString()} / Pendiente: $
+                  Pagado: ${selectedAttendeeForPayment.amountPaid.toLocaleString()} / ASIGNADO: $
                   {((event.price || 0) - selectedAttendeeForPayment.amountPaid).toLocaleString()}
                 </p>
               )}

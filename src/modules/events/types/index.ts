@@ -2,7 +2,7 @@ export type EventStatus = "PLANIFICADO" | "ACTIVO" | "FINALIZADO" | "CANCELADO"
 
 export type AttendeeStatus = "REGISTRADO" | "CONFIRMADO" | "ASISTIO" | "AUSENTE" | "CANCELADO"
 
-export type PaymentStatus = "PENDIENTE" | "PARCIAL" | "COMPLETO" | "EXONERADO"
+export type PaymentStatus = "ASIGNADO" | "PARCIAL" | "COMPLETO" | "EXONERADO"
 
 export type PaymentType = "COMPLETO" | "PARCIAL"
 

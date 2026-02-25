@@ -187,12 +187,6 @@ export function SessionDetailPage() {
               <Users className="h-4 w-4" />
               <span>{assignments.length} asignaciones</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>
-                {assignments.filter((a) => a.status === "CONFIRMADO").length} confirmados
-              </span>
-            </div>
           </div>
         </CardContent>
       </Card>

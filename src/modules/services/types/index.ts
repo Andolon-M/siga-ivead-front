@@ -23,8 +23,6 @@ export type ServiceRole =
 
 export type SessionStatus = "PLANIFICADO" | "ACTIVO" | "FINALIZADO" | "CANCELADO"
 
-export type AssignmentStatus = "PENDIENTE" | "CONFIRMADO" | "CANCELADO" | "COMPLETADO"
-
 // Interfaces principales
 export interface MinistryRef {
   id: string
@@ -100,7 +98,6 @@ export interface ServiceAssignment {
   }
   member_id: string
   member?: MemberRef
-  status: AssignmentStatus
   confirmed_at?: string | null
   notes?: string | null
 }
@@ -162,7 +159,6 @@ export interface CreateSessionRequest {
 export interface CreateAssignmentRequest {
   required_role_id: string
   member_id: string
-  status?: AssignmentStatus
   notes?: string
 }
 

@@ -44,7 +44,7 @@ export function ServiceCard({ session, onClick, className }: ServiceCardProps) {
       <CardContent className="p-4">
         <div className="flex gap-4">
           {/* Icono */}
-          <div className="flex shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+          <div className="flex shrink-0 w-10 h-10 rounded-lg bg-primary/10 items-center justify-center">
             <Church className="h-5 w-5 text-primary" />
           </div>
 
