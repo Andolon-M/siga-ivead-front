@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import {
@@ -41,6 +41,10 @@ export interface SearchableEntitySelectorProps<T extends { id: string }> {
   className?: string
   /** Ancho del popover (ej. "400px") */
   popoverWidth?: string
+  /** Mínimo de caracteres para ejecutar búsqueda (por defecto 3) */
+  minSearchLength?: number
+  /** Tiempo de espera en ms tras dejar de escribir para ejecutar búsqueda (por defecto 1000) */
+  searchDebounceMs?: number
 }
 
 /**
@@ -63,15 +67,35 @@ export function SearchableEntitySelector<T extends { id: string }>({
   allowClear = true,
   className,
   popoverWidth = "400px",
+  minSearchLength = 3,
+  searchDebounceMs = 1000,
 }: SearchableEntitySelectorProps<T>) {
   const [open, setOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const selectedItem = items.find((item) => getItemId(item) === value)
 
+  // Debounce: ejecutar búsqueda 1s después de dejar de escribir, y solo si hay >= 3 caracteres (o vacío)
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null
+      const shouldSearch = searchQuery.length >= minSearchLength || searchQuery === ""
+      if (shouldSearch) {
+        onSearchChange?.(searchQuery)
+      }
+    }, searchDebounceMs)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [searchQuery, minSearchLength, searchDebounceMs, onSearchChange])
+
   const handleSearchChange = (q: string) => {
     setSearchQuery(q)
-    onSearchChange?.(q)
   }
 
   const handleSelect = (id: string) => {
@@ -119,6 +143,10 @@ export function SearchableEntitySelector<T extends { id: string }>({
             {loading ? (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : searchQuery.length > 0 && searchQuery.length < minSearchLength ? (
+              <div className="py-6 text-center text-sm text-muted-foreground px-2">
+                Escribe al menos {minSearchLength} caracteres para buscar
               </div>
             ) : (
               <>
