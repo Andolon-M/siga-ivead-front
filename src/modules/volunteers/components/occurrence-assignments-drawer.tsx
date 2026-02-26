@@ -12,6 +12,7 @@ import {
 } from "@/shared/components/ui/drawer"
 import { Separator } from "@/shared/components/ui/separator"
 import { Check, Plus, Trash2, X } from "lucide-react"
+import { formatDateNumeric } from "@/shared/lib/date-utils"
 import { getVolunteerErrorMessage } from "../lib/errors"
 import { volunteersService } from "../services/volunteers.service"
 import type { TaskAssignment, TaskOccurrence } from "../types"
@@ -113,7 +114,7 @@ export function OccurrenceAssignmentsDrawer({ open, onOpenChange, occurrence }: 
             <DrawerTitle>Asignaciones de ocurrencia</DrawerTitle>
             <DrawerDescription>
               {occurrence
-                ? `${occurrence.task_name || "Tarea"} • ${new Date(occurrence.occurrence_date).toLocaleDateString()}`
+                ? `${occurrence.task_name || "Tarea"} • ${formatDateNumeric(occurrence.occurrence_date)}`
                 : "Selecciona una ocurrencia para ver detalles."}
             </DrawerDescription>
           </DrawerHeader>

@@ -12,6 +12,7 @@ import { GenerateOccurrencesDialog } from "../components/generate-occurrences-di
 import { OccurrenceAssignmentsDrawer } from "../components/occurrence-assignments-drawer"
 import { useTaskOccurrences } from "../hooks/use-task-occurrences"
 import { useVolunteerTasks } from "../hooks/use-volunteer-tasks"
+import { formatDateNumeric } from "@/shared/lib/date-utils"
 import { getVolunteerErrorMessage } from "../lib/errors"
 import { volunteersService } from "../services/volunteers.service"
 import type { GenerateOccurrencesData, RecurrenceType, TaskOccurrence, VolunteerTask } from "../types"
@@ -292,7 +293,7 @@ export function TaskOccurrencesPage() {
                       ) : (
                         safeOccurrences.map((occurrence) => (
                           <TableRow key={occurrence.id}>
-                            <TableCell>{new Date(occurrence.occurrence_date).toLocaleDateString()}</TableCell>
+                            <TableCell>{formatDateNumeric(occurrence.occurrence_date)}</TableCell>
                             <TableCell>
                               {occurrence.assigned_count} / {occurrence.required_quantity}
                             </TableCell>
