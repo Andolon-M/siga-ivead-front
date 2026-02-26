@@ -43,7 +43,7 @@ const menuItems = [
     icon: Calendar,
   },
   {
-    title: "Servicios",
+    title: "Cultos",
     href: "/admin/services",
     icon: CalendarDays,
   },
@@ -71,6 +71,11 @@ const menuItems = [
     title: "Mensajería Masiva",
     href: "/admin/mass-messaging",
     icon: MessageSquare,
+  },
+  {
+    title: "Voluntarios",
+    href: "/admin/volunteers",
+    icon: UserCircle,
   },
   {
     title: "Configuración",

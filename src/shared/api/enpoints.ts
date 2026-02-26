@@ -159,5 +159,49 @@ export const API_ENDPOINTS = {
       MEMBER_STATS: (memberId: string) => `/meetings/assignments/member/${memberId}/stats`,
     },
   },
+
+  // Volunteers
+  VOLUNTEERS: {
+    TASKS: {
+      LIST: "/volunteers/tasks",
+      CREATE: "/volunteers/tasks",
+      GET: (id: string) => `/volunteers/tasks/${id}`,
+      UPDATE: (id: string) => `/volunteers/tasks/${id}`,
+      DELETE: (id: string) => `/volunteers/tasks/${id}`,
+    },
+    OCCURRENCES: {
+      LIST: "/volunteers/occurrences",
+      GET: (id: string) => `/volunteers/occurrences/${id}`,
+      GENERATE: (taskId: string) => `/volunteers/tasks/${taskId}/occurrences/generate`,
+    },
+    TASK_ASSIGNMENTS: {
+      CREATE: (occurrenceId: string) => `/volunteers/occurrences/${occurrenceId}/assignments`,
+      BY_OCCURRENCE: (occurrenceId: string) => `/volunteers/occurrences/${occurrenceId}/assignments`,
+      UPDATE: (id: string) => `/volunteers/assignments/task/${id}`,
+      CONFIRM: (id: string) => `/volunteers/assignments/task/${id}/confirm`,
+      CANCEL: (id: string) => `/volunteers/assignments/task/${id}/cancel`,
+      DELETE: (id: string) => `/volunteers/assignments/task/${id}`,
+      BY_MEMBER: (memberId: string) => `/volunteers/assignments/member/${memberId}`,
+    },
+    ACTIVITIES: {
+      LIST: "/volunteers/activities",
+      CREATE: "/volunteers/activities",
+      GET: (id: string) => `/volunteers/activities/${id}`,
+      UPDATE: (id: string) => `/volunteers/activities/${id}`,
+      DELETE: (id: string) => `/volunteers/activities/${id}`,
+    },
+    ACTIVITY_SLOTS: {
+      LIST: (activityId: string) => `/volunteers/activities/${activityId}/slots`,
+      ASSIGN: (activityId: string) => `/volunteers/activities/${activityId}/slots/assign`,
+    },
+    ACTIVITY_ASSIGNMENTS: {
+      BY_ACTIVITY: (activityId: string) => `/volunteers/activities/${activityId}/assignments`,
+      UPDATE: (id: string) => `/volunteers/assignments/activity/${id}`,
+      CONFIRM: (id: string) => `/volunteers/assignments/activity/${id}/confirm`,
+      CANCEL: (id: string) => `/volunteers/assignments/activity/${id}/cancel`,
+      DELETE: (id: string) => `/volunteers/assignments/activity/${id}`,
+      BY_MEMBER: (memberId: string) => `/volunteers/assignments/member/${memberId}/activities`,
+    },
+  },
 }
 

@@ -1,0 +1,5 @@
+export { VolunteersTasksPage } from "./volunteers-tasks-page"
+export { TaskOccurrencesPage } from "./task-occurrences-page"
+export { VolunteersActivitiesPage } from "./volunteers-activities-page"
+export { ActivitySlotsBoardPage } from "./activity-slots-board-page"
+export { MemberVolunteerHistoryPage } from "./member-volunteer-history-page"

@@ -1,0 +1,104 @@
+import { Badge } from "@/shared/components/ui/badge"
+import { Button } from "@/shared/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Check, Clock3, Trash2, UserPlus, X } from "lucide-react"
+import type { ActivityAssignment, ActivitySlot } from "../types"
+
+interface SlotsBoardProps {
+  slots: ActivitySlot[]
+  assignments: ActivityAssignment[]
+  onAssign: (slot: ActivitySlot) => void
+  onConfirm: (assignmentId: string) => void
+  onCancel: (assignmentId: string) => void
+  onDelete: (assignmentId: string) => void
+}
+
+function findAssignment(slot: ActivitySlot, assignments: ActivityAssignment[]) {
+  const safeAssignments = Array.isArray(assignments) ? assignments : []
+  return safeAssignments.find(
+    (assignment) =>
+      assignment.slot_id === slot.id &&
+      (assignment.status === "ASIGNADO" || assignment.status === "CONFIRMADO")
+  )
+}
+
+const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
+  ASIGNADO: "secondary",
+  CONFIRMADO: "default",
+  CANCELADO: "outline",
+  REEMPLAZADO: "destructive",
+}
+
+export function SlotsBoard({ slots, assignments, onAssign, onConfirm, onCancel, onDelete }: SlotsBoardProps) {
+  const safeSlots = Array.isArray(slots) ? slots : []
+  const safeAssignments = Array.isArray(assignments) ? assignments : []
+  
+  if (safeSlots.length === 0) {
+    return <p className="text-sm text-muted-foreground">Esta actividad aún no tiene slots generados.</p>
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {safeSlots.map((slot) => {
+        const assignment = findAssignment(slot, safeAssignments)
+        const isAssigned = !!assignment
+        
+        const memberName = assignment?.members
+          ? `${assignment.members.name}${assignment.members.last_name ? ` ${assignment.members.last_name}` : ""}`
+          : assignment?.member_name || assignment?.member_id
+        
+        return (
+          <Card key={slot.id}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Clock3 className="h-4 w-4" />
+                  {new Date(slot.start_time).toLocaleTimeString()} - {new Date(slot.end_time).toLocaleTimeString()}
+                </span>
+                {assignment ? <Badge variant={statusVariant[assignment.status] || "outline"}>{assignment.status}</Badge> : null}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isAssigned ? (
+                <>
+                  <div>
+                    <p className="font-medium">{memberName}</p>
+                    <p className="text-xs text-muted-foreground">{assignment?.notes || "Sin notas"}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => assignment && onConfirm(assignment.id)}
+                      disabled={assignment?.status === "CONFIRMADO"}
+                    >
+                      <Check className="h-4 w-4 mr-2" />
+                      Confirmar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => assignment && onCancel(assignment.id)}
+                      disabled={assignment?.status === "CANCELADO" || assignment?.status === "REEMPLAZADO"}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancelar
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => assignment && onDelete(assignment.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <Button onClick={() => onAssign(slot)} className="w-full">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Asignar voluntario
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )
+      })}
+    </div>
+  )
+}
