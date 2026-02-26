@@ -180,16 +180,12 @@ export function formatTimeFromISO(dateString: string): string {
   } catch {
     return ""
   }
-}
-
-/**
+}/**
  * Obtiene el día de la semana abreviado (LUN, MAR, etc.)
  */
 export function getDayOfWeekShort(date: Date, locale = "es-ES"): string {
   return date.toLocaleDateString(locale, { weekday: "short" }).toUpperCase().slice(0, 3)
-}
-
-/**
+}/**
  * Obtiene el mes abreviado (ene, feb, etc.)
  */
 export function getMonthShort(date: Date, locale = "es-ES"): string {

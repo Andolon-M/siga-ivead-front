@@ -1,3 +1,4 @@
+import { PhoneWhatsAppLink } from "@/shared/components/phone-whatsapp-link"
 import { Badge } from "@/shared/components/ui/badge"
 import { Button } from "@/shared/components/ui/button"
 import {
@@ -34,7 +35,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 const STATUS_CONFIG = {
-  PENDIENTE: { label: "Pendiente", variant: "secondary" as const, icon: Clock },
+  ASIGNADO: { label: "ASIGNADO", variant: "secondary" as const, icon: Clock },
   CONFIRMADO: { label: "Confirmado", variant: "default" as const, icon: CheckCircle2 },
   CANCELADO: { label: "Cancelado", variant: "destructive" as const, icon: XCircle },
   COMPLETADO: { label: "Completado", variant: "outline" as const, icon: CheckCircle2 },
@@ -75,16 +76,13 @@ export function AssignmentsTable({
           <TableRow>
             <TableHead>Miembro</TableHead>
             <TableHead>Rol</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>Confirmado</TableHead>
+            <TableHead>Celular</TableHead>
             <TableHead>Notas</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {assignments.map((assignment) => {
-            const statusConfig = STATUS_CONFIG[assignment.status]
-            const StatusIcon = statusConfig.icon
             const member = assignment.member
             const role = assignment.required_role
 
@@ -97,43 +95,13 @@ export function AssignmentsTable({
                   {role ? ROLE_LABELS[role.role] ?? role.role : "Sin rol"}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={statusConfig.variant} className="gap-1">
-                    <StatusIcon className="h-3 w-3" />
-                    {statusConfig.label}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {assignment.confirmed_at
-                    ? format(new Date(assignment.confirmed_at), "d MMM, HH:mm", { locale: es })
-                    : "-"}
+                  <PhoneWhatsAppLink phone={member?.cell ?? null} />
                 </TableCell>
                 <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
                   {assignment.notes || "-"}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    {assignment.status === "PENDIENTE" && onConfirm && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onConfirm(assignment.id)}
-                        title="Confirmar"
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-1" />
-                        Confirmar
-                      </Button>
-                    )}
-                    {assignment.status === "CONFIRMADO" && onCancel && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onCancel(assignment.id)}
-                        title="Cancelar"
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Cancelar
-                      </Button>
-                    )}
                     {onDelete && (
                       <Button
                         variant="ghost"

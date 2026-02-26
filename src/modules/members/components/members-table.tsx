@@ -2,8 +2,9 @@ import { Button } from "@/shared/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table"
 import { Badge } from "@/shared/components/ui/badge"
 import { SearchInput } from "@/shared/components/search-input"
-import { Edit, Trash2, User, Phone, Eye } from "lucide-react"
+import { Edit, Trash2, User } from "lucide-react"
 import type { Member } from "../types"
+import { PhoneWhatsAppLink } from "@/shared/components/phone-whatsapp-link"
 
 interface MembersTableProps {
   members: Member[]
@@ -26,7 +27,7 @@ export function MembersTable({ members, onSearch, onEdit, onDelete, onViewDetail
     <div className="space-y-4">
       <SearchInput
         onSearch={onSearch}
-        placeholder="Buscar por nombre o DNI..."
+        placeholder="Buscar por nombre, cedula o telefono..."
         isSearching={isSearching}
       />
 
@@ -55,19 +56,24 @@ export function MembersTable({ members, onSearch, onEdit, onDelete, onViewDetail
                 className={onViewDetails ? "cursor-pointer hover:bg-muted/50" : ""}
                 onClick={() => onViewDetails?.(member.id)}
               >
-                <TableCell className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground " />
-                  {member.name.charAt(0).toUpperCase() + member.name.slice(1)} {member.last_name?.charAt(0).toUpperCase() + member?.last_name?.slice(1)}
+                <TableCell >
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground " />
+                    {member?.name?.charAt(0).toUpperCase() + member?.name?.slice(1)} {member?.last_name?.charAt(0).toUpperCase() + member?.last_name?.slice(1)}
+                  </div>
                 </TableCell>
                 <TableCell>{member.dni_user}</TableCell>
-                <TableCell className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  {member.cell}
+                <TableCell className="" onClick={(e) => e.stopPropagation()}>
+                  <PhoneWhatsAppLink phone={member.cell} />
                 </TableCell>
                 <TableCell>
                   <Badge variant={statusColors[member.status] as any}>{member.status}</Badge>
                 </TableCell>
-                <TableCell>{member.gender}</TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center gap-1.5" title={member.gender}>
+                  {member.gender === "MASCULINO" ? "♂" : "♀"} {member.gender?.toString().charAt(0).toUpperCase()}
+                </span> 
+                  </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                     <Button
