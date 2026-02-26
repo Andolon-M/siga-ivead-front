@@ -17,12 +17,22 @@ interface EditTaskDialogProps {
 
 const recurrenceNeedsDay: RecurrenceType[] = ["WEEKLY", "BIWEEKLY"]
 
+const LOCATION_AUDITORIO = "Auditorio IVE"
+const LOCATION_SELECT_AUDITORIO = "AUDITORIO_IVE"
+const LOCATION_SELECT_OTRA = "OTRA"
+
 export function EditTaskDialog({ open, onOpenChange, task, onSubmit }: EditTaskDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [locationSelect, setLocationSelect] = useState(LOCATION_SELECT_AUDITORIO)
+  const [locationOther, setLocationOther] = useState("")
   const [formData, setFormData] = useState<UpdateVolunteerTaskData>({})
 
   useEffect(() => {
     if (!task) return
+    const loc = task.location?.trim() || ""
+    const isAuditorio = !loc || loc === LOCATION_AUDITORIO
+    setLocationSelect(isAuditorio ? LOCATION_SELECT_AUDITORIO : LOCATION_SELECT_OTRA)
+    setLocationOther(isAuditorio ? "" : loc)
     setFormData({
       name: task.name,
       description: task.description || "",
@@ -36,6 +46,7 @@ export function EditTaskDialog({ open, onOpenChange, task, onSubmit }: EditTaskD
 
   const recurrenceType = (formData.recurrence_type || task?.recurrence_type || "WEEKLY") as RecurrenceType
   const needsDayOfWeek = recurrenceNeedsDay.includes(recurrenceType)
+  const showOtherLocation = locationSelect === LOCATION_SELECT_OTRA
 
   const handleSubmit = async () => {
     if (!task) return
@@ -47,6 +58,12 @@ export function EditTaskDialog({ open, onOpenChange, task, onSubmit }: EditTaskD
       alert("Debes seleccionar día de la semana para esta recurrencia")
       return
     }
+    if (showOtherLocation && !locationOther.trim()) {
+      alert("Indica la otra ubicación.")
+      return
+    }
+
+    const locationValue = locationSelect === LOCATION_SELECT_AUDITORIO ? LOCATION_AUDITORIO : locationOther.trim()
 
     setIsSubmitting(true)
     try {
@@ -54,7 +71,7 @@ export function EditTaskDialog({ open, onOpenChange, task, onSubmit }: EditTaskD
         ...formData,
         name: formData.name?.trim(),
         description: formData.description?.trim() || undefined,
-        location: formData.location?.trim() || undefined,
+        location: locationValue || undefined,
         day_of_week: needsDayOfWeek ? formData.day_of_week : undefined,
       })
       onOpenChange(false)
@@ -106,9 +123,10 @@ export function EditTaskDialog({ open, onOpenChange, task, onSubmit }: EditTaskD
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="WEEKLY">WEEKLY</SelectItem>
-                  <SelectItem value="BIWEEKLY">BIWEEKLY</SelectItem>
-                  <SelectItem value="MONTHLY">MONTHLY</SelectItem>
+                  <SelectItem value="WEEKLY">Semanal</SelectItem>
+                  <SelectItem value="BIWEEKLY">Quincenal</SelectItem>
+                  <SelectItem value="MONTHLY">Mensual</SelectItem>
+                  <SelectItem value="CUSTOM">Personalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -124,13 +142,13 @@ export function EditTaskDialog({ open, onOpenChange, task, onSubmit }: EditTaskD
                   <SelectValue placeholder={needsDayOfWeek ? "Selecciona un día" : "No aplica"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="LUNES">LUNES</SelectItem>
-                  <SelectItem value="MARTES">MARTES</SelectItem>
-                  <SelectItem value="MIERCOLES">MIERCOLES</SelectItem>
-                  <SelectItem value="JUEVES">JUEVES</SelectItem>
-                  <SelectItem value="VIERNES">VIERNES</SelectItem>
-                  <SelectItem value="SABADO">SABADO</SelectItem>
-                  <SelectItem value="DOMINGO">DOMINGO</SelectItem>
+                  <SelectItem value="LUNES">Lunes</SelectItem>
+                  <SelectItem value="MARTES">Martes</SelectItem>
+                  <SelectItem value="MIERCOLES">Miércoles</SelectItem>
+                  <SelectItem value="JUEVES">Jueves</SelectItem>
+                  <SelectItem value="VIERNES">Viernes</SelectItem>
+                  <SelectItem value="SABADO">Sábado</SelectItem>
+                  <SelectItem value="DOMINGO">Domingo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -151,11 +169,29 @@ export function EditTaskDialog({ open, onOpenChange, task, onSubmit }: EditTaskD
             </div>
             <div className="space-y-2">
               <Label htmlFor="task-location-edit">Ubicación</Label>
-              <Input
-                id="task-location-edit"
-                value={formData.location || ""}
-                onChange={(e) => setFormData((current) => ({ ...current, location: e.target.value }))}
-              />
+              <Select
+                value={locationSelect}
+                onValueChange={(v) => {
+                  setLocationSelect(v)
+                  if (v !== LOCATION_SELECT_OTRA) setLocationOther("")
+                }}
+              >
+                <SelectTrigger id="task-location-edit">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={LOCATION_SELECT_AUDITORIO}>{LOCATION_AUDITORIO}</SelectItem>
+                  <SelectItem value={LOCATION_SELECT_OTRA}>Otra</SelectItem>
+                </SelectContent>
+              </Select>
+              {showOtherLocation ? (
+                <Input
+                  value={locationOther}
+                  onChange={(e) => setLocationOther(e.target.value)}
+                  placeholder="Escribe la ubicación"
+                  className="mt-2"
+                />
+              ) : null}
             </div>
           </div>
 

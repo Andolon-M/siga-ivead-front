@@ -2,8 +2,15 @@ import { Badge } from "@/shared/components/ui/badge"
 import { Button } from "@/shared/components/ui/button"
 import { SearchInput } from "@/shared/components/search-input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/components/ui/table"
-import { CalendarPlus, Edit, Eye, Trash2 } from "lucide-react"
-import type { VolunteerTask } from "../types"
+import { Edit, Eye, Trash2 } from "lucide-react"
+import type { RecurrenceType, VolunteerTask } from "../types"
+
+const RECURRENCE_LABEL: Record<RecurrenceType, string> = {
+  WEEKLY: "Semanal",
+  BIWEEKLY: "Quincenal",
+  MONTHLY: "Mensual",
+  CUSTOM: "Personalizado",
+}
 
 interface TasksTableProps {
   tasks: VolunteerTask[]
@@ -20,7 +27,6 @@ export function TasksTable({
   onSearch,
   onEdit,
   onDelete,
-  onGenerateOccurrences,
   onViewOccurrences,
   isSearching,
 }: TasksTableProps) {
@@ -53,14 +59,18 @@ export function TasksTable({
             </TableRow>
           ) : (
             safeTasks.map((task) => (
-              <TableRow key={task.id}>
+              <TableRow
+                key={task.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => onViewOccurrences(task)}
+              >
                 <TableCell>
                   <div className="font-medium">{task.name}</div>
                   {task.description ? <p className="text-xs text-muted-foreground">{task.description}</p> : null}
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">
-                    <Badge variant="outline">{task.recurrence_type}</Badge>
+                    <Badge variant="outline">{RECURRENCE_LABEL[task.recurrence_type] ?? task.recurrence_type}</Badge>
                     {task.day_of_week ? <p className="text-xs text-muted-foreground">{task.day_of_week}</p> : null}
                   </div>
                 </TableCell>
@@ -69,18 +79,10 @@ export function TasksTable({
                 <TableCell>
                   <Badge variant={task.is_active ? "default" : "secondary"}>{task.is_active ? "Activa" : "Inactiva"}</Badge>
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" onClick={() => onViewOccurrences(task)} title="Ver ocurrencias">
                       <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onGenerateOccurrences(task)}
-                      title="Generar ocurrencias"
-                    >
-                      <CalendarPlus className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => onEdit(task)} title="Editar tarea">
                       <Edit className="h-4 w-4" />

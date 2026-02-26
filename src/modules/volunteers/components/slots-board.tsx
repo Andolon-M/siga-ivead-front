@@ -15,13 +15,18 @@ interface SlotsBoardProps {
 
 function findAssignment(slot: ActivitySlot, assignments: ActivityAssignment[]) {
   const safeAssignments = Array.isArray(assignments) ? assignments : []
-  return safeAssignments.find((assignment) => assignment.slot_id === slot.id)
+  return safeAssignments.find(
+    (assignment) =>
+      assignment.slot_id === slot.id &&
+      (assignment.status === "ASIGNADO" || assignment.status === "CONFIRMADO")
+  )
 }
 
 const statusVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-  PENDING: "secondary",
-  CONFIRMED: "default",
-  CANCELLED: "outline",
+  ASIGNADO: "secondary",
+  CONFIRMADO: "default",
+  CANCELADO: "outline",
+  REEMPLAZADO: "destructive",
 }
 
 export function SlotsBoard({ slots, assignments, onAssign, onConfirm, onCancel, onDelete }: SlotsBoardProps) {
@@ -61,11 +66,21 @@ export function SlotsBoard({ slots, assignments, onAssign, onConfirm, onCancel, 
                     <p className="text-xs text-muted-foreground">{assignment?.notes || "Sin notas"}</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => assignment && onConfirm(assignment.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => assignment && onConfirm(assignment.id)}
+                      disabled={assignment?.status === "CONFIRMADO"}
+                    >
                       <Check className="h-4 w-4 mr-2" />
                       Confirmar
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => assignment && onCancel(assignment.id)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => assignment && onCancel(assignment.id)}
+                      disabled={assignment?.status === "CANCELADO" || assignment?.status === "REEMPLAZADO"}
+                    >
                       <X className="h-4 w-4 mr-2" />
                       Cancelar
                     </Button>

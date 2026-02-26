@@ -37,7 +37,7 @@ export function DayFilter({
         <span className="text-sm font-medium text-muted-foreground">
           Filtrar por fecha
         </span>
-        <span className="text-muted-foreground cursor-help" title="Selecciona un día para ver los servicios">
+        <span className="text-muted-foreground cursor-help" title="Selecciona un día para ver los cultos">
           ℹ️
         </span>
       </div>

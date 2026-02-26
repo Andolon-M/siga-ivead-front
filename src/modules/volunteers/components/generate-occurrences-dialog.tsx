@@ -1,9 +1,26 @@
 import { useState } from "react"
+import { X } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
+import { Calendar } from "@/shared/components/ui/calendar"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog"
-import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select"
 import type { GenerateOccurrencesData, VolunteerTask } from "../types"
+
+const MESES = [
+  { value: 1, label: "Enero" },
+  { value: 2, label: "Febrero" },
+  { value: 3, label: "Marzo" },
+  { value: 4, label: "Abril" },
+  { value: 5, label: "Mayo" },
+  { value: 6, label: "Junio" },
+  { value: 7, label: "Julio" },
+  { value: 8, label: "Agosto" },
+  { value: 9, label: "Septiembre" },
+  { value: 10, label: "Octubre" },
+  { value: 11, label: "Noviembre" },
+  { value: 12, label: "Diciembre" },
+]
 
 interface GenerateOccurrencesDialogProps {
   open: boolean
@@ -14,22 +31,47 @@ interface GenerateOccurrencesDialogProps {
 
 const currentDate = new Date()
 
+function toDateOnlyISO(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}T00:00:00.000Z`
+}
+
+const currentYear = currentDate.getFullYear()
+
 export function GenerateOccurrencesDialog({ open, onOpenChange, task, onSubmit }: GenerateOccurrencesDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [year, setYear] = useState(currentDate.getFullYear())
   const [month, setMonth] = useState(currentDate.getMonth() + 1)
+  const [selectedDates, setSelectedDates] = useState<Date[]>([])
+
+  const isCustomTask = task?.recurrence_type === "CUSTOM"
 
   const handleSubmit = async () => {
     if (!task) return
-    if (month < 1 || month > 12) {
-      alert("El mes debe estar entre 1 y 12")
-      return
-    }
-
     setIsSubmitting(true)
     try {
-      await onSubmit(task.id, { year, month })
+      let payload: GenerateOccurrencesData
+      if (isCustomTask) {
+        if (selectedDates.length === 0) {
+          alert("Selecciona al menos una fecha en el calendario.")
+          setIsSubmitting(false)
+          return
+        }
+        const sorted = [...selectedDates].sort((a, b) => a.getTime() - b.getTime())
+        payload = { custom_dates: sorted.map(toDateOnlyISO) }
+      } else {
+        if (month < 1 || month > 12) {
+          alert("El mes debe estar entre 1 y 12")
+          setIsSubmitting(false)
+          return
+        }
+        payload = { year: currentYear, month }
+      }
+
+      await onSubmit(task.id, payload)
       onOpenChange(false)
+      setSelectedDates([])
     } finally {
       setIsSubmitting(false)
     }
@@ -37,23 +79,76 @@ export function GenerateOccurrencesDialog({ open, onOpenChange, task, onSubmit }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>Generar ocurrencias</DialogTitle>
           <DialogDescription>
-            {task ? `Crear ocurrencias para "${task.name}" en un período mensual.` : "Selecciona una tarea primero."}
+            {task
+              ? task.recurrence_type === "CUSTOM"
+                ? `Crear ocurrencias para "${task.name}" a partir de fechas explícitas.`
+                : `Crear ocurrencias para "${task.name}" en un período mensual.`
+              : "Selecciona una tarea primero."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="occ-year">Año</Label>
-            <Input id="occ-year" type="number" value={year} onChange={(e) => setYear(Number(e.target.value || 0))} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="occ-month">Mes</Label>
-            <Input id="occ-month" type="number" min={1} max={12} value={month} onChange={(e) => setMonth(Number(e.target.value || 0))} />
-          </div>
+        <div className="space-y-4">
+          {isCustomTask ? (
+            <div className="space-y-3">
+              <Label>Selecciona las fechas</Label>
+              <Calendar
+                mode="multiple"
+                selected={selectedDates}
+                onSelect={(dates) => setSelectedDates(dates ?? [])}
+                defaultMonth={currentDate}
+                locale={undefined}
+                className="rounded-md border p-3"
+              />
+              {selectedDates.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {[...selectedDates]
+                    .sort((a, b) => a.getTime() - b.getTime())
+                    .map((d) => (
+                      <span
+                        key={d.toISOString()}
+                        className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-sm"
+                      >
+                        {d.toLocaleDateString("es-CL", { day: "numeric", month: "short", year: "numeric" })}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDates((prev) => prev.filter((x) => x.getTime() !== d.getTime()))}
+                          className="rounded p-0.5 hover:bg-muted-foreground/20"
+                          aria-label="Quitar fecha"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                <span className="text-muted-foreground">Año: </span>
+                <span className="font-medium">{currentYear}</span>
+              </div>
+              <div className="space-y-2">
+                <Label>Mes</Label>
+                <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+                  <SelectTrigger id="occ-month">
+                    <SelectValue placeholder="Selecciona un mes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MESES.map((m) => (
+                      <SelectItem key={m.value} value={String(m.value)}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

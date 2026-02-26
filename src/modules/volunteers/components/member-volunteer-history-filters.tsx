@@ -51,9 +51,10 @@ export function MemberVolunteerHistoryFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="PENDING">Pendiente</SelectItem>
-            <SelectItem value="CONFIRMED">Confirmado</SelectItem>
-            <SelectItem value="CANCELLED">Cancelado</SelectItem>
+            <SelectItem value="ASIGNADO">Asignado</SelectItem>
+            <SelectItem value="CONFIRMADO">Confirmado</SelectItem>
+            <SelectItem value="CANCELADO">Cancelado</SelectItem>
+            <SelectItem value="REEMPLAZADO">Reemplazado</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -43,7 +43,7 @@ const menuItems = [
     icon: Calendar,
   },
   {
-    title: "Servicios",
+    title: "Cultos",
     href: "/admin/services",
     icon: CalendarDays,
   },

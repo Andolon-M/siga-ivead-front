@@ -114,7 +114,13 @@ export function MemberVolunteerHistoryPage() {
                       <TableCell>
                         <Badge
                           variant={
-                            item.status === "CONFIRMED" ? "default" : item.status === "PENDING" ? "secondary" : "outline"
+                            item.status === "CONFIRMADO"
+                              ? "default"
+                              : item.status === "ASIGNADO"
+                                ? "secondary"
+                                : item.status === "REEMPLAZADO"
+                                  ? "destructive"
+                                  : "outline"
                           }
                         >
                           {item.status}

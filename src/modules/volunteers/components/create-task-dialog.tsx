@@ -16,19 +16,26 @@ interface CreateTaskDialogProps {
 
 const recurrenceNeedsDay: RecurrenceType[] = ["WEEKLY", "BIWEEKLY"]
 
+const LOCATION_AUDITORIO = "Auditorio IVE"
+const LOCATION_SELECT_AUDITORIO = "AUDITORIO_IVE"
+const LOCATION_SELECT_OTRA = "OTRA"
+
 export function CreateTaskDialog({ open, onOpenChange, onSubmit }: CreateTaskDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [locationSelect, setLocationSelect] = useState(LOCATION_SELECT_AUDITORIO)
+  const [locationOther, setLocationOther] = useState("")
   const [formData, setFormData] = useState<CreateVolunteerTaskData>({
     name: "",
     description: "",
     recurrence_type: "WEEKLY",
     day_of_week: "SABADO",
     default_quantity: 1,
-    location: "",
+    location: LOCATION_AUDITORIO,
     is_active: true,
   })
 
   const needsDayOfWeek = recurrenceNeedsDay.includes(formData.recurrence_type)
+  const showOtherLocation = locationSelect === LOCATION_SELECT_OTRA
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
@@ -39,6 +46,12 @@ export function CreateTaskDialog({ open, onOpenChange, onSubmit }: CreateTaskDia
       alert("Debes seleccionar día de la semana para esta recurrencia")
       return
     }
+    if (showOtherLocation && !locationOther.trim()) {
+      alert("Indica la otra ubicación.")
+      return
+    }
+
+    const locationValue = locationSelect === LOCATION_SELECT_AUDITORIO ? LOCATION_AUDITORIO : locationOther.trim()
 
     setIsSubmitting(true)
     try {
@@ -46,7 +59,7 @@ export function CreateTaskDialog({ open, onOpenChange, onSubmit }: CreateTaskDia
         ...formData,
         name: formData.name.trim(),
         description: formData.description?.trim() || undefined,
-        location: formData.location?.trim() || undefined,
+        location: locationValue || undefined,
         day_of_week: needsDayOfWeek ? formData.day_of_week : undefined,
       })
       onOpenChange(false)
@@ -56,9 +69,11 @@ export function CreateTaskDialog({ open, onOpenChange, onSubmit }: CreateTaskDia
         recurrence_type: "WEEKLY",
         day_of_week: "SABADO",
         default_quantity: 1,
-        location: "",
+        location: LOCATION_AUDITORIO,
         is_active: true,
       })
+      setLocationSelect(LOCATION_SELECT_AUDITORIO)
+      setLocationOther("")
     } finally {
       setIsSubmitting(false)
     }
@@ -109,9 +124,10 @@ export function CreateTaskDialog({ open, onOpenChange, onSubmit }: CreateTaskDia
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="WEEKLY">WEEKLY</SelectItem>
-                  <SelectItem value="BIWEEKLY">BIWEEKLY</SelectItem>
-                  <SelectItem value="MONTHLY">MONTHLY</SelectItem>
+                  <SelectItem value="WEEKLY">Semanal</SelectItem>
+                  <SelectItem value="BIWEEKLY">Quincenal</SelectItem>
+                  <SelectItem value="MONTHLY">Mensual</SelectItem>
+                  <SelectItem value="CUSTOM">Personalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -127,19 +143,19 @@ export function CreateTaskDialog({ open, onOpenChange, onSubmit }: CreateTaskDia
                   <SelectValue placeholder={needsDayOfWeek ? "Selecciona un día" : "No aplica"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="LUNES">LUNES</SelectItem>
+                  <SelectItem value="LUNES">Lunes</SelectItem>
                   <SelectItem value="MARTES">MARTES</SelectItem>
-                  <SelectItem value="MIERCOLES">MIERCOLES</SelectItem>
-                  <SelectItem value="JUEVES">JUEVES</SelectItem>
-                  <SelectItem value="VIERNES">VIERNES</SelectItem>
-                  <SelectItem value="SABADO">SABADO</SelectItem>
-                  <SelectItem value="DOMINGO">DOMINGO</SelectItem>
+                  <SelectItem value="MIERCOLES">Miércoles</SelectItem>
+                  <SelectItem value="JUEVES">Jueves</SelectItem>
+                  <SelectItem value="VIERNES">Viernes</SelectItem>
+                  <SelectItem value="SABADO">Sábado</SelectItem>
+                  <SelectItem value="DOMINGO">Domingo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="space-y-2">
               <Label htmlFor="task-capacity">Cupos por ocurrencia</Label>
               <Input
@@ -154,25 +170,33 @@ export function CreateTaskDialog({ open, onOpenChange, onSubmit }: CreateTaskDia
             </div>
             <div className="space-y-2">
               <Label htmlFor="task-location">Ubicación</Label>
-              <Input
-                id="task-location"
-                value={formData.location}
-                onChange={(e) => setFormData((current) => ({ ...current, location: e.target.value }))}
-                placeholder="Templo principal"
-              />
+              <Select
+                value={locationSelect}
+                onValueChange={(v) => {
+                  setLocationSelect(v)
+                  if (v !== LOCATION_SELECT_OTRA) setLocationOther("")
+                }}
+              >
+                <SelectTrigger id="task-location">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={LOCATION_SELECT_AUDITORIO}>{LOCATION_AUDITORIO}</SelectItem>
+                  <SelectItem value={LOCATION_SELECT_OTRA}>Otra</SelectItem>
+                </SelectContent>
+              </Select>
+              {showOtherLocation ? (
+                <Input
+                  value={locationOther}
+                  onChange={(e) => setLocationOther(e.target.value)}
+                  placeholder="Escribe la ubicación"
+                  className="mt-2"
+                />
+              ) : null}
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div>
-              <p className="font-medium">Tarea activa</p>
-              <p className="text-xs text-muted-foreground">Las tareas inactivas no deberían aceptar nuevas asignaciones.</p>
-            </div>
-            <Switch
-              checked={!!formData.is_active}
-              onCheckedChange={(value) => setFormData((current) => ({ ...current, is_active: value }))}
-            />
-          </div>
+         
         </div>
 
         <DialogFooter>

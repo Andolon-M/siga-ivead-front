@@ -1,4 +1,4 @@
-export type RecurrenceType = "WEEKLY" | "BIWEEKLY" | "MONTHLY"
+export type RecurrenceType = "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "CUSTOM"
 export type DayOfWeek =
   | "LUNES"
   | "MARTES"
@@ -7,7 +7,7 @@ export type DayOfWeek =
   | "VIERNES"
   | "SABADO"
   | "DOMINGO"
-export type AssignmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED"
+export type AssignmentStatus = "ASIGNADO" | "CONFIRMADO" | "CANCELADO" | "REEMPLAZADO"
 
 export interface PaginatedResponse<T> {
   previousPage: number | null
@@ -36,6 +36,9 @@ export interface VolunteerTaskFilters {
   search?: string
   is_active?: boolean
   recurrence_type?: RecurrenceType
+  day_of_week?: DayOfWeek
+  limit?: number
+  offset?: number
   page?: number
   pageSize?: number
 }
@@ -60,10 +63,17 @@ export interface UpdateVolunteerTaskData {
   is_active?: boolean
 }
 
-export interface GenerateOccurrencesData {
-  year: number
-  month: number
-}
+export type GenerateOccurrencesData =
+  | {
+      year: number
+      month: number
+      custom_dates?: never
+    }
+  | {
+      custom_dates: string[]
+      year?: never
+      month?: never
+    }
 
 export interface TaskOccurrence {
   id: string
@@ -78,6 +88,10 @@ export interface TaskOccurrence {
 
 export interface TaskOccurrenceFilters {
   task_id?: string
+  date_from?: string
+  date_to?: string
+  limit?: number
+  offset?: number
   year?: number
   month?: number
   page?: number
@@ -124,6 +138,11 @@ export interface VolunteerActivity {
 
 export interface VolunteerActivityFilters {
   search?: string
+  date_from?: string
+  date_to?: string
+  is_active?: boolean
+  limit?: number
+  offset?: number
   from?: string
   to?: string
   page?: number
@@ -212,6 +231,8 @@ export const VOLUNTEERS_ERROR_MESSAGES: BusinessErrorMap = {
   DAY_OF_WEEK_REQUIRED: "Debes indicar el día de la semana para tareas semanales o quincenales.",
   TASK_NOT_FOUND: "La tarea no existe o fue eliminada.",
   TASK_INACTIVE: "La tarea está inactiva y no permite nuevas operaciones.",
+  YEAR_MONTH_REQUIRED: "Debes indicar año y mes para generar ocurrencias automáticas.",
+  CUSTOM_DATES_REQUIRED: "Debes enviar fechas explícitas para tareas con recurrencia CUSTOM.",
   MEMBER_NOT_FOUND: "El miembro seleccionado no existe.",
   DUPLICATE_ASSIGNMENT: "El miembro ya tiene una asignación activa para este caso.",
   OCCURRENCE_CAPACITY_REACHED: "La ocurrencia alcanzó su capacidad máxima de cupos.",
