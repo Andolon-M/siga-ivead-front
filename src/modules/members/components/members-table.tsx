@@ -62,7 +62,7 @@ export function MembersTable({ members, onSearch, onEdit, onDelete, onViewDetail
                     {member?.name?.charAt(0).toUpperCase() + member?.name?.slice(1)} {member?.last_name?.charAt(0).toUpperCase() + member?.last_name?.slice(1)}
                   </div>
                 </TableCell>
-                <TableCell>{member.dni_user}</TableCell>
+                <TableCell> {member.tipo_dni}: {member.dni_user}</TableCell>
                 <TableCell className="" onClick={(e) => e.stopPropagation()}>
                   <PhoneWhatsAppLink phone={member.cell} />
                 </TableCell>
