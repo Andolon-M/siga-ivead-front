@@ -160,6 +160,11 @@ export const API_ENDPOINTS = {
     },
   },
 
+  // YouTube (público, sin auth)
+  YOUTUBE: {
+    VIDEOS: "/youtube/videos",
+  },
+
   // Volunteers
   VOLUNTEERS: {
     TASKS: {

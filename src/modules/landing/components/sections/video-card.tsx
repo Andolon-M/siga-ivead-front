@@ -1,20 +1,28 @@
 import { Card } from "@/shared/components/ui/card"
 import { Play } from "lucide-react"
-import { useYouTubeVideoInfo } from "../../hooks/useYouTubeVideoInfo"
 
 interface VideoCardProps {
   videoId: string
   onClick: () => void
   showTitle?: boolean
   size?: 'large' | 'medium'
+  /** Título del video (p. ej. desde el listado del backend) */
+  title?: string
+  /** URL de la miniatura (p. ej. desde el listado del backend) */
+  thumbnailUrl?: string
 }
 
-export function VideoCard({ videoId, onClick, showTitle = false, size = 'medium' }: VideoCardProps) {
-  const { videoInfo, loading } = useYouTubeVideoInfo(videoId)
-  
-  const thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
-  const title = videoInfo?.title || 'Cargando...'
-  
+export function VideoCard({
+  videoId,
+  onClick,
+  showTitle = false,
+  size = 'medium',
+  title = '',
+  thumbnailUrl,
+}: VideoCardProps) {
+  const thumbnail =
+    thumbnailUrl ?? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+
   const playIconSize = size === 'large' ? 'w-20 h-20' : 'w-16 h-16'
   const playSize = size === 'large' ? 'h-10 w-10' : 'h-8 w-8'
 
@@ -26,7 +34,7 @@ export function VideoCard({ videoId, onClick, showTitle = false, size = 'medium'
       <div className="relative aspect-video">
         <img
           src={thumbnail}
-          alt={title}
+          alt={title || 'Video'}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
@@ -37,13 +45,7 @@ export function VideoCard({ videoId, onClick, showTitle = false, size = 'medium'
       </div>
       {showTitle && (
         <div className="p-4 bg-card">
-          <p className="text-sm font-medium line-clamp-2">
-            {loading ? (
-              <span className="text-muted-foreground animate-pulse">Cargando título...</span>
-            ) : (
-              title
-            )}
-          </p>
+          <p className="text-sm font-medium line-clamp-2">{title || 'Video'}</p>
         </div>
       )}
     </Card>
