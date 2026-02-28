@@ -77,7 +77,10 @@ export function HeroSection() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="bg-live hover:bg-live/90 text-live-foreground border-live px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                  className="bg-live hover:bg-live/90 text-live-foreground dark:bg-live dark:text-live-foreground hover:dark:bg-live/90 hover:dark:text-live-foreground border-live px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                  onClick={() =>
+                    document.getElementById("predicas")?.scrollIntoView({ behavior: "smooth" })
+                  }
                 >
                   <Radio className="mr-2 h-5 w-5 animate-pulse" />
                   En vivo
@@ -130,10 +133,13 @@ export function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className={`bg-live hover:bg-live/90 text-live-foreground border-live px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-700 hover:scale-105 ${
+                className={`bg-live hover:bg-live/90 text-live-foreground border-live px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl dark:bg-live dark:text-live-foreground dark:border-live hover:dark:bg-live/90 hover:dark:text-live-foreground hover:dark:border-live transition-all duration-700 hover:scale-105 ${
                   currentSlide === 1 ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
                 }`}
                 style={{ transitionDelay: currentSlide === 1 ? "600ms" : "0ms" }}
+                onClick={() =>
+                  document.getElementById("horarios")?.scrollIntoView({ behavior: "smooth" })
+                }
               >
                 <Calendar className="mr-2 h-5 w-5" />
                 Más horarios
