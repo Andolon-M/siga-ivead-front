@@ -11,10 +11,17 @@ import {
   Settings,
   LayoutDashboard,
   Shield,
-  MessageSquare,
   X,
 } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
+
+const SaraIcon = ({ className }: { className?: string }) => (
+  <img 
+    src="/Sara%20perfil%20cuadrado.png" 
+    alt="Sara" 
+    className={cn("w-5 h-5 rounded-md object-cover", className)} 
+  />
+)
 
 const menuItems = [
   {
@@ -63,14 +70,9 @@ const menuItems = [
     icon: Shield,
   },
   {
-    title: "Plantillas WhatsApp",
-    href: "/admin/meta-templates",
-    icon: FileText,
-  },
-  {
-    title: "Mensajería Masiva",
-    href: "/admin/mass-messaging",
-    icon: MessageSquare,
+    title: "SARA",
+    href: "/admin/sara",
+    icon: SaraIcon,
   },
   {
     title: "Voluntarios",
@@ -126,7 +128,7 @@ export function AdminSidebar({ isOpen = true, onClose }: AdminSidebarProps) {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
             return (
               <Link
                 key={item.href}

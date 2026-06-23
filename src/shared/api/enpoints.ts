@@ -208,5 +208,11 @@ export const API_ENDPOINTS = {
       BY_MEMBER: (memberId: string) => `/volunteers/assignments/member/${memberId}/activities`,
     },
   },
+
+  // Sara Admin (Sub-panel)
+  SARA_ADMIN: {
+    CHATS: "/sara/admin/chats",
+    CHAT_MESSAGES: (id: string) => `/sara/admin/chats/${id}/messages`,
+  },
 }
 

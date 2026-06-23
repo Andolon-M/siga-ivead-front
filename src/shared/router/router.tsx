@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { LandingPage } from '@/modules/landing/pages/public/landing-page'
 import { AdminLayout } from '@/shared/layouts/admin-layout'
+import { SaraLayout } from '@/shared/layouts/sara-layout'
 import { AdminDashboard } from '@/modules/dashboard/pages/dashboard'
 import { UsersPage } from '@/modules/users/pages'
 import { MembersPage, MemberDetailPage } from '@/modules/members/pages'
@@ -14,6 +15,7 @@ import { RolesPage } from '@/modules/roles/pages'
 import { SettingsPage } from '@/modules/settings/pages'
 import { MassMessagingPage } from '@/modules/mass-messaging/pages'
 import { MetaTemplatesPage, MetaTemplateDetailPage } from '@/modules/meta-templates/pages'
+import { SaraChatsPage, SaraChatDetailPage, EmptyChatSelection } from '@/modules/sara-chats/pages'
 import {
   ActivitySlotsBoardPage,
   MemberVolunteerHistoryPage,
@@ -69,15 +71,31 @@ export default function AppRouter() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="files" element={<FilesPage />} />
         <Route path="roles" element={<RolesPage />} />
-        <Route path="meta-templates" element={<MetaTemplatesPage />} />
-        <Route path="meta-templates/:id" element={<MetaTemplateDetailPage />} />
-        <Route path="mass-messaging" element={<MassMessagingPage />} />
         <Route path="volunteers" element={<VolunteersTasksPage />} />
         <Route path="volunteers/occurrences" element={<TaskOccurrencesPage />} />
         <Route path="volunteers/activities" element={<VolunteersActivitiesPage />} />
         <Route path="volunteers/activities/:id/slots" element={<ActivitySlotsBoardPage />} />
         <Route path="volunteers/history" element={<MemberVolunteerHistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
+      </Route>
+
+      {/* Sub-panel SARA — layout propio con sidebar */}
+      <Route
+        path="/admin/sara"
+        element={
+          <ProtectedRoute>
+            <SaraLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="chats" replace />} />
+        <Route path="chats" element={<SaraChatsPage />}>
+          <Route index element={<EmptyChatSelection />} />
+          <Route path=":id" element={<SaraChatDetailPage />} />
+        </Route>
+        <Route path="mass-messaging" element={<MassMessagingPage />} />
+        <Route path="meta-templates" element={<MetaTemplatesPage />} />
+        <Route path="meta-templates/:id" element={<MetaTemplateDetailPage />} />
       </Route>
 
       {/* Ruta por defecto */}
