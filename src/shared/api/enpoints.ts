@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/members/${id}`,
     DELETE: (id: string) => `/members/${id}`,
     GET: (id: string) => `/members/${id}`,
+    EXPORT: "/members/export",
     STATS: "/members/stats",
   },
 

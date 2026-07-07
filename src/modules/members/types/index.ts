@@ -104,9 +104,10 @@ export interface MemberFilters {
   dni?: string
   userId?: string
   search?: string
-  status?: MemberStatus
+  status?: string
   gender?: Gender
   tipo_dni?: DocumentType
+  ageGroup?: 'ADULT' | 'MINOR'
   page?: number
   pageSize?: number
 }

@@ -27,6 +27,7 @@ export const membersService = {
       if (filters.status) params.append("status", filters.status)
       if (filters.gender) params.append("gender", filters.gender)
       if (filters.tipo_dni) params.append("tipo_dni", filters.tipo_dni)
+      if (filters.ageGroup) params.append("ageGroup", filters.ageGroup)
       if (filters.page) params.append("page", filters.page.toString())
       if (filters.pageSize) params.append("pageSize", filters.pageSize.toString())
     }
@@ -34,6 +35,35 @@ export const membersService = {
     const url = `${API_ENDPOINTS.MEMBERS.LIST}${params.toString() ? `?${params.toString()}` : ""}`
     const response = await axiosInstance.get<ApiResponse<PaginatedResponse<Member> | Member>>(url)
     return response.data.data
+  },
+
+  /**
+   * Exportar miembros a Excel
+   */
+  async exportMembers(filters?: MemberFilters): Promise<void> {
+    const params = new URLSearchParams()
+    
+    if (filters) {
+      if (filters.search) params.append("search", filters.search)
+      if (filters.status) params.append("status", filters.status)
+      if (filters.gender) params.append("gender", filters.gender)
+      if (filters.tipo_dni) params.append("tipo_dni", filters.tipo_dni)
+      if (filters.ageGroup) params.append("ageGroup", filters.ageGroup)
+    }
+    
+    const url = `${API_ENDPOINTS.MEMBERS.EXPORT}${params.toString() ? `?${params.toString()}` : ""}`
+    const response = await axiosInstance.get(url, { responseType: 'blob' })
+    
+    // Crear objeto URL para descargar el archivo
+    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.setAttribute('download', 'miembros_reporte.xlsx')
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(downloadUrl)
   },
 
   /**

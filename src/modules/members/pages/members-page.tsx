@@ -2,17 +2,22 @@ import { useState, useMemo, useCallback } from "react"
 import { useNavigate } from "react-router"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
-import { Plus, Loader2 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select"
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/components/ui/dropdown-menu"
+import { Plus, Loader2, Download, Filter } from "lucide-react"
 import { CreateMemberDialog } from "../components/create-member-dialog"
 import { EditMemberDialog } from "../components/edit-member-dialog"
 import { MembersTable } from "../components/members-table"
 import { useMembers } from "../hooks/use-members"
 import { membersService } from "../services/members.service"
-import type { Member, CreateMemberData, UpdateMemberData } from "../types"
+import type { Member, CreateMemberData, UpdateMemberData, MemberStatus, Gender } from "../types"
 
 export function MembersPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilters, setStatusFilters] = useState<MemberStatus[]>([])
+  const [genderFilter, setGenderFilter] = useState<Gender | "ALL">("ALL")
+  const [ageGroupFilter, setAgeGroupFilter] = useState<"ADULT" | "MINOR" | "ALL">("ALL")
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(20)
 
@@ -20,11 +25,26 @@ export function MembersPage() {
   const filters = useMemo(
     () => ({
       search: searchQuery || undefined,
+      status: statusFilters.length > 0 ? statusFilters.join(',') : undefined,
+      gender: genderFilter !== "ALL" ? genderFilter : undefined,
+      ageGroup: ageGroupFilter !== "ALL" ? ageGroupFilter : undefined,
       page: currentPage,
       pageSize,
     }),
-    [searchQuery, currentPage, pageSize]
+    [searchQuery, statusFilters, genderFilter, ageGroupFilter, currentPage, pageSize]
   )
+
+  const toggleStatusFilter = (status: MemberStatus) => {
+    setStatusFilters(prev => {
+      const isSelected = prev.includes(status)
+      if (isSelected) {
+        return prev.filter(s => s !== status)
+      } else {
+        return [...prev, status]
+      }
+    })
+    setCurrentPage(1)
+  }
 
   // Usar el hook con los filtros dinámicos
   const { members, loading, error, pagination, refetch } = useMembers(filters)
@@ -33,6 +53,24 @@ export function MembersPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Exportar Excel
+  const handleExport = async () => {
+    try {
+      setIsExporting(true)
+      await membersService.exportMembers({
+        search: filters.search,
+        status: filters.status,
+        gender: filters.gender,
+        ageGroup: filters.ageGroup,
+      })
+    } catch (error) {
+      console.error("Error al exportar:", error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   // Crear miembro
   const handleCreateMember = async (data: CreateMemberData) => {
@@ -124,7 +162,7 @@ export function MembersPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
             <div>
               <CardTitle>Lista de Miembros</CardTitle>
               <CardDescription>
@@ -135,7 +173,62 @@ export function MembersPage() {
                 )}
               </CardDescription>
             </div>
-            {loading && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+            <div className="flex items-center gap-2">
+              {loading && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+              <Button variant="outline" onClick={handleExport} disabled={isExporting || (members.length === 0 && !loading)}>
+                {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                Exportar a Excel
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-[180px] justify-between font-normal text-muted-foreground">
+                  {statusFilters.length === 0 ? "Todos los estados" : `${statusFilters.length} estado(s)`}
+                  <Filter className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[180px]">
+                <DropdownMenuLabel>Filtrar por estado</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem checked={statusFilters.includes("ACTIVO")} onCheckedChange={() => toggleStatusFilter("ACTIVO")}>
+                  Activo
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem checked={statusFilters.includes("ASISTENTE")} onCheckedChange={() => toggleStatusFilter("ASISTENTE")}>
+                  Asistente
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem checked={statusFilters.includes("INACTIVO")} onCheckedChange={() => toggleStatusFilter("INACTIVO")}>
+                  Inactivo
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem checked={statusFilters.includes("VISITANTE")} onCheckedChange={() => toggleStatusFilter("VISITANTE")}>
+                  Visitante
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Select value={genderFilter} onValueChange={(v: any) => { setGenderFilter(v); setCurrentPage(1); }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Género" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todos los géneros</SelectItem>
+                <SelectItem value="MASCULINO">Masculino</SelectItem>
+                <SelectItem value="FEMENINO">Femenino</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={ageGroupFilter} onValueChange={(v: any) => { setAgeGroupFilter(v); setCurrentPage(1); }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Edad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todas las edades</SelectItem>
+                <SelectItem value="ADULT">Mayores de edad</SelectItem>
+                <SelectItem value="MINOR">Menores de edad</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
