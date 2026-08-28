@@ -159,6 +159,13 @@ export const API_ENDPOINTS = {
       DELETE: (id: string) => `/meetings/sessions/${id}`,
       ROLES_CHECK: (sessionId: string) => `/meetings/sessions/${sessionId}/roles/check`,
       ASSIGNMENTS: (sessionId: string) => `/meetings/sessions/${sessionId}/assignments`,
+      SONGS: {
+        LIST: (sessionId: string) => `/meetings/sessions/${sessionId}/songs`,
+        ADD: (sessionId: string) => `/meetings/sessions/${sessionId}/songs`,
+        REORDER: (sessionId: string) => `/meetings/sessions/${sessionId}/songs/reorder`,
+        UPDATE: (sessionId: string, songItemId: string) => `/meetings/sessions/${sessionId}/songs/${songItemId}`,
+        DELETE: (sessionId: string, songItemId: string) => `/meetings/sessions/${sessionId}/songs/${songItemId}`,
+      },
     },
     ASSIGNMENTS: {
       GET: (id: string) => `/meetings/assignments/${id}`,

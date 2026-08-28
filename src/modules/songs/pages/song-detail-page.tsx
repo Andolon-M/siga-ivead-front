@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Music,
   ArrowLeft,
@@ -24,6 +24,9 @@ import {
   ChevronRight,
   ChevronLeft,
   GripVertical,
+  SkipBack,
+  SkipForward,
+  ListMusic,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -38,6 +41,8 @@ import {
 import { Can } from '@/shared/components/auth/can';
 import type { Song, MusicalKey } from '../types';
 import { songsService } from '../services/songs.service';
+import { meetingsService } from '@/modules/services/services/meetings.service';
+import type { MeetingSessionSongItem, MeetingSession } from '@/modules/services/types';
 import {
   MUSICAL_KEY_SHORT,
   transposeSongContent,
@@ -49,12 +54,20 @@ import { PrintSongModal } from '../components/print-song-modal';
 export function SongDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('sessionId');
+
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const mobileControlsRef = useRef<HTMLDivElement>(null);
 
   const [song, setSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isInitialPrefLoaded = useRef<boolean>(false);
+
+  // Estados de Setlist / Sesión de Culto (cuando se abre desde un servicio)
+  const [sessionSongs, setSessionSongs] = useState<MeetingSessionSongItem[]>([]);
+  const [currentSession, setCurrentSession] = useState<MeetingSession | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
 
   // Estados interactivos
   const [semitones, setSemitones] = useState<number>(0);
@@ -238,6 +251,73 @@ export function SongDetailPage() {
     loadSongAndPreferences();
   }, [id, navigate]);
 
+  // Cargar lista de canciones de la sesión si se accede en contexto de un culto
+  useEffect(() => {
+    if (!sessionId) {
+      setSessionSongs([]);
+      setCurrentSession(null);
+      return;
+    }
+
+    const loadSessionSetlist = async () => {
+      try {
+        setIsLoadingSession(true);
+        const [songsData, sessionData] = await Promise.all([
+          meetingsService.getSessionSongs(sessionId),
+          meetingsService.getSessionById(sessionId).catch(() => null),
+        ]);
+        setSessionSongs(songsData);
+        if (sessionData) setCurrentSession(sessionData);
+      } catch (err) {
+        console.error('Error al cargar setlist de la sesión:', err);
+      } finally {
+        setIsLoadingSession(false);
+      }
+    };
+
+    loadSessionSetlist();
+  }, [sessionId]);
+
+  // Posición actual en el setlist del culto
+  const currentIndex = useMemo(() => {
+    if (!sessionId || sessionSongs.length === 0 || !id) return -1;
+    return sessionSongs.findIndex((s) => s.song_id === id || s.song?.id === id);
+  }, [sessionId, sessionSongs, id]);
+
+  const prevSongItem = useMemo(() => {
+    if (currentIndex > 0) return sessionSongs[currentIndex - 1];
+    return null;
+  }, [currentIndex, sessionSongs]);
+
+  const nextSongItem = useMemo(() => {
+    if (currentIndex >= 0 && currentIndex < sessionSongs.length - 1) {
+      return sessionSongs[currentIndex + 1];
+    }
+    return null;
+  }, [currentIndex, sessionSongs]);
+
+  const handleNavigateSong = (targetSongId: string) => {
+    navigate(`/admin/songs/${targetSongId}?sessionId=${sessionId}`);
+  };
+
+  // Atajos de teclado en vivo para cambiar de canción (Flecha Izq / Flecha Der / PageUp / PageDown)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      if ((e.key === 'ArrowLeft' || e.key === 'PageUp') && prevSongItem) {
+        e.preventDefault();
+        handleNavigateSong(prevSongItem.song_id);
+      } else if ((e.key === 'ArrowRight' || e.key === 'PageDown') && nextSongItem) {
+        e.preventDefault();
+        handleNavigateSong(nextSongItem.song_id);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [prevSongItem, nextSongItem, sessionId]);
+
   // Guardar preferencias en segundo plano (debounce 600ms)
   useEffect(() => {
     if (!song || !isInitialPrefLoaded.current) return;
@@ -328,9 +408,41 @@ export function SongDetailPage() {
       {/* Header en Pantalla Completa (Modo Atril de Escenario) */}
       {isFullscreen ? (
         <div className="border-b pb-3 mb-6 flex flex-wrap items-center justify-between gap-3 select-none">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{song.title}</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">{song.artist}</p>
+          <div className="flex items-center gap-3">
+            {sessionId && (
+              <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-lg border border-primary/20">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-primary"
+                  onClick={() => prevSongItem && handleNavigateSong(prevSongItem.song_id)}
+                  disabled={!prevSongItem}
+                  title={prevSongItem ? `Anterior: ${prevSongItem.song.title}` : 'Primera canción'}
+                >
+                  <SkipBack className="h-4 w-4" />
+                </Button>
+
+                <span className="text-xs font-bold font-mono text-primary px-1">
+                  {currentIndex >= 0 ? `${currentIndex + 1} / ${sessionSongs.length}` : ''}
+                </span>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-primary"
+                  onClick={() => nextSongItem && handleNavigateSong(nextSongItem.song_id)}
+                  disabled={!nextSongItem}
+                  title={nextSongItem ? `Siguiente: ${nextSongItem.song.title}` : 'Última canción'}
+                >
+                  <SkipForward className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{song.title}</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground font-medium">{song.artist}</p>
+            </div>
           </div>
 
           <div className="hidden lg:flex flex-wrap items-center gap-2">
@@ -436,40 +548,88 @@ export function SongDetailPage() {
         </div>
       ) : (
         /* Header Normal */
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/admin/songs')}
-              title="Volver a la lista de canciones"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{song.title}</h1>
-                {song.song_type && (
-                  <Badge
-                    variant="outline"
-                    className="font-normal text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
-                  >
-                    {song.song_type.name}
-                  </Badge>
-                )}
-                {song.theme && (
-                  <Badge
-                    variant="outline"
-                    className="font-normal text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                  >
-                    {song.theme.name}
-                  </Badge>
-                )}
-                {song.version_type && (
-                  <Badge variant="secondary" className="font-normal text-xs">
-                    {song.version_type.name}
-                  </Badge>
-                )}
+        <div className="space-y-3 border-b pb-4">
+          {/* Barra de Navegación de Sesión / Setlist si está en contexto de Culto */}
+          {sessionId && (
+            <div className="flex items-center justify-between bg-primary/10 dark:bg-primary/15 border border-primary/25 px-4 py-2.5 rounded-xl">
+              <div className="flex items-center gap-2 min-w-0">
+                <ListMusic className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-xs font-semibold text-primary truncate">
+                  {currentSession?.recurring_meetings?.name
+                    ? `${currentSession.recurring_meetings.name}`
+                    : 'Repertorio del Culto'}
+                </span>
+                <Badge variant="default" className="text-xs px-2 py-0 bg-primary shrink-0">
+                  Canción {currentIndex + 1} de {sessionSongs.length}
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1 text-xs bg-background hover:bg-muted"
+                  onClick={() => prevSongItem && handleNavigateSong(prevSongItem.song_id)}
+                  disabled={!prevSongItem}
+                  title={prevSongItem ? `Anterior: ${prevSongItem.song.title}` : 'Primera canción'}
+                >
+                  <SkipBack className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Anterior</span>
+                </Button>
+
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-8 gap-1 text-xs bg-primary text-primary-foreground font-semibold"
+                  onClick={() => nextSongItem && handleNavigateSong(nextSongItem.song_id)}
+                  disabled={!nextSongItem}
+                  title={nextSongItem ? `Siguiente: ${nextSongItem.song.title}` : 'Última canción'}
+                >
+                  <span className="hidden sm:inline">Siguiente</span>
+                  <SkipForward className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  sessionId
+                    ? navigate(`/admin/services/session/${sessionId}`)
+                    : navigate('/admin/songs')
+                }
+                title={sessionId ? 'Volver a la sesión del culto' : 'Volver a la lista de canciones'}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{song.title}</h1>
+                  {song.song_type && (
+                    <Badge
+                      variant="outline"
+                      className="font-normal text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
+                    >
+                      {song.song_type.name}
+                    </Badge>
+                  )}
+                  {song.theme && (
+                    <Badge
+                      variant="outline"
+                      className="font-normal text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                    >
+                      {song.theme.name}
+                    </Badge>
+                  )}
+                  {song.version_type && (
+                    <Badge variant="secondary" className="font-normal text-xs">
+                      {song.version_type.name}
+                    </Badge>
+                  )}
                 {song.bpm && (
                   <Badge
                     variant="outline"
@@ -538,6 +698,7 @@ export function SongDetailPage() {
               </Button>
             </Can>
           </div>
+        </div>
         </div>
       )}
 
@@ -688,7 +849,36 @@ export function SongDetailPage() {
               </Button>
             </div>
 
-            {/* 4. Pantalla Completa / Salir */}
+            {/* 4. Navegación de Setlist Móvil (si está en contexto de culto) */}
+            {sessionId && (
+              <div className="flex flex-col items-center gap-1 bg-primary/10 p-1 rounded-xl border border-primary/20">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-primary"
+                  onClick={() => prevSongItem && handleNavigateSong(prevSongItem.song_id)}
+                  disabled={!prevSongItem}
+                  title={prevSongItem ? `Anterior: ${prevSongItem.song.title}` : 'Primera canción'}
+                >
+                  <SkipBack className="h-3.5 w-3.5" />
+                </Button>
+                <span className="text-[10px] font-bold font-mono text-primary">
+                  {currentIndex + 1}/{sessionSongs.length}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-primary"
+                  onClick={() => nextSongItem && handleNavigateSong(nextSongItem.song_id)}
+                  disabled={!nextSongItem}
+                  title={nextSongItem ? `Siguiente: ${nextSongItem.song.title}` : 'Última canción'}
+                >
+                  <SkipForward className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+
+            {/* 5. Pantalla Completa / Salir */}
             <Button
               variant={isFullscreen ? 'secondary' : 'outline'}
               size="icon"

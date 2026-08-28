@@ -214,3 +214,36 @@ export interface RecurringMeetingStats {
   inactive: number
   byType?: { recurrence_type: string; _count: number }[]
 }
+
+// ========== Repertorio de Canciones en la Sesión ==========
+import type { Song, MusicalKey } from "@/modules/songs/types"
+
+export interface MeetingSessionSongItem {
+  id: string
+  session_id: string
+  song_id: string
+  order: number
+  custom_key?: MusicalKey | null
+  notes?: string | null
+  created_at?: string
+  updated_at?: string
+  song: Song
+}
+
+export interface CreateSessionSongRequest {
+  song_id: string
+  order?: number
+  custom_key?: MusicalKey | null
+  notes?: string | null
+}
+
+export interface UpdateSessionSongRequest {
+  order?: number
+  custom_key?: MusicalKey | null
+  notes?: string | null
+}
+
+export interface SessionSongsListResponse {
+  songs: MeetingSessionSongItem[]
+}
+

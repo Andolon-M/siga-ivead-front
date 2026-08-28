@@ -20,6 +20,10 @@ import type {
   SessionsListResponse,
   RolesListResponse,
   AssignmentsListResponse,
+  MeetingSessionSongItem,
+  CreateSessionSongRequest,
+  UpdateSessionSongRequest,
+  SessionSongsListResponse,
 } from "../types"
 
 export const meetingsService = {
@@ -209,5 +213,54 @@ export const meetingsService = {
 
   async deleteAssignment(id: string): Promise<void> {
     await axiosInstance.delete(API_ENDPOINTS.MEETINGS.ASSIGNMENTS.DELETE(id))
+  },
+
+  // ========== Repertorio de Canciones (Setlist / Playlist) de la Sesión ==========
+
+  async getSessionSongs(sessionId: string): Promise<MeetingSessionSongItem[]> {
+    const response = await axiosInstance.get<ApiResponse<SessionSongsListResponse>>(
+      API_ENDPOINTS.MEETINGS.SESSIONS.SONGS.LIST(sessionId)
+    )
+    return response.data.data.songs
+  },
+
+  async addSongToSession(
+    sessionId: string,
+    data: CreateSessionSongRequest
+  ): Promise<MeetingSessionSongItem> {
+    const response = await axiosInstance.post<ApiResponse<{ songItem: MeetingSessionSongItem }>>(
+      API_ENDPOINTS.MEETINGS.SESSIONS.SONGS.ADD(sessionId),
+      data
+    )
+    return response.data.data.songItem
+  },
+
+  async reorderSessionSongs(
+    sessionId: string,
+    songItemIds: string[]
+  ): Promise<MeetingSessionSongItem[]> {
+    const response = await axiosInstance.put<ApiResponse<SessionSongsListResponse>>(
+      API_ENDPOINTS.MEETINGS.SESSIONS.SONGS.REORDER(sessionId),
+      { song_item_ids: songItemIds }
+    )
+    return response.data.data.songs
+  },
+
+  async updateSessionSong(
+    sessionId: string,
+    songItemId: string,
+    data: UpdateSessionSongRequest
+  ): Promise<MeetingSessionSongItem> {
+    const response = await axiosInstance.put<ApiResponse<{ songItem: MeetingSessionSongItem }>>(
+      API_ENDPOINTS.MEETINGS.SESSIONS.SONGS.UPDATE(sessionId, songItemId),
+      data
+    )
+    return response.data.data.songItem
+  },
+
+  async removeSongFromSession(sessionId: string, songItemId: string): Promise<void> {
+    await axiosInstance.delete(
+      API_ENDPOINTS.MEETINGS.SESSIONS.SONGS.DELETE(sessionId, songItemId)
+    )
   },
 }

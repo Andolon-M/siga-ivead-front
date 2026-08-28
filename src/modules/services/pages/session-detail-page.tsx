@@ -4,7 +4,7 @@ import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs"
 import { Badge } from "@/shared/components/ui/badge"
-import { ArrowLeft, Plus, Calendar, Clock, MapPin, Users, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, Plus, Calendar, Clock, MapPin, Users, CheckCircle2, ListMusic } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { meetingsService } from "../services/meetings.service"
@@ -14,6 +14,7 @@ import { CreateRoleDialog } from "../components/create-role-dialog"
 import { RolesTable } from "../components/roles-table"
 import { AssignMemberDialog } from "../components/assign-member-dialog"
 import { AssignmentsTable } from "../components/assignments-table"
+import { SessionSongsTab } from "../components/session-songs-tab"
 import { extractDateOnly, formatTimeFromISO } from "@/shared/lib/date-utils"
 import type { MeetingSession, CreateRequiredRoleRequest, CreateAssignmentRequest } from "../types"
 
@@ -192,11 +193,23 @@ export function SessionDetailPage() {
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue="assignments" className="space-y-4">
+      <Tabs defaultValue="songs" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="songs" className="gap-2">
+            <ListMusic className="h-4 w-4" />
+            Repertorio de Alabanza
+          </TabsTrigger>
           <TabsTrigger value="assignments">Asignaciones</TabsTrigger>
           <TabsTrigger value="roles">Roles Requeridos</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="songs" className="space-y-4">
+          <SessionSongsTab
+            sessionId={id!}
+            sessionName={meeting?.name}
+            sessionDate={formattedDate}
+          />
+        </TabsContent>
 
         <TabsContent value="assignments" className="space-y-4">
           <div className="flex items-center justify-between">
