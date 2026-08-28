@@ -67,35 +67,10 @@ function buildNotificationFromMassEvent(eventName: string, payload: MassMessageS
         source: "mass_messaging" as const,
         event: eventName,
         type: "info" as const,
-        title: "Campaña encolada",
-        message: `Request ${requestId ?? "N/A"} encolado para ${payload.totalRecipients ?? 0} destinatarios.`,
-        requestId,
-      }
-    case "mass_message.processing":
-      return {
-        source: "mass_messaging" as const,
-        event: eventName,
-        type: "info" as const,
-        title: "Campaña en proceso",
-        message: `Procesando envío para ${payload.phone ?? "destinatario"} (request ${requestId ?? "N/A"}).`,
-        requestId,
-      }
-    case "mass_message.sent":
-      return {
-        source: "mass_messaging" as const,
-        event: eventName,
-        type: "success" as const,
-        title: "Mensaje enviado",
-        message: `Envío exitoso a ${payload.phone ?? "destinatario"} (request ${requestId ?? "N/A"}).`,
-        requestId,
-      }
-    case "mass_message.failed":
-      return {
-        source: "mass_messaging" as const,
-        event: eventName,
-        type: "error" as const,
-        title: "Error en envío",
-        message: `Falló envío a ${payload.phone ?? "destinatario"} (${payload.error ?? "sin detalle"}).`,
+        title: "Campaña iniciada",
+        message: payload.templateName
+          ? `Campaña "${payload.templateName}" encolada para ${payload.totalRecipients ?? 0} destinatarios.`
+          : `Campaña encolada para ${payload.totalRecipients ?? 0} destinatarios (request ${requestId ?? "N/A"}).`,
         requestId,
       }
     case "mass_message.completed":
@@ -104,7 +79,7 @@ function buildNotificationFromMassEvent(eventName: string, payload: MassMessageS
         event: eventName,
         type: "success" as const,
         title: "Campaña completada",
-        message: `Request ${requestId ?? "N/A"} completado: ${payload.summary?.sent ?? 0} enviados, ${payload.summary?.failed ?? 0} fallidos.`,
+        message: `Campaña finalizada: ${payload.summary?.sent ?? 0} enviados exitosamente, ${payload.summary?.failed ?? 0} fallidos.`,
         requestId,
       }
     default:
@@ -122,6 +97,17 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   const addNotification = useCallback((notification: Omit<NotificationEvent, "id" | "createdAt" | "read">) => {
     setNotifications((current) => {
+      // Evitar duplicados consecutivos del mismo evento para el mismo requestId
+      if (notification.requestId) {
+        const isDuplicate = current.some(
+          (item) =>
+            item.requestId === notification.requestId &&
+            item.event === notification.event &&
+            Date.now() - new Date(item.createdAt).getTime() < 10000
+        )
+        if (isDuplicate) return current
+      }
+
       const nextItem: NotificationEvent = {
         ...notification,
         id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -134,21 +120,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   useSocketEvent<MassMessageSocketPayload>("mass_message.queued", (payload) => {
     const notification = buildNotificationFromMassEvent("mass_message.queued", payload)
-    if (notification) addNotification(notification)
-  })
-
-  useSocketEvent<MassMessageSocketPayload>("mass_message.processing", (payload) => {
-    const notification = buildNotificationFromMassEvent("mass_message.processing", payload)
-    if (notification) addNotification(notification)
-  })
-
-  useSocketEvent<MassMessageSocketPayload>("mass_message.sent", (payload) => {
-    const notification = buildNotificationFromMassEvent("mass_message.sent", payload)
-    if (notification) addNotification(notification)
-  })
-
-  useSocketEvent<MassMessageSocketPayload>("mass_message.failed", (payload) => {
-    const notification = buildNotificationFromMassEvent("mass_message.failed", payload)
     if (notification) addNotification(notification)
   })
 

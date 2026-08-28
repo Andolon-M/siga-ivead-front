@@ -30,7 +30,7 @@ export function NotificationsPanel() {
   } = useNotifications()
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative shrink-0">
           <Bell className="h-5 w-5" />
