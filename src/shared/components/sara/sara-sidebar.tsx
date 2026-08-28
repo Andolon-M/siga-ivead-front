@@ -65,7 +65,7 @@ export function SaraSidebar({ isOpen = true, onClose }: SaraSidebarProps) {
             />
             <div>
               <h2 className="font-bold text-lg">SARA</h2>
-              <p className="text-xs text-muted-foreground">Agente IA</p>
+              <p className="text-xs text-muted-foreground">Agente IA IVEAD</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={onClose}>

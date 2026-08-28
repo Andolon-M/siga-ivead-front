@@ -1,16 +1,26 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
-import { Menu, X, LogIn, LayoutDashboard, User } from "lucide-react"
+import { Menu, X, LogIn, LayoutDashboard, LogOut, ChevronDown } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { ThemeToggle } from "@/shared/components/theme-toggle"
 import { useTheme } from "@/shared/contexts/theme-provider"
 import { useAuth } from "@/shared/contexts/auth-context"
+import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/components/ui/dropdown-menu"
+import { cn } from "@/shared/lib/utils"
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { resolvedTheme } = useTheme()
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, logout } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -34,6 +44,15 @@ export function Navigation() {
     }
   }
 
+  const handleLogout = async () => {
+    await logout()
+    setIsMobileMenuOpen(false)
+  }
+
+  const getInitials = (email?: string) => {
+    return (email?.slice(0, 2) || "U").toUpperCase()
+  }
+
   const navLinks = [
     { to: "#inicio", label: "Inicio" },
     { to: "#predicas", label: "Prédicas" },
@@ -42,14 +61,15 @@ export function Navigation() {
     { to: "#contactenos", label: "Contáctenos" },
   ]
 
+  const navTextWhite = resolvedTheme === "dark" || !isScrolled
   const logoSrc =
     resolvedTheme === "dark"
       ? "/images/logo-ive-white.png"
       : isScrolled
         ? "/images/logo-ive-color.png"
         : "/images/logo-ive-white.png"
-  const textColor = resolvedTheme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"
-  const subtextColor = resolvedTheme === "dark" ? "text-white/80" : isScrolled ? "text-muted-foreground" : "text-white/80"
+  const textColor = navTextWhite ? "text-white" : "text-foreground"
+  const subtextColor = navTextWhite ? "text-white/80" : "text-muted-foreground"
 
   return (
     <nav
@@ -78,48 +98,66 @@ export function Navigation() {
                 href={link.to}
                 onClick={(e) => handleNavClick(e, link.to)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all hover:bg-primary hover:text-primary-foreground ${
-                  resolvedTheme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"
+                  navTextWhite ? "text-white" : "text-foreground"
                 } ${link.to === "#inicio" ? "bg-primary text-primary-foreground" : ""}`}
               >
                 {link.label}
               </a>
             ))}
+
             {isAuthenticated ? (
-              <>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigate("/admin")}
-                  className={
-                    resolvedTheme === "dark" || !isScrolled
-                      ? "border-white text-white hover:bg-white/10"
-                      : ""
-                  }
-                >
-                  <LayoutDashboard className="h-4 w-4 mr-2" />
-                  Panel Admin
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className={
-                    resolvedTheme === "dark" || !isScrolled
-                      ? "text-white hover:bg-white/10"
-                      : ""
-                  }
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  <span className="max-w-[100px] truncate">{user?.email.split("@")[0]}</span>
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "flex items-center gap-2 rounded-full px-3 py-1.5 h-auto transition-all",
+                      navTextWhite
+                        ? "text-white hover:bg-white/15 hover:text-white border border-white/20"
+                        : "text-foreground hover:bg-accent border border-border"
+                    )}
+                  >
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
+                        {getInitials(user?.email)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="max-w-[120px] truncate text-sm font-medium">
+                      {user?.email.split("@")[0]}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none truncate h-4">{user?.email}</p>
+                      <p className="text-xs leading-none text-muted-foreground capitalize">
+                        {user?.role?.name || "Usuario"}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>SIGA Inicio</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Cerrar Sesión</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <Link to="/login">
                 <Button
                   size="sm"
                   className={
-                    resolvedTheme === "dark" || !isScrolled
-                      ? "bg-white text-primary hover:bg-white/90"
-                      : ""
+                    navTextWhite
+                      ? "bg-white text-primary hover:bg-white/90 shadow-sm"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
                   }
                 >
                   <LogIn className="h-4 w-4 mr-2" />
@@ -127,88 +165,91 @@ export function Navigation() {
                 </Button>
               </Link>
             )}
-            <div
-              className={
-                resolvedTheme === "dark"
-                  ? "[&_button]:text-white [&_button]:hover:bg-white/10"
-                  : isScrolled
-                    ? ""
-                    : "[&_button]:text-white [&_button]:hover:bg-white/10"
-              }
-            >
-              <ThemeToggle />
-            </div>
+
+            <ThemeToggle
+              className={navTextWhite ? "text-white hover:bg-white/15 hover:text-white" : ""}
+              iconClassName={navTextWhite && resolvedTheme !== "dark" ? "text-white" : undefined}
+            />
           </div>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
-            <div
-              className={
-                resolvedTheme === "dark"
-                  ? "[&_button]:text-white [&_button]:hover:bg-white/10"
-                  : isScrolled
-                    ? ""
-                    : "[&_button]:text-white [&_button]:hover:bg-white/10"
-              }
+            <ThemeToggle
+              className={navTextWhite ? "text-white hover:bg-white/15 hover:text-white" : ""}
+              iconClassName={navTextWhite && resolvedTheme !== "dark" ? "text-white" : undefined}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className={navTextWhite ? "text-white hover:bg-white/15 hover:text-white" : ""}
             >
-              <ThemeToggle />
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-              {isMobileMenuOpen ? (
-                <X className={resolvedTheme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"} />
-              ) : (
-                <Menu className={resolvedTheme === "dark" ? "text-white" : isScrolled ? "text-foreground" : "text-white"} />
-              )}
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden pb-4 animate-in slide-in-from-top">
-            <div className="flex flex-col gap-2">
+          <div className="md:hidden pb-6 animate-in slide-in-from-top">
+            <div className="flex flex-col gap-2 rounded-xl bg-card/95 backdrop-blur-md p-4 border shadow-lg">
               {navLinks.map((link) => (
                 <a
                   key={link.to}
                   href={link.to}
                   onClick={(e) => handleNavClick(e, link.to)}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-primary hover:text-primary-foreground ${
-                    link.to === "#inicio" ? "bg-primary text-primary-foreground" : "bg-card"
+                    link.to === "#inicio" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
                   }`}
                 >
                   {link.label}
                 </a>
               ))}
-              {isAuthenticated ? (
-                <>
-                  <Button 
-                    className="w-full" 
-                    size="sm"
-                    onClick={() => {
-                      navigate("/admin")
-                      setIsMobileMenuOpen(false)
-                    }}
-                  >
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Panel Admin
-                  </Button>
-                  <Button 
-                    className="w-full" 
-                    size="sm"
-                    variant="outline"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    {user?.email.split("@")[0]}
-                  </Button>
-                </>
-              ) : (
-                <Link to="/login" className="w-full">
-                  <Button className="w-full" size="sm">
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Iniciar Sesión
-                  </Button>
-                </Link>
-              )}
+
+              <div className="pt-2 border-t mt-2">
+                {isAuthenticated ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 rounded-lg">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                          {getInitials(user?.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{user?.email}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{user?.role?.name || "Usuario"}</p>
+                      </div>
+                    </div>
+                    <Button 
+                      className="w-full justify-start" 
+                      size="sm"
+                      onClick={() => {
+                        navigate("/admin")
+                        setIsMobileMenuOpen(false)
+                      }}
+                    >
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      SIGA Inicio
+                    </Button>
+                    <Button 
+                      className="w-full justify-start text-red-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30" 
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Cerrar Sesión
+                    </Button>
+                  </div>
+                ) : (
+                  <Link to="/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Button className="w-full" size="sm">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Iniciar Sesión
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -16,10 +16,10 @@ import {
 import { Button } from "@/shared/components/ui/button"
 
 const SaraIcon = ({ className }: { className?: string }) => (
-  <img 
-    src="/Sara%20perfil%20cuadrado.png" 
-    alt="Sara" 
-    className={cn("w-5 h-5 rounded-md object-cover", className)} 
+  <img
+    src="/Sara%20perfil%20cuadrado.png"
+    alt="Sara"
+    className={cn("w-5 h-5 rounded-md object-cover", className)}
   />
 )
 
@@ -80,22 +80,22 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    label: "Finanzas",
-    items: [
-      {
-        title: "Reportes Financieros",
-        href: "/admin/reports",
-        icon: DollarSign,
-      },
-    ],
-  },
-  {
     label: "Agente IA",
     items: [
       {
         title: "SARA",
         href: "/admin/sara",
         icon: SaraIcon,
+      },
+    ],
+  },
+  {
+    label: "Finanzas",
+    items: [
+      {
+        title: "Reportes Financieros",
+        href: "/admin/reports",
+        icon: DollarSign,
       },
     ],
   },
