@@ -27,17 +27,18 @@ import {
   SkipBack,
   SkipForward,
   ListMusic,
+  MoreVertical,
+  X,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/shared/components/ui/select';
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/shared/components/ui/dropdown-menu';
 import { Can } from '@/shared/components/auth/can';
 import type { Song, MusicalKey } from '../types';
 import { songsService } from '../services/songs.service';
@@ -50,6 +51,7 @@ import {
 } from '../utils/chord-transposer';
 import { ChordSheetViewer } from '../components/chord-sheet-viewer';
 import { PrintSongModal } from '../components/print-song-modal';
+import { SetlistSheet } from '../components/setlist-sheet';
 
 export function SongDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +70,7 @@ export function SongDetailPage() {
   const [sessionSongs, setSessionSongs] = useState<MeetingSessionSongItem[]>([]);
   const [currentSession, setCurrentSession] = useState<MeetingSession | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
+  const [isSetlistSheetOpen, setIsSetlistSheetOpen] = useState<boolean>(false);
 
   // Estados interactivos
   const [semitones, setSemitones] = useState<number>(0);
@@ -88,16 +91,33 @@ export function SongDetailPage() {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isMobileControlsOpen, setIsMobileControlsOpen] = useState<boolean>(false);
 
+  // Estado para colapsar / ocultar la barra flotante de navegación inferior deslizándola a la derecha
+  const [isBottomNavCollapsed, setIsBottomNavCollapsed] = useState<boolean>(false);
+  const bottomNavTouchStart = useRef<{ x: number; y: number } | null>(null);
+  const bottomNavMouseStart = useRef<number | null>(null);
+
   // Estados de posicionamiento y arrastre de la burbuja flotante móvil
   const [bubbleSide, setBubbleSide] = useState<'left' | 'right'>('right');
-  const [bubbleY, setBubbleY] = useState<number>(110);
+  const [bubbleY, setBubbleY] = useState<number>(170);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const dragInfoRef = useRef<{ startX: number; startY: number; initialY: number; moved: boolean }>({
     startX: 0,
     startY: 0,
-    initialY: 110,
+    initialY: 170,
     moved: false,
   });
+
+  // Gestos táctiles de deslizamiento (swipe horizontal) para cambiar canciones en móvil/tablet
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+
+  // Sincronizar estado con evento nativo de pantalla completa (por ejemplo al pulsar tecla Esc)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   // Cerrar controles flotantes al hacer clic / tap fuera de ellos
   useEffect(() => {
@@ -165,36 +185,13 @@ export function SongDetailPage() {
     };
   }, [isDragging]);
 
-  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-
-    dragInfoRef.current = {
-      startX: clientX,
-      startY: clientY,
-      initialY: bubbleY,
-      moved: false,
-    };
-    setIsDragging(true);
-  };
-
-  const handleBubbleClick = (e: React.MouseEvent) => {
-    // Si fue un arrastre, no abrir los controles
-    if (dragInfoRef.current.moved) {
-      e.stopPropagation();
-      return;
-    }
-    setIsMobileControlsOpen(true);
-  };
-
   // Alternar pantalla completa
   const handleToggleFullscreen = async () => {
     try {
-      const willBeFullscreen = !isFullscreen;
-      setIsFullscreen(willBeFullscreen);
-
-      if (willBeFullscreen) {
-        if (fullscreenContainerRef.current?.requestFullscreen) {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if (fullscreenContainerRef.current?.requestFullscreen) {
           await fullscreenContainerRef.current.requestFullscreen();
         }
       } else {
@@ -318,6 +315,71 @@ export function SongDetailPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [prevSongItem, nextSongItem, sessionId]);
 
+  // Gestos táctiles de navegación horizontal
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartPos.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartPos.current || e.changedTouches.length === 0) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartPos.current.x;
+    const deltaY = e.changedTouches[0].clientY - touchStartPos.current.y;
+    touchStartPos.current = null;
+
+    // Solo si el deslizamiento horizontal es mayor a 65px y más pronunciado que el scroll vertical
+    if (Math.abs(deltaX) > 65 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0 && nextSongItem) {
+        handleNavigateSong(nextSongItem.song_id);
+      } else if (deltaX > 0 && prevSongItem) {
+        handleNavigateSong(prevSongItem.song_id);
+      }
+    }
+  };
+
+  // Gestos táctiles para deslizar y ocultar/mostrar la barra flotante de navegación inferior
+  const handleBottomNavTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      bottomNavTouchStart.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const handleBottomNavTouchEnd = (e: React.TouchEvent) => {
+    if (!bottomNavTouchStart.current || e.changedTouches.length === 0) return;
+    const deltaX = e.changedTouches[0].clientX - bottomNavTouchStart.current.x;
+    const deltaY = e.changedTouches[0].clientY - bottomNavTouchStart.current.y;
+    bottomNavTouchStart.current = null;
+
+    if (deltaX > 20 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      setIsBottomNavCollapsed(true);
+    } else if (deltaX < -20 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      setIsBottomNavCollapsed(false);
+    }
+  };
+
+  const handleBottomNavMouseDown = (e: React.MouseEvent) => {
+    bottomNavMouseStart.current = e.clientX;
+  };
+
+  const handleBottomNavMouseUp = (e: React.MouseEvent) => {
+    if (bottomNavMouseStart.current !== null) {
+      const deltaX = e.clientX - bottomNavMouseStart.current;
+      bottomNavMouseStart.current = null;
+      if (deltaX > 20) {
+        setIsBottomNavCollapsed(true);
+      } else if (deltaX < -20) {
+        setIsBottomNavCollapsed(false);
+      }
+    }
+  };
+
   // Guardar preferencias en segundo plano (debounce 600ms)
   useEffect(() => {
     if (!song || !isInitialPrefLoaded.current) return;
@@ -399,6 +461,8 @@ export function SongDetailPage() {
   return (
     <div
       ref={fullscreenContainerRef}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className={`space-y-6 max-w-6xl mx-auto pb-16 transition-colors ${
         isFullscreen
           ? 'bg-background text-foreground fixed inset-0 z-[100] max-w-none p-4 sm:p-8 overflow-y-auto'
@@ -407,160 +471,211 @@ export function SongDetailPage() {
     >
       {/* Header en Pantalla Completa (Modo Atril de Escenario) */}
       {isFullscreen ? (
-        <div className="border-b pb-3 mb-6 flex flex-wrap items-center justify-between gap-3 select-none">
-          <div className="flex items-center gap-3">
-            {sessionId && (
-              <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-lg border border-primary/20">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-primary"
-                  onClick={() => prevSongItem && handleNavigateSong(prevSongItem.song_id)}
-                  disabled={!prevSongItem}
-                  title={prevSongItem ? `Anterior: ${prevSongItem.song.title}` : 'Primera canción'}
-                >
-                  <SkipBack className="h-4 w-4" />
-                </Button>
+        <div className="border-b pb-3 mb-6 select-none">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">{song.title}</h1>
 
-                <span className="text-xs font-bold font-mono text-primary px-1">
-                  {currentIndex >= 0 ? `${currentIndex + 1} / ${sessionSongs.length}` : ''}
-                </span>
+                {/* Previsualización en letras pequeñas de la siguiente canción (Escritorio) */}
+                {sessionId && nextSongItem && (
+                  <button
+                    onClick={() => handleNavigateSong(nextSongItem.song_id)}
+                    className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs transition-colors cursor-pointer group shrink-0"
+                    title={`Ir a la siguiente canción: ${nextSongItem.song?.title}`}
+                  >
+                    <span className="text-[10px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                      &gt; Siguiente:
+                    </span>
+                    <span className="font-semibold text-xs truncate max-w-[140px] sm:max-w-[200px]">
+                      {nextSongItem.song?.title}
+                    </span>
+                    <ChevronRight className="h-3 w-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] sm:text-xs text-muted-foreground font-normal mt-0.5 truncate">
+                {song.artist_rel?.name || song.artist}
+              </p>
+            </div>
 
+            {/* En Móvil Fullscreen: Únicamente botón de lista */}
+            {sessionId && sessionSongs.length > 0 && (
+              <div className="lg:hidden flex items-center shrink-0">
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-primary"
-                  onClick={() => nextSongItem && handleNavigateSong(nextSongItem.song_id)}
-                  disabled={!nextSongItem}
-                  title={nextSongItem ? `Siguiente: ${nextSongItem.song.title}` : 'Última canción'}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2 gap-1 bg-muted/40 hover:bg-muted border border-border/70 text-foreground rounded-lg"
+                  onClick={() => setIsSetlistSheetOpen(true)}
+                  title="Ver repertorio de canciones"
                 >
-                  <SkipForward className="h-4 w-4" />
+                  <ListMusic className="h-4 w-4 text-primary" />
+                  <span className="text-[10px] font-mono font-bold text-muted-foreground">
+                    {sessionSongs.length}
+                  </span>
                 </Button>
               </div>
             )}
 
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{song.title}</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium">{song.artist}</p>
-            </div>
-          </div>
-
-          <div className="hidden lg:flex flex-wrap items-center gap-2">
-            {/* Tono */}
-            <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-lg border">
-              <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setSemitones((prev) => prev - 1)}
-                title="Bajar medio tono"
-              >
-                <Minus className="h-3.5 w-3.5" />
-              </Button>
-              <div className="w-16 h-7 bg-primary text-primary-foreground font-mono font-bold text-xs rounded shadow-xs flex items-center justify-center shrink-0 select-none">
-                <span>{currentKeyDisplay}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setSemitones((prev) => prev + 1)}
-                title="Subir medio tono"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                onClick={handleResetToOriginalKey}
-                disabled={semitones === 0}
-                title={semitones === 0 ? 'Tono original' : 'Restablecer tono original'}
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
-            {/* Toggle Acordes */}
-            <Button
-              variant={showChords ? 'default' : 'outline'}
-              size="sm"
-              className="h-8 text-xs gap-1.5"
-              onClick={() => setShowChords(!showChords)}
-            >
-              {showChords ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-              {showChords ? 'Acordes' : 'Solo Letra'}
-            </Button>
-
-            {/* Zoom */}
-            <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
-                disabled={fontSize <= 10}
-                title="Reducir letra"
-              >
-                <ZoomOut className="h-3.5 w-3.5" />
-              </Button>
-              <span className="text-xs font-mono px-1.5">{fontSize}px</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setFontSize((prev) => Math.min(28, prev + 1))}
-                disabled={fontSize >= 28}
-                title="Aumentar letra"
-              >
-                <ZoomIn className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
-            {/* Columnas */}
-            <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
-              {([1, 2, 3] as const).map((col) => (
+            {/* Controles de Barra Superior en Escritorio */}
+            <div className="hidden lg:flex flex-wrap items-center gap-2">
+              {/* Botón de Lista del Repertorio Completo */}
+              {sessionId && sessionSongs.length > 0 && (
                 <Button
-                  key={col}
-                  variant={columns === col ? 'secondary' : 'ghost'}
+                  variant="outline"
                   size="sm"
-                  className="h-7 px-2 text-xs font-mono"
-                  onClick={() => setColumns(col)}
+                  className="h-8 gap-1.5 text-xs font-semibold bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:text-primary shadow-xs"
+                  onClick={() => setIsSetlistSheetOpen(true)}
+                  title="Permite ver toda la lista e ir directo a otra canción"
                 >
-                  {col} Col
+                  <ListMusic className="h-4 w-4" />
+                  <span className="hidden xl:inline">Repertorio</span>
+                  <span className="text-[10px] font-mono bg-primary text-primary-foreground px-1.5 py-0.2 rounded-full font-bold">
+                    {sessionSongs.length}
+                  </span>
                 </Button>
-              ))}
-            </div>
+              )}
 
-            {/* Salir de Pantalla Completa */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 border-primary/40 text-primary"
-              onClick={handleToggleFullscreen}
-              title="Salir de pantalla completa (Esc)"
-            >
-              <Minimize className="h-4 w-4" />
-              Salir (Esc)
-            </Button>
+              {/* Tono */}
+              <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-lg border">
+                <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setSemitones((prev) => prev - 1)}
+                  title="Bajar medio tono"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </Button>
+                <div className="w-16 h-7 bg-primary text-primary-foreground font-mono font-bold text-xs rounded shadow-xs flex items-center justify-center shrink-0 select-none">
+                  <span>{currentKeyDisplay}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setSemitones((prev) => prev + 1)}
+                  title="Subir medio tono"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                  onClick={handleResetToOriginalKey}
+                  disabled={semitones === 0}
+                  title={semitones === 0 ? 'Tono original' : 'Restablecer tono original'}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              {/* Toggle Acordes */}
+              <Button
+                variant={showChords ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => setShowChords(!showChords)}
+              >
+                {showChords ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                {showChords ? 'Acordes' : 'Solo Letra'}
+              </Button>
+
+              {/* Zoom */}
+              <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                  disabled={fontSize <= 10}
+                  title="Reducir letra"
+                >
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </Button>
+                <span className="text-xs font-mono px-1.5">{fontSize}px</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setFontSize((prev) => Math.min(28, prev + 1))}
+                  disabled={fontSize >= 28}
+                  title="Aumentar letra"
+                >
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              {/* Columnas */}
+              <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
+                {([1, 2, 3] as const).map((col) => (
+                  <Button
+                    key={col}
+                    variant={columns === col ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 px-2 text-xs font-mono"
+                    onClick={() => setColumns(col)}
+                  >
+                    {col} Col
+                  </Button>
+                ))}
+              </div>
+
+              {/* Salir de Pantalla Completa */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-primary/40 text-primary"
+                onClick={handleToggleFullscreen}
+                title="Salir de pantalla completa (Esc)"
+              >
+                <Minimize className="h-4 w-4" />
+                Salir (Esc)
+              </Button>
+            </div>
           </div>
+
+          {/* En Móvil Fullscreen: Barra limpia de siguiente canción abajo del título */}
+          {sessionId && nextSongItem && (
+            <div className="lg:hidden mt-2 pt-2 border-t border-border/40">
+              <button
+                onClick={() => handleNavigateSong(nextSongItem.song_id)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs transition-colors cursor-pointer border border-primary/20"
+                title={`Ir a la siguiente canción: ${nextSongItem.song?.title}`}
+              >
+                <span className="flex items-center gap-1.5 truncate">
+                  <span className="text-[10px] font-bold text-primary/70 uppercase">Siguiente:</span>
+                  <span className="font-semibold truncate">{nextSongItem.song?.title}</span>
+                </span>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         /* Header Normal */
         <div className="space-y-3 border-b pb-4">
-          {/* Barra de Navegación de Sesión / Setlist si está en contexto de Culto */}
+          {/* Barra de Navegación de Sesión / Setlist si está en contexto de Culto (Visible en tablet/desktop) */}
           {sessionId && (
-            <div className="flex items-center justify-between bg-primary/10 dark:bg-primary/15 border border-primary/25 px-4 py-2.5 rounded-xl">
+            <div className="hidden sm:flex items-center justify-between bg-primary/10 dark:bg-primary/15 border border-primary/25 px-3 sm:px-4 py-2.5 rounded-xl gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <ListMusic className="h-4 w-4 text-primary shrink-0" />
-                <span className="text-xs font-semibold text-primary truncate">
-                  {currentSession?.recurring_meetings?.name
-                    ? `${currentSession.recurring_meetings.name}`
-                    : 'Repertorio del Culto'}
-                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 gap-1.5 text-primary hover:bg-primary/20 font-semibold text-xs shrink-0"
+                  onClick={() => setIsSetlistSheetOpen(true)}
+                  title="Ver todo el repertorio"
+                >
+                  <ListMusic className="h-4 w-4" />
+                  <span className="truncate max-w-[200px]">
+                    {currentSession?.recurring_meetings?.name || 'Repertorio del Culto'}
+                  </span>
+                </Button>
+
                 <Badge variant="default" className="text-xs px-2 py-0 bg-primary shrink-0">
-                  Canción {currentIndex + 1} de {sessionSongs.length}
+                  {currentIndex + 1} de {sessionSongs.length}
                 </Badge>
               </div>
 
@@ -592,123 +707,188 @@ export function SongDetailPage() {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  sessionId
-                    ? navigate(`/admin/services/session/${sessionId}`)
-                    : navigate('/admin/songs')
-                }
-                title={sessionId ? 'Volver a la sesión del culto' : 'Volver a la lista de canciones'}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{song.title}</h1>
-                  {song.song_type && (
-                    <Badge
-                      variant="outline"
-                      className="font-normal text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
-                    >
-                      {song.song_type.name}
-                    </Badge>
-                  )}
-                  {song.theme && (
-                    <Badge
-                      variant="outline"
-                      className="font-normal text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                    >
-                      {song.theme.name}
-                    </Badge>
-                  )}
-                  {song.version_type && (
-                    <Badge variant="secondary" className="font-normal text-xs">
-                      {song.version_type.name}
-                    </Badge>
-                  )}
-                {song.bpm && (
-                  <Badge
-                    variant="outline"
-                    className={`font-normal text-xs ${
-                      song.bpm >= 100
-                        ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30'
-                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
-                    }`}
-                  >
-                    {song.bpm >= 100 ? '⚡ Rápida' : '🕊️ Lenta'} ({song.bpm} BPM)
-                  </Badge>
-                )}
+          {/* Encabezado Principal de Canción */}
+          <div className="space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              {/* Lado Izquierdo: Volver + Título */}
+              <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 mt-0.5"
+                  onClick={() =>
+                    sessionId
+                      ? navigate(`/admin/services/session/${sessionId}`)
+                      : navigate('/admin/songs')
+                  }
+                  title={sessionId ? 'Volver a la sesión del culto' : 'Volver a la lista de canciones'}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground leading-tight">
+                      {song.title}
+                    </h1>
+
+                    {/* Previsualización en letras pequeñas de la siguiente canción (Escritorio) */}
+                    {sessionId && nextSongItem && (
+                      <button
+                        onClick={() => handleNavigateSong(nextSongItem.song_id)}
+                        className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs transition-colors cursor-pointer group shrink-0"
+                        title={`Ir a la siguiente canción: ${nextSongItem.song?.title}`}
+                      >
+                        <span className="text-[10px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
+                          &gt; Siguiente:
+                        </span>
+                        <span className="font-semibold text-xs truncate max-w-[140px] sm:max-w-[220px]">
+                          {nextSongItem.song?.title}
+                        </span>
+                        <ChevronRight className="h-3 w-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Nombre del Autor y Todos los Badges agrupados juntos */}
+                  <div className="flex items-center gap-2 mt-1 flex-wrap text-xs">
+                    <span className="text-[11px] sm:text-xs text-muted-foreground font-normal">
+                      {song.artist_rel?.name || song.artist}
+                    </span>
+
+                    {song.bpm && (
+                      <Badge
+                        variant="outline"
+                        className={`font-normal text-[11px] h-5 px-2 ${
+                          song.bpm >= 100
+                            ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30'
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                        }`}
+                      >
+                        {song.bpm >= 100 ? '⚡ Rápida' : '🕊️ Lenta'} ({song.bpm} BPM)
+                      </Badge>
+                    )}
+
+                    {song.version_type && (
+                      <Badge variant="secondary" className="font-normal text-[11px] h-5 px-2">
+                        {song.version_type.name}
+                      </Badge>
+                    )}
+
+                    {song.song_type && (
+                      <Badge
+                        variant="outline"
+                        className="font-normal text-[11px] h-5 px-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
+                      >
+                        {song.song_type.name}
+                      </Badge>
+                    )}
+
+                    {song.theme && (
+                      <Badge
+                        variant="outline"
+                        className="font-normal text-[11px] h-5 px-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                      >
+                        {song.theme.name}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-0.5 font-medium">
-                {song.artist_rel?.name || song.artist}
-              </p>
+
+              {/* Lado Derecho: Botones de Acción */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Botón de Lista en Móvil cuando no es Fullscreen */}
+                {sessionId && sessionSongs.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="sm:hidden h-8 px-2 gap-1 bg-muted/40 hover:bg-muted border border-border/70 text-foreground rounded-lg"
+                    onClick={() => setIsSetlistSheetOpen(true)}
+                    title="Ver repertorio completo"
+                  >
+                    <ListMusic className="h-4 w-4 text-primary" />
+                    <span className="text-[10px] font-mono font-bold text-muted-foreground">
+                      {sessionSongs.length}
+                    </span>
+                  </Button>
+                )}
+
+                {/* Botón Imprimir / PDF */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2.5 sm:px-3 gap-1.5 text-xs shadow-xs"
+                  onClick={() => setIsPrintModalOpen(true)}
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Imprimir / PDF</span>
+                </Button>
+
+                {/* Menú de Más Opciones (Tres puntos ⋮ con Editar y Eliminar) */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                      title="Más opciones"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <Can resource="songs" action="update">
+                      <DropdownMenuItem
+                        onClick={() => navigate(`/admin/songs/${song.id}/edit`)}
+                        className="cursor-pointer gap-2 text-xs"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                        <span>Editar canción</span>
+                      </DropdownMenuItem>
+                    </Can>
+
+                    <Can resource="songs" action="delete">
+                      <DropdownMenuItem
+                        onClick={handleDeleteSong}
+                        className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive focus:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Eliminar canción</span>
+                      </DropdownMenuItem>
+                    </Can>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
-          </div>
 
-          {/* Acciones Superiores */}
-          <div className="flex flex-wrap items-center gap-2">
-            {song.multitrack_url && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-indigo-600 border-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
-                onClick={() => window.open(song.multitrack_url!, '_blank')}
-              >
-                <FileAudio className="h-4 w-4" />
-                Multitrack
-                <ExternalLink className="h-3 w-3 ml-0.5 opacity-70" />
-              </Button>
+            {/* En Móvil Normal: Barra limpia de siguiente canción */}
+            {sessionId && nextSongItem && (
+              <div className="sm:hidden pt-1.5 border-t border-border/40">
+                <button
+                  onClick={() => handleNavigateSong(nextSongItem.song_id)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs transition-colors cursor-pointer border border-primary/20"
+                  title={`Ir a la siguiente canción: ${nextSongItem.song?.title}`}
+                >
+                  <span className="flex items-center gap-1.5 truncate">
+                    <span className="text-[10px] font-bold text-primary/70 uppercase">Siguiente:</span>
+                    <span className="font-semibold truncate">{nextSongItem.song?.title}</span>
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                </button>
+              </div>
             )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setIsPrintModalOpen(true)}
-            >
-              <Printer className="h-4 w-4" />
-              Imprimir / PDF
-            </Button>
-
-            <Can resource="songs" action="update">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/admin/songs/${song.id}/edit`)}
-                className="gap-1.5"
-              >
-                <Edit2 className="h-4 w-4" />
-                Editar
-              </Button>
-            </Can>
-
-            <Can resource="songs" action="delete">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDeleteSong}
-                className="text-destructive hover:bg-destructive/10"
-                title="Eliminar canción"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </Can>
           </div>
-        </div>
         </div>
       )}
 
-      {/* Columna Flotante Lateral Móvil / Tablet (Draggable, reposicionable y con click-outside) */}
+      {/* Columna Flotante Lateral Móvil / Tablet ("Más delgada", sin header "Ajustes", sin navegación interna) */}
       <div
         ref={mobileControlsRef}
         className="lg:hidden fixed z-50 transition-all select-none touch-none"
         style={{
           top: `${bubbleY}px`,
-          ...(bubbleSide === 'right' ? { right: '8px' } : { left: '8px' }),
+          ...(bubbleSide === 'right' ? { right: '6px' } : { left: '6px' }),
         }}
       >
         {/* Pestaña / Burbuja para expandir (Arrastrable con touch o mouse) */}
@@ -737,79 +917,73 @@ export function SongDetailPage() {
             }}
           >
             <div
-              className={`h-11 px-3 py-1 bg-background/90 dark:bg-background/95 backdrop-blur-md border shadow-lg flex items-center gap-1.5 text-xs font-semibold ${
+              className={`h-9 px-2 bg-background/90 dark:bg-background/95 backdrop-blur-md border shadow-lg flex items-center gap-1 text-xs font-semibold ${
                 bubbleSide === 'right'
-                  ? 'rounded-l-2xl border-r-0 pl-2 pr-3'
-                  : 'rounded-r-2xl border-l-0 pr-2 pl-3'
+                  ? 'rounded-l-xl border-r-0 pl-1.5 pr-2.5'
+                  : 'rounded-r-xl border-l-0 pr-1.5 pl-2.5'
               }`}
             >
-              <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-              <SlidersHorizontal className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span className="font-mono text-[11px] font-bold text-primary w-7 text-center shrink-0">
+              <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+              <SlidersHorizontal className="h-3 w-3 text-primary shrink-0" />
+              <span className="font-mono text-[10px] font-bold text-primary w-6 text-center shrink-0">
                 {currentKeyDisplay}
               </span>
-              {bubbleSide === 'right' ? (
-                <ChevronLeft className="h-3 w-3 opacity-60 shrink-0" />
-              ) : (
-                <ChevronRight className="h-3 w-3 opacity-60 shrink-0" />
-              )}
             </div>
           </div>
         ) : (
-          /* Columna Flotante Semitransparente Abierta */
-          <div className="flex flex-col items-center gap-2 p-2.5 bg-background/90 dark:bg-background/95 backdrop-blur-md border border-border/80 shadow-2xl rounded-2xl animate-in fade-in duration-200">
-            {/* Botón para Ocultar / Colapsar */}
-            <div className="flex items-center justify-between w-full px-1">
-              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Ajustes</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 rounded-full text-muted-foreground hover:text-foreground"
-                onClick={() => setIsMobileControlsOpen(false)}
-                title="Ocultar controles"
-              >
-                {bubbleSide === 'right' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-              </Button>
-            </div>
+          /* Columna Flotante Semitransparente Abierta (Ultra delgada) */
+          <div className="flex flex-col items-center gap-1.5 p-1.5 bg-background/90 dark:bg-background/95 backdrop-blur-md border border-border/80 shadow-2xl rounded-2xl animate-in fade-in duration-150 w-11">
+            {/* Botón para Cerrar / Colapsar */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 rounded-full text-muted-foreground hover:text-foreground mb-0.5"
+              onClick={() => setIsMobileControlsOpen(false)}
+              title="Ocultar controles"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
 
-            {/* 1. Control de Tono Vertical con Ancho Fijo */}
-            <div className="flex flex-col items-center gap-0.5 bg-muted/60 p-1 rounded-xl border border-border/60">
+            {/* 1. Control de Tono Vertical */}
+            <div className="flex flex-col items-center gap-0.5 bg-muted/60 p-0.5 rounded-xl border border-border/60 w-full">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg"
+                className="h-6 w-6 rounded"
                 onClick={() => setSemitones((prev) => prev + 1)}
                 title="Subir tono (+1)"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3 w-3" />
               </Button>
 
-              <div className="w-10 h-9 bg-primary text-primary-foreground font-mono font-bold text-xs rounded-lg shadow-xs flex flex-col items-center justify-center shrink-0 select-none">
-                <span className="leading-tight">{currentKeyDisplay}</span>
-                <span className={`text-[9px] leading-none ${semitones !== 0 ? 'opacity-85 font-normal' : 'opacity-0 select-none'}`}>
-                  {semitones > 0 ? `+${semitones}` : semitones || '+0'}
-                </span>
+              <div className="w-8 h-7 bg-primary text-primary-foreground font-mono font-bold text-[11px] rounded shadow-xs flex flex-col items-center justify-center shrink-0 select-none">
+                <span className="leading-none">{currentKeyDisplay}</span>
+                {semitones !== 0 && (
+                  <span className="text-[8px] leading-none opacity-85 font-normal">
+                    {semitones > 0 ? `+${semitones}` : semitones}
+                  </span>
+                )}
               </div>
 
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg"
+                className="h-6 w-6 rounded"
                 onClick={() => setSemitones((prev) => prev - 1)}
                 title="Bajar tono (-1)"
               >
-                <Minus className="h-3.5 w-3.5" />
+                <Minus className="h-3 w-3" />
               </Button>
 
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 text-muted-foreground disabled:opacity-20 disabled:cursor-not-allowed"
+                className="h-5 w-5 text-muted-foreground disabled:opacity-20 disabled:cursor-not-allowed"
                 onClick={handleResetToOriginalKey}
                 disabled={semitones === 0}
                 title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tono original'}
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="h-2.5 w-2.5" />
               </Button>
             </div>
 
@@ -817,30 +991,32 @@ export function SongDetailPage() {
             <Button
               variant={showChords ? 'default' : 'outline'}
               size="icon"
-              className="h-8 w-8 rounded-xl"
+              className="h-7 w-7 rounded-xl"
               onClick={() => setShowChords(!showChords)}
               title={showChords ? 'Ocultar acordes (Solo Letra)' : 'Mostrar acordes'}
             >
-              {showChords ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              {showChords ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
             </Button>
 
             {/* 3. Zoom de Letra Vertical */}
-            <div className="flex flex-col items-center gap-0.5 bg-muted/60 p-1 rounded-xl border border-border/60">
+            <div className="flex flex-col items-center gap-0.5 bg-muted/60 p-0.5 rounded-xl border border-border/60 w-full">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6"
+                className="h-5 w-5"
                 onClick={() => setFontSize((prev) => Math.min(28, prev + 1))}
                 disabled={fontSize >= 28}
                 title="Aumentar letra"
               >
                 <ZoomIn className="h-3 w-3" />
               </Button>
-              <span className="text-[10px] font-mono font-semibold py-0.5 text-muted-foreground">{fontSize}px</span>
+              <span className="text-[9px] font-mono font-semibold py-0.2 text-muted-foreground">
+                {fontSize}px
+              </span>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6"
+                className="h-5 w-5"
                 onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
                 disabled={fontSize <= 10}
                 title="Reducir letra"
@@ -849,64 +1025,103 @@ export function SongDetailPage() {
               </Button>
             </div>
 
-            {/* 4. Navegación de Setlist Móvil (si está en contexto de culto) */}
-            {sessionId && (
-              <div className="flex flex-col items-center gap-1 bg-primary/10 p-1 rounded-xl border border-primary/20">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-primary"
-                  onClick={() => prevSongItem && handleNavigateSong(prevSongItem.song_id)}
-                  disabled={!prevSongItem}
-                  title={prevSongItem ? `Anterior: ${prevSongItem.song.title}` : 'Primera canción'}
-                >
-                  <SkipBack className="h-3.5 w-3.5" />
-                </Button>
-                <span className="text-[10px] font-bold font-mono text-primary">
-                  {currentIndex + 1}/{sessionSongs.length}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-primary"
-                  onClick={() => nextSongItem && handleNavigateSong(nextSongItem.song_id)}
-                  disabled={!nextSongItem}
-                  title={nextSongItem ? `Siguiente: ${nextSongItem.song.title}` : 'Última canción'}
-                >
-                  <SkipForward className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            )}
-
-            {/* 5. Pantalla Completa / Salir */}
+            {/* 4. Pantalla Completa / Salir */}
             <Button
               variant={isFullscreen ? 'secondary' : 'outline'}
               size="icon"
-              className="h-8 w-8 rounded-xl"
+              className="h-7 w-7 rounded-xl"
               onClick={handleToggleFullscreen}
               title={isFullscreen ? 'Salir de pantalla completa (Esc)' : 'Modo pantalla completa (Atril)'}
             >
-              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              {isFullscreen ? <Minimize className="h-3.5 w-3.5" /> : <Maximize className="h-3.5 w-3.5" />}
             </Button>
           </div>
         )}
       </div>
 
-      {/* Reproductor de YouTube Compacto Fijo (Solo en modo normal) */}
-      {!isFullscreen && youtubeVideoId && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 p-2.5 bg-card border rounded-xl shadow-sm overflow-hidden max-w-full">
-          <div className="relative h-[125px] w-full sm:w-[222px] shrink-0 rounded-lg overflow-hidden border bg-black shadow-inner">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube.com/embed/${youtubeVideoId}`}
-              title={`${song.title} - YouTube`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full border-0"
-            />
+      {/* Barra Flotante de Navegación Inferior Derecha en Móvil (Deslizable a la derecha para ocultar) */}
+      {sessionId && sessionSongs.length > 0 && (
+        <div
+          onTouchStart={handleBottomNavTouchStart}
+          onTouchEnd={handleBottomNavTouchEnd}
+          onMouseDown={handleBottomNavMouseDown}
+          onMouseUp={handleBottomNavMouseUp}
+          className={`lg:hidden fixed bottom-1.5 z-40 transition-all duration-300 ease-out select-none flex items-center ${
+            isBottomNavCollapsed
+              ? 'right-0 translate-x-[calc(100%-14px)]'
+              : 'right-1 translate-x-0'
+          }`}
+        >
+          {/* Pestaña / Handle para expandir o colapsar */}
+          <button
+            onClick={() => setIsBottomNavCollapsed(!isBottomNavCollapsed)}
+            className={`h-9 w-3.5 bg-background/95 backdrop-blur border border-r-0 border-border/80 shadow-lg rounded-l-lg flex items-center justify-center text-muted-foreground hover:text-primary transition-colors cursor-pointer ${
+              !isBottomNavCollapsed ? 'opacity-40 hover:opacity-100' : 'opacity-90'
+            }`}
+            title={isBottomNavCollapsed ? 'Mostrar navegación' : 'Ocultar navegación'}
+          >
+            {isBottomNavCollapsed ? (
+              <ChevronLeft className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+          </button>
+
+          {/* Widget de botones */}
+          <div className="bg-background/90 dark:bg-background/95 backdrop-blur-md border border-border/80 shadow-2xl rounded-r-xl p-0.5 flex flex-col items-center">
+            <div className="flex items-center gap-0.2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-lg text-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-25"
+                onClick={() => prevSongItem && handleNavigateSong(prevSongItem.song_id)}
+                disabled={!prevSongItem}
+                title={prevSongItem ? `Anterior: ${prevSongItem.song.title}` : 'Primera canción'}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-lg text-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-25"
+                onClick={() => nextSongItem && handleNavigateSong(nextSongItem.song_id)}
+                disabled={!nextSongItem}
+                title={nextSongItem ? `Siguiente: ${nextSongItem.song.title}` : 'Última canción'}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <span className="text-[9px] font-bold font-mono text-muted-foreground leading-none pb-0.5">
+              {currentIndex >= 0 ? `${currentIndex + 1}/${sessionSongs.length}` : ''}
+            </span>
           </div>
-          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-1">
+        </div>
+      )}
+
+      {/* Reproductor de YouTube y Multitrack (Solo en modo normal) */}
+      {!isFullscreen && (youtubeVideoId || song.multitrack_url) && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 p-3 bg-card border rounded-xl shadow-xs overflow-hidden max-w-full">
+          {youtubeVideoId ? (
+            <div className="relative h-[125px] w-full sm:w-[222px] shrink-0 rounded-lg overflow-hidden border bg-black shadow-inner">
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                title={`${song.title} - YouTube`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full border-0"
+              />
+            </div>
+          ) : (
+            <div className="h-20 sm:h-[125px] w-full sm:w-[125px] shrink-0 rounded-lg border bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <FileAudio className="h-8 w-8" />
+            </div>
+          )}
+
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5 px-1">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
               <Youtube className="h-4 w-4 shrink-0" />
               <span>Video / Audio de Referencia</span>
@@ -914,15 +1129,33 @@ export function SongDetailPage() {
             <p className="text-xs text-muted-foreground line-clamp-2">
               Reproduce la versión guía o el arreglo original directamente mientras visualizas la canción.
             </p>
-            <a
-              href={`https://www.youtube.com/watch?v=${youtubeVideoId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline mt-0.5 w-fit"
-            >
-              <span>Abrir en YouTube</span>
-              <ExternalLink className="h-3 w-3" />
-            </a>
+
+            <div className="flex items-center gap-2.5 mt-1 flex-wrap">
+              {youtubeVideoId && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${youtubeVideoId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline w-fit"
+                >
+                  <span>Abrir en YouTube</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+
+              {song.multitrack_url && (
+                <a
+                  href={song.multitrack_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 px-3 py-1.5 rounded-lg transition-colors w-fit"
+                >
+                  <FileAudio className="h-3.5 w-3.5" />
+                  <span>Multitrack (Descargar / Abrir)</span>
+                  <ExternalLink className="h-3 w-3 ml-0.5 opacity-70" />
+                </a>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -935,51 +1168,70 @@ export function SongDetailPage() {
         </div>
       )}
 
-      {/* Barra de Control y Transposición en Tiempo Real (Fijada en el borde superior al scrollear) */}
+      {/* Barra de Control y Transposición en Tiempo Real (Fijada en el borde superior al scrollear en escritorio) */}
       {!isFullscreen && (
         <div className="hidden lg:flex sticky top-[-1.2em] z-30 bg-background/95 backdrop-blur border rounded-xl p-3 shadow-md items-center justify-between gap-3 max-w-full">
-          {/* Controles de Transposición de Tono con Ancho Fijo */}
-          <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-lg border">
-            <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded"
-              onClick={() => setSemitones((prev) => prev - 1)}
-              title="Bajar medio tono (-1 semitono)"
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </Button>
-
-            <div className="w-[84px] h-7 bg-primary text-primary-foreground font-mono font-bold text-sm rounded shadow-xs flex items-center justify-center gap-1 shrink-0 select-none">
-              <span>{currentKeyDisplay}</span>
-              {semitones !== 0 && (
-                <span className="text-[10px] opacity-85 font-normal">
-                  ({semitones > 0 ? `+${semitones}` : semitones})
+          {/* Controles de Transposición de Tono y Lista de Canciones */}
+          <div className="flex items-center gap-2">
+            {/* Botón de Lista de Canciones si está en sesión */}
+            {sessionId && sessionSongs.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 text-xs font-semibold bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:text-primary shadow-xs"
+                onClick={() => setIsSetlistSheetOpen(true)}
+                title="Permite ver toda la lista e ir directo a otra canción"
+              >
+                <ListMusic className="h-4 w-4" />
+                <span>Repertorio</span>
+                <span className="text-[10px] font-mono bg-primary text-primary-foreground px-1.5 py-0.2 rounded-full font-bold">
+                  {sessionSongs.length}
                 </span>
-              )}
+              </Button>
+            )}
+
+            <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-lg border">
+              <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded"
+                onClick={() => setSemitones((prev) => prev - 1)}
+                title="Bajar medio tono (-1 semitono)"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </Button>
+
+              <div className="w-[84px] h-7 bg-primary text-primary-foreground font-mono font-bold text-sm rounded shadow-xs flex items-center justify-center gap-1 shrink-0 select-none">
+                <span>{currentKeyDisplay}</span>
+                {semitones !== 0 && (
+                  <span className="text-[10px] opacity-85 font-normal">
+                    ({semitones > 0 ? `+${semitones}` : semitones})
+                  </span>
+                )}
+              </div>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded"
+                onClick={() => setSemitones((prev) => prev + 1)}
+                title="Subir medio tono (+1 semitono)"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                onClick={handleResetToOriginalKey}
+                disabled={semitones === 0}
+                title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tonalidad original'}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
             </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded"
-              onClick={() => setSemitones((prev) => prev + 1)}
-              title="Subir medio tono (+1 semitono)"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              onClick={handleResetToOriginalKey}
-              disabled={semitones === 0}
-              title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tonalidad original'}
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </Button>
           </div>
 
           {/* Parámetros musicales (BPM / Compás) */}
@@ -1083,6 +1335,18 @@ export function SongDetailPage() {
         song={song}
         currentContent={transposedContent}
         currentKey={currentKeyDisplay}
+      />
+
+      {/* Panel Lateral de Lista de Canciones del Culto (Repertorio Completo) */}
+      <SetlistSheet
+        open={isSetlistSheetOpen}
+        onOpenChange={setIsSetlistSheetOpen}
+        sessionSongs={sessionSongs}
+        currentSongId={song.id}
+        sessionTitle={currentSession?.recurring_meetings?.name || 'Repertorio del Culto'}
+        sessionDate={currentSession?.session_date}
+        onSelectSong={handleNavigateSong}
+        container={fullscreenContainerRef.current}
       />
     </div>
   );
