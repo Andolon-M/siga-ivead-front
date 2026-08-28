@@ -18,10 +18,12 @@ import {
   ZoomOut,
   Loader2,
   ExternalLink,
-  ChevronDown,
-  ChevronUp,
   Maximize,
   Minimize,
+  SlidersHorizontal,
+  ChevronRight,
+  ChevronLeft,
+  GripVertical,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -48,6 +50,7 @@ export function SongDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
+  const mobileControlsRef = useRef<HTMLDivElement>(null);
 
   const [song, setSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,11 +58,98 @@ export function SongDetailPage() {
   // Estados interactivos
   const [semitones, setSemitones] = useState<number>(0);
   const [showChords, setShowChords] = useState<boolean>(true);
-  const [fontSize, setFontSize] = useState<number>(18);
-  const [columns, setColumns] = useState<1 | 2 | 3>(2);
+  const [fontSize, setFontSize] = useState<number>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return 13;
+    }
+    return 18;
+  });
+  const [columns, setColumns] = useState<1 | 2 | 3>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return 1;
+    }
+    return 2;
+  });
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
-  const [isYoutubeOpen, setIsYoutubeOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isMobileControlsOpen, setIsMobileControlsOpen] = useState<boolean>(false);
+
+  // Estados de posicionamiento y arrastre de la burbuja flotante móvil
+  const [bubbleSide, setBubbleSide] = useState<'left' | 'right'>('right');
+  const [bubbleY, setBubbleY] = useState<number>(110);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const dragInfoRef = useRef<{ startX: number; startY: number; initialY: number; moved: boolean }>({
+    startX: 0,
+    startY: 0,
+    initialY: 110,
+    moved: false,
+  });
+
+  // Cerrar controles flotantes al hacer clic / tap fuera de ellos
+  useEffect(() => {
+    if (!isMobileControlsOpen) return;
+
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (
+        mobileControlsRef.current &&
+        !mobileControlsRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileControlsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isMobileControlsOpen]);
+
+  // Manejo de arrastre (drag) libre de la burbuja (arriba / abajo / izquierda / derecha)
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handlePointerMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+
+      const deltaX = clientX - dragInfoRef.current.startX;
+      const deltaY = clientY - dragInfoRef.current.startY;
+
+      if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+        dragInfoRef.current.moved = true;
+      }
+
+      const maxY = window.innerHeight - 200;
+      const newY = Math.max(30, Math.min(maxY, dragInfoRef.current.initialY + deltaY));
+      setBubbleY(newY);
+
+      // Cambiar de lado según la mitad de la pantalla
+      if (clientX < window.innerWidth / 2) {
+        setBubbleSide('left');
+      } else {
+        setBubbleSide('right');
+      }
+    };
+
+    const handlePointerUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handlePointerUp);
+    window.addEventListener('touchmove', handlePointerMove);
+    window.addEventListener('touchend', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseup', handlePointerUp);
+      window.removeEventListener('touchmove', handlePointerMove);
+      window.removeEventListener('touchend', handlePointerUp);
+    };
+  }, [isDragging]);
 
   // Sincronizar estado de pantalla completa
   useEffect(() => {
@@ -168,13 +258,13 @@ export function SongDetailPage() {
     >
       {/* Header en Pantalla Completa (Modo Atril de Escenario) */}
       {isFullscreen ? (
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b pb-3 mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="border-b pb-3 mb-6 flex flex-wrap items-center justify-between gap-3 select-none">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{song.title}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground font-medium">{song.artist}</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="hidden lg:flex flex-wrap items-center gap-2">
             {/* Tono */}
             <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-lg border">
               <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
@@ -187,9 +277,9 @@ export function SongDetailPage() {
               >
                 <Minus className="h-3.5 w-3.5" />
               </Button>
-              <span className="px-2 py-0.5 bg-primary text-primary-foreground font-mono font-bold text-xs rounded">
-                {currentKeyDisplay}
-              </span>
+              <div className="w-16 h-7 bg-primary text-primary-foreground font-mono font-bold text-xs rounded shadow-xs flex items-center justify-center shrink-0 select-none">
+                <span>{currentKeyDisplay}</span>
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
@@ -199,17 +289,16 @@ export function SongDetailPage() {
               >
                 <Plus className="h-3.5 w-3.5" />
               </Button>
-              {semitones !== 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground"
-                  onClick={() => setSemitones(0)}
-                  title="Restablecer tono original"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                onClick={() => setSemitones(0)}
+                disabled={semitones === 0}
+                title={semitones === 0 ? 'Tono original' : 'Restablecer tono original'}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </Button>
             </div>
 
             {/* Toggle Acordes */}
@@ -229,8 +318,8 @@ export function SongDetailPage() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
-                onClick={() => setFontSize((prev) => Math.max(12, prev - 1))}
-                disabled={fontSize <= 12}
+                onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                disabled={fontSize <= 10}
                 title="Reducir letra"
               >
                 <ZoomOut className="h-3.5 w-3.5" />
@@ -281,26 +370,27 @@ export function SongDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
           <div className="flex items-center gap-3">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={() => navigate('/admin/songs')}
-              title="Volver al cancionero"
+              title="Volver a la lista de canciones"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{song.title}</h1>
-                {song.version_type?.name && (
-                  <Badge variant="secondary" className="text-xs">
+                {song.version_type && (
+                  <Badge variant="secondary" className="font-normal text-xs">
                     {song.version_type.name}
                   </Badge>
                 )}
               </div>
-              <p className="text-base text-muted-foreground font-medium">{song.artist}</p>
+              <p className="text-sm text-muted-foreground mt-0.5 font-medium">{song.artist}</p>
             </div>
           </div>
 
+          {/* Acciones Superiores */}
           <div className="flex flex-wrap items-center gap-2">
             {song.multitrack_url && (
               <Button
@@ -314,17 +404,6 @@ export function SongDetailPage() {
                 <ExternalLink className="h-3 w-3 ml-0.5 opacity-70" />
               </Button>
             )}
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={handleToggleFullscreen}
-              title="Modo pantalla completa para atril"
-            >
-              <Maximize className="h-4 w-4" />
-              Pantalla Completa
-            </Button>
 
             <Button
               variant="outline"
@@ -363,10 +442,171 @@ export function SongDetailPage() {
         </div>
       )}
 
-      {/* Barra de Control y Transposición en Tiempo Real (Solo en modo normal) */}
+      {/* Columna Flotante Lateral Móvil / Tablet (Draggable, reposicionable y con click-outside) */}
+      <div
+        ref={mobileControlsRef}
+        className="lg:hidden fixed z-50 transition-all select-none touch-none"
+        style={{
+          top: `${bubbleY}px`,
+          ...(bubbleSide === 'right' ? { right: '8px' } : { left: '8px' }),
+        }}
+      >
+        {/* Pestaña / Burbuja para expandir (Arrastrable con touch o mouse) */}
+        {!isMobileControlsOpen ? (
+          <div
+            className={`flex items-center shadow-xl cursor-grab active:cursor-grabbing ${
+              bubbleSide === 'right' ? 'flex-row' : 'flex-row-reverse'
+            }`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const startX = e.clientX;
+              const startY = e.clientY;
+              dragInfoRef.current = { startX, startY, initialY: bubbleY, moved: false };
+              setIsDragging(true);
+            }}
+            onTouchStart={(e) => {
+              const startX = e.touches[0].clientX;
+              const startY = e.touches[0].clientY;
+              dragInfoRef.current = { startX, startY, initialY: bubbleY, moved: false };
+              setIsDragging(true);
+            }}
+            onClick={() => {
+              if (!dragInfoRef.current.moved) {
+                setIsMobileControlsOpen(true);
+              }
+            }}
+          >
+            <div
+              className={`h-11 px-3 py-1 bg-background/90 dark:bg-background/95 backdrop-blur-md border shadow-lg flex items-center gap-1.5 text-xs font-semibold ${
+                bubbleSide === 'right'
+                  ? 'rounded-l-2xl border-r-0 pl-2 pr-3'
+                  : 'rounded-r-2xl border-l-0 pr-2 pl-3'
+              }`}
+            >
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+              <SlidersHorizontal className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="font-mono text-[11px] font-bold text-primary w-7 text-center shrink-0">
+                {currentKeyDisplay}
+              </span>
+              {bubbleSide === 'right' ? (
+                <ChevronLeft className="h-3 w-3 opacity-60 shrink-0" />
+              ) : (
+                <ChevronRight className="h-3 w-3 opacity-60 shrink-0" />
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Columna Flotante Semitransparente Abierta */
+          <div className="flex flex-col items-center gap-2 p-2.5 bg-background/90 dark:bg-background/95 backdrop-blur-md border border-border/80 shadow-2xl rounded-2xl animate-in fade-in duration-200">
+            {/* Botón para Ocultar / Colapsar */}
+            <div className="flex items-center justify-between w-full px-1">
+              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Ajustes</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 rounded-full text-muted-foreground hover:text-foreground"
+                onClick={() => setIsMobileControlsOpen(false)}
+                title="Ocultar controles"
+              >
+                {bubbleSide === 'right' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </Button>
+            </div>
+
+            {/* 1. Control de Tono Vertical con Ancho Fijo */}
+            <div className="flex flex-col items-center gap-0.5 bg-muted/60 p-1 rounded-xl border border-border/60">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-lg"
+                onClick={() => setSemitones((prev) => prev + 1)}
+                title="Subir tono (+1)"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+
+              <div className="w-10 h-9 bg-primary text-primary-foreground font-mono font-bold text-xs rounded-lg shadow-xs flex flex-col items-center justify-center shrink-0 select-none">
+                <span className="leading-tight">{currentKeyDisplay}</span>
+                <span className={`text-[9px] leading-none ${semitones !== 0 ? 'opacity-85 font-normal' : 'opacity-0 select-none'}`}>
+                  {semitones > 0 ? `+${semitones}` : semitones || '+0'}
+                </span>
+              </div>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-lg"
+                onClick={() => setSemitones((prev) => prev - 1)}
+                title="Bajar tono (-1)"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground disabled:opacity-20 disabled:cursor-not-allowed"
+                onClick={() => setSemitones(0)}
+                disabled={semitones === 0}
+                title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tono original'}
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
+            </div>
+
+            {/* 2. Toggle Acordes / Solo Letra */}
+            <Button
+              variant={showChords ? 'default' : 'outline'}
+              size="icon"
+              className="h-8 w-8 rounded-xl"
+              onClick={() => setShowChords(!showChords)}
+              title={showChords ? 'Ocultar acordes (Solo Letra)' : 'Mostrar acordes'}
+            >
+              {showChords ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            </Button>
+
+            {/* 3. Zoom de Letra Vertical */}
+            <div className="flex flex-col items-center gap-0.5 bg-muted/60 p-1 rounded-xl border border-border/60">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setFontSize((prev) => Math.min(28, prev + 1))}
+                disabled={fontSize >= 28}
+                title="Aumentar letra"
+              >
+                <ZoomIn className="h-3 w-3" />
+              </Button>
+              <span className="text-[10px] font-mono font-semibold py-0.5 text-muted-foreground">{fontSize}px</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                disabled={fontSize <= 10}
+                title="Reducir letra"
+              >
+                <ZoomOut className="h-3 w-3" />
+              </Button>
+            </div>
+
+            {/* 4. Pantalla Completa / Salir */}
+            <Button
+              variant={isFullscreen ? 'secondary' : 'outline'}
+              size="icon"
+              className="h-8 w-8 rounded-xl"
+              onClick={handleToggleFullscreen}
+              title={isFullscreen ? 'Salir de pantalla completa (Esc)' : 'Modo pantalla completa (Atril)'}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Barra de Control y Transposición en Tiempo Real (Solo en Escritorio Grande) */}
       {!isFullscreen && (
-        <div className="sticky top-16 z-20 bg-background/95 backdrop-blur border rounded-xl p-3 shadow-md flex flex-wrap items-center justify-between gap-3">
-          {/* Controles de Transposición de Tono */}
+        <div className="hidden lg:flex sticky top-16 z-20 bg-background/95 backdrop-blur border rounded-xl p-3 shadow-md items-center justify-between gap-3 max-w-full">
+          {/* Controles de Transposición de Tono con Ancho Fijo */}
           <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-lg border">
             <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
             <Button
@@ -379,10 +619,10 @@ export function SongDetailPage() {
               <Minus className="h-3.5 w-3.5" />
             </Button>
 
-            <div className="px-2.5 py-0.5 bg-primary text-primary-foreground font-mono font-bold text-sm rounded shadow-sm flex items-center gap-1.5">
+            <div className="w-[84px] h-7 bg-primary text-primary-foreground font-mono font-bold text-sm rounded shadow-xs flex items-center justify-center gap-1 shrink-0 select-none">
               <span>{currentKeyDisplay}</span>
               {semitones !== 0 && (
-                <span className="text-[10px] opacity-80">
+                <span className="text-[10px] opacity-85 font-normal">
                   ({semitones > 0 ? `+${semitones}` : semitones})
                 </span>
               )}
@@ -398,17 +638,16 @@ export function SongDetailPage() {
               <Plus className="h-3.5 w-3.5" />
             </Button>
 
-            {semitones !== 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded text-muted-foreground hover:text-foreground"
-                onClick={() => setSemitones(0)}
-                title="Restablecer tonalidad original"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={() => setSemitones(0)}
+              disabled={semitones === 0}
+              title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tonalidad original'}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </Button>
           </div>
 
           {/* Parámetros musicales (BPM / Compás) */}
@@ -444,8 +683,8 @@ export function SongDetailPage() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
-                onClick={() => setFontSize((prev) => Math.max(12, prev - 1))}
-                disabled={fontSize <= 12}
+                onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                disabled={fontSize <= 10}
                 title="Reducir tamaño de letra"
               >
                 <ZoomOut className="h-3.5 w-3.5" />
@@ -493,50 +732,52 @@ export function SongDetailPage() {
         </div>
       )}
 
-      {/* Reproductor de YouTube Desplegable (Solo en modo normal) */}
+      {/* Reproductor de YouTube Compacto Fijo (Solo en modo normal) */}
       {!isFullscreen && youtubeVideoId && (
-        <Card className="border-rose-200 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/20">
-          <CardHeader
-            className="py-3 px-4 flex-row items-center justify-between cursor-pointer select-none"
-            onClick={() => setIsYoutubeOpen(!isYoutubeOpen)}
-          >
-            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-rose-700 dark:text-rose-400">
-              <Youtube className="h-4 w-4" />
-              Referencia de YouTube
-            </CardTitle>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-              {isYoutubeOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </CardHeader>
-
-          {isYoutubeOpen && (
-            <CardContent className="pt-0 pb-4 px-4">
-              <div className="aspect-video w-full max-w-2xl rounded-lg overflow-hidden border shadow-sm mx-auto">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={`https://www.youtube.com/embed/${youtubeVideoId}`}
-                  title={`${song.title} - YouTube`}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </CardContent>
-          )}
-        </Card>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 p-2.5 bg-card border rounded-xl shadow-sm overflow-hidden max-w-full">
+          <div className="relative h-[125px] w-full sm:w-[222px] shrink-0 rounded-lg overflow-hidden border bg-black shadow-inner">
+            <iframe
+              width="100%"
+              height="100%"
+              src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+              title={`${song.title} - YouTube`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full border-0"
+            />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
+              <Youtube className="h-4 w-4 shrink-0" />
+              <span>Video / Audio de Referencia</span>
+            </div>
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              Reproduce la versión guía o el arreglo original directamente mientras visualizas la canción.
+            </p>
+            <a
+              href={`https://www.youtube.com/watch?v=${youtubeVideoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline mt-0.5 w-fit"
+            >
+              <span>Abrir en YouTube</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
       )}
 
       {/* Notas del arreglo si existen (Solo en modo normal) */}
       {!isFullscreen && song.notes && (
-        <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-900 dark:text-amber-200">
+        <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-900 dark:text-amber-200 overflow-hidden max-w-full">
           <span className="font-bold uppercase tracking-wider block mb-0.5">Notas del Arreglo:</span>
           {song.notes}
         </div>
       )}
 
-      {/* Visor Principal de Acordes y Letras */}
-      <Card className={isFullscreen ? 'border-0 shadow-none bg-transparent' : 'shadow-sm'}>
-        <CardContent className={isFullscreen ? 'p-0' : 'p-6 sm:p-8'}>
+      {/* Visor Principal de Acordes y Letras con Scroll Interno */}
+      <Card className={isFullscreen ? 'border-0 shadow-none bg-transparent overflow-hidden' : 'shadow-sm overflow-hidden max-w-full'}>
+        <CardContent className={isFullscreen ? 'p-0 overflow-x-auto max-w-full' : 'p-4 sm:p-6 md:p-8 overflow-x-auto max-w-full'}>
           <ChordSheetViewer
             content={transposedContent}
             showChords={showChords}

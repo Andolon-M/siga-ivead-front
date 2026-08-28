@@ -95,16 +95,20 @@ export interface SongsListResponse {
   totalPages: number;
 }
 
+export type SongLineType = 'empty' | 'section' | 'chord' | 'lyrics' | 'riff' | 'comment';
+
 export interface ChordBlock {
   chord: string | null;
   text: string;
 }
 
 export interface ParsedLine {
-  isSectionHeader: boolean;
+  type: SongLineType;
+  text: string;
   sectionName?: string;
-  isComment: boolean;
+  isSectionHeader?: boolean;
+  isComment?: boolean;
   isRiffOrNotes?: boolean;
-  isEmpty: boolean;
-  blocks: ChordBlock[];
+  isEmpty?: boolean;
+  blocks?: ChordBlock[];
 }

@@ -107,12 +107,6 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
     }
   };
 
-  // Contenido convertido a formato bracketed para vista previa y guardado
-  const previewContent = useMemo(
-    () => convertPlainTextToBracketed(formData.content),
-    [formData.content]
-  );
-
   // Insertar etiqueta de sección
   const insertSectionTag = (tag: string) => {
     setFormData((prev) => ({
@@ -141,12 +135,9 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
       return;
     }
 
-    // Convertir siempre a formato bracketed para almacenamiento interno
-    const finalContent = convertPlainTextToBracketed(formData.content);
-
     const submissionData = {
       ...formData,
-      content: finalContent,
+      content: formData.content,
     };
 
     setIsSubmitting(true);
@@ -473,7 +464,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
             ) : (
               <div className="flex-1 min-h-[420px] p-4 bg-muted/20 border rounded-lg overflow-y-auto">
                 {formData.content.trim() ? (
-                  <ChordSheetViewer content={previewContent} showChords={true} />
+                  <ChordSheetViewer content={formData.content} showChords={true} />
                 ) : (
                   <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                     Escribe letra y acordes en la pestaña Editor para ver el resultado aquí.

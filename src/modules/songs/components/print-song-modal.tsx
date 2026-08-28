@@ -15,7 +15,7 @@ import { Slider } from '@/shared/components/ui/slider';
 import { Printer, Eye } from 'lucide-react';
 import type { Song } from '../types';
 import { ChordSheetViewer } from './chord-sheet-viewer';
-import { MUSICAL_KEY_SHORT, parseSongLines } from '../utils/chord-transposer';
+import { MUSICAL_KEY_SHORT, parseSongLines, filterVisibleSongLines } from '../utils/chord-transposer';
 
 interface PrintSongModalProps {
   open: boolean;
@@ -43,7 +43,8 @@ export function PrintSongModal({
       return;
     }
 
-    const lines = parseSongLines(currentContent);
+    const rawLines = parseSongLines(currentContent);
+    const lines = filterVisibleSongLines(rawLines, showChords);
 
     const escapeHtml = (text: string) =>
       text
@@ -54,37 +55,28 @@ export function PrintSongModal({
 
     const generatedBody = lines
       .map((line) => {
-        if (line.isEmpty) {
+        if (line.type === 'empty' || line.isEmpty) {
           return '<div style="height: 12px; margin: 0; padding: 0;"></div>';
         }
-        if (line.isSectionHeader && line.sectionName) {
+        if ((line.type === 'section' || line.isSectionHeader) && line.sectionName) {
           return `<div class="section-badge">${escapeHtml(line.sectionName)}</div>`;
         }
-        if (line.isComment) {
-          return `<div class="comment">${escapeHtml(line.blocks[0]?.text || '')}</div>`;
+        if (line.type === 'comment' || line.isComment) {
+          return `<div class="comment">${escapeHtml(line.text || '')}</div>`;
         }
-        if (line.isRiffOrNotes) {
-          return `<div class="riff-box">${escapeHtml(line.blocks[0]?.text || '')}</div>`;
+        if (line.type === 'riff' || line.isRiffOrNotes) {
+          if (!showChords) return '';
+          return `<div class="riff-box">${escapeHtml(line.text || '')}</div>`;
+        }
+        if (line.type === 'chord') {
+          if (!showChords) return '';
+          return `<div class="chord-line">${escapeHtml(line.text || '')}</div>`;
         }
 
-        const blocksHtml = line.blocks
-          .map((b) => {
-            const chordHtml =
-              showChords && b.chord
-                ? `<span class="chord">${escapeHtml(b.chord)}</span>`
-                : showChords
-                ? '<span class="chord-empty">&nbsp;</span>'
-                : '';
-            const textHtml = `<span class="lyric">${b.text ? escapeHtml(b.text) : '&nbsp;'}</span>`;
-            const minWidthStyle = b.chord
-              ? `style="min-width: ${Math.max(b.chord.length + 1, (b.text || '').length)}ch;"`
-              : '';
-            return `<span class="chord-block" ${minWidthStyle}>${chordHtml}${textHtml}</span>`;
-          })
-          .join('');
-
-        return `<div class="line-row">${blocksHtml}</div>`;
+        // type === 'lyrics'
+        return `<div class="lyrics-line">${escapeHtml(line.text || '')}</div>`;
       })
+      .filter(Boolean)
       .join('\n');
 
     const html = `
@@ -152,42 +144,26 @@ export function PrintSongModal({
               column-gap: 32px;
               column-rule: 1px solid #cbd5e1;
               width: 100%;
+              font-family: "Courier New", Courier, monospace;
             }
-            .line-row {
-              display: flex;
-              flex-wrap: wrap;
-              align-items: flex-end;
-              margin: 2px 0;
-              line-height: 1;
-              break-inside: avoid;
-              page-break-inside: avoid;
-            }
-            .chord-block {
-              display: inline-flex;
-              flex-direction: column;
-              vertical-align: bottom;
-              white-space: pre;
-              padding-right: 2px;
-            }
-            .chord {
+            .chord-line {
               font-family: "Courier New", Courier, monospace;
               font-weight: 700;
               color: #0f172a;
-              font-size: 0.85em;
-              line-height: 1.1;
-              height: 1.15em;
-              display: block;
+              font-size: 0.95em;
+              line-height: 1.2;
+              white-space: pre;
+              break-inside: avoid;
+              page-break-inside: avoid;
             }
-            .chord-empty {
-              height: 1.15em;
-              visibility: hidden;
-              display: block;
-            }
-            .lyric {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            .lyrics-line {
+              font-family: "Courier New", Courier, monospace;
               color: #0f172a;
-              line-height: 1.25;
-              display: block;
+              font-size: 0.95em;
+              line-height: 1.35;
+              white-space: pre;
+              break-inside: avoid;
+              page-break-inside: avoid;
             }
             .section-badge {
               display: inline-block;
@@ -217,6 +193,7 @@ export function PrintSongModal({
               font-size: 0.9em;
               margin: 4px 0;
               display: inline-block;
+              white-space: pre;
               letter-spacing: 0.5px;
               break-inside: avoid;
               page-break-inside: avoid;
@@ -226,6 +203,7 @@ export function PrintSongModal({
               font-size: 0.85em;
               color: #64748b;
               margin: 2px 0;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
               break-inside: avoid;
             }
           </style>

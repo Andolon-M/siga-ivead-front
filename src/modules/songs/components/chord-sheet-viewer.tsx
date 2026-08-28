@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { parseSongLines } from '../utils/chord-transposer';
+import { parseSongLines, filterVisibleSongLines } from '../utils/chord-transposer';
 
 interface ChordSheetViewerProps {
   content: string;
@@ -12,11 +12,14 @@ interface ChordSheetViewerProps {
 export function ChordSheetViewer({
   content,
   showChords = true,
-  fontSize = 16,
+  fontSize = 18,
   columns = 1,
   className = '',
 }: ChordSheetViewerProps) {
-  const lines = useMemo(() => parseSongLines(content), [content]);
+  const lines = useMemo(() => {
+    const rawParsed = parseSongLines(content);
+    return filterVisibleSongLines(rawParsed, showChords);
+  }, [content, showChords]);
 
   // Clase de columnas para Tailwind
   const columnClasses = {
@@ -26,22 +29,23 @@ export function ChordSheetViewer({
   }[columns];
 
   return (
-    <div
-      className={`font-sans select-text leading-relaxed ${columnClasses} ${className}`}
-      style={{ fontSize: `${fontSize}px` }}
-    >
-      {lines.map((line, lineIdx) => {
+    <div className="w-full max-w-full overflow-x-auto pb-2">
+      <div
+        className={`font-mono select-text leading-relaxed min-w-fit ${columnClasses} ${className}`}
+        style={{ fontSize: `${fontSize}px` }}
+      >
+        {lines.map((line, lineIdx) => {
         // 1. Línea vacía
-        if (line.isEmpty) {
+        if (line.type === 'empty' || line.isEmpty) {
           return <div key={lineIdx} className="h-4 break-inside-avoid" />;
         }
 
-        // 2. Encabezado de sección ([Intro], [Coro], [Verso 1], etc.)
-        if (line.isSectionHeader && line.sectionName) {
+        // 2. Encabezado de sección ([Intro], [Coro], [Verso 1], [Todos puntos], etc.)
+        if ((line.type === 'section' || line.isSectionHeader) && line.sectionName) {
           return (
             <div
               key={lineIdx}
-              className="mt-4 mb-2 pt-2 first:mt-0 font-bold uppercase tracking-wider text-xs text-primary/90 flex items-center gap-2 border-b border-border/50 pb-1 break-inside-avoid"
+              className="mt-4 mb-2 pt-2 first:mt-0 font-sans font-bold uppercase tracking-wider text-xs text-primary/90 flex items-center gap-2 border-b border-border/50 pb-1 break-inside-avoid"
             >
               <span className="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                 {line.sectionName}
@@ -51,64 +55,54 @@ export function ChordSheetViewer({
         }
 
         // 3. Comentarios
-        if (line.isComment) {
+        if (line.type === 'comment' || line.isComment) {
           return (
             <div
               key={lineIdx}
-              className="text-xs text-muted-foreground italic my-1 break-inside-avoid"
+              className="text-xs text-muted-foreground italic my-1 font-sans break-inside-avoid"
             >
-              {line.blocks[0]?.text}
+              {line.text}
             </div>
           );
         }
 
         // 3.1. Línea de Notas / Melodía / Instrumental / Riff
-        if (line.isRiffOrNotes) {
+        if (line.type === 'riff' || line.isRiffOrNotes) {
+          if (!showChords) return null;
           return (
             <div
               key={lineIdx}
-              className="my-1.5 py-1 px-3 rounded-md bg-muted/50 border border-border/60 font-mono font-bold text-primary tracking-wider text-[0.9em] break-inside-avoid inline-block"
+              className="my-1.5 py-1 px-3 rounded-md bg-muted/50 border border-border/60 font-mono font-bold text-primary tracking-wider text-[0.9em] break-inside-avoid inline-block whitespace-pre"
             >
-              {line.blocks[0]?.text}
+              {line.text}
             </div>
           );
         }
 
-        // 4. Línea con bloques de acordes y texto
+        // 4. Línea de Acordes
+        if (line.type === 'chord') {
+          if (!showChords) return null;
+          return (
+            <div
+              key={lineIdx}
+              className="font-mono font-bold text-primary whitespace-pre tracking-normal leading-tight select-text break-inside-avoid min-h-[1.25em]"
+            >
+              {line.text}
+            </div>
+          );
+        }
+
+        // 5. Línea de Letra Normal
         return (
           <div
             key={lineIdx}
-            className="flex flex-wrap items-end min-h-[1.75em] break-inside-avoid my-0.5 leading-none"
+            className="font-mono text-foreground whitespace-pre tracking-normal leading-normal select-text break-inside-avoid min-h-[1.25em]"
           >
-            {line.blocks.map((block, blockIdx) => (
-              <span
-                key={blockIdx}
-                className="inline-flex flex-col align-bottom whitespace-pre pr-0.5"
-                style={{
-                  minWidth: block.chord
-                    ? `${Math.max(block.chord.length + 1, (block.text || '').length)}ch`
-                    : undefined,
-                }}
-              >
-                {/* Fila del Acorde */}
-                {showChords && (
-                  <span
-                    className={`font-mono font-bold text-primary tracking-tight h-[1.2em] leading-none select-none text-[0.85em] ${
-                      !block.chord ? 'invisible' : ''
-                    }`}
-                  >
-                    {block.chord || '\u00A0'}
-                  </span>
-                )}
-                {/* Fila de la Letra */}
-                <span className="leading-normal text-foreground">
-                  {block.text || '\u00A0'}
-                </span>
-              </span>
-            ))}
+            {line.text}
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
