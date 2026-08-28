@@ -1,4 +1,4 @@
-import { Search, Menu, LogOut, Settings } from "lucide-react"
+import { Search, Menu, LogOut } from "lucide-react"
 import { Input } from "@/shared/components/ui/input"
 import { Button } from "@/shared/components/ui/button"
 import { ThemeToggle } from "@/shared/components/theme-toggle"
@@ -72,11 +72,6 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/admin/settings")}>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Configuración</span>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
               <LogOut className="mr-2 h-4 w-4" />

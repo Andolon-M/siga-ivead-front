@@ -12,7 +12,6 @@ import { TeamsPage } from '@/modules/teams/pages'
 import { ReportsPage } from '@/modules/reports/pages'
 import { FilesPage } from '@/modules/files/pages'
 import { RolesPage } from '@/modules/roles/pages'
-import { SettingsPage } from '@/modules/settings/pages'
 import { MassMessagingPage } from '@/modules/mass-messaging/pages'
 import { MetaTemplatesPage, MetaTemplateDetailPage } from '@/modules/meta-templates/pages'
 import { SaraChatsPage, SaraChatDetailPage, EmptyChatSelection } from '@/modules/sara-chats/pages'
@@ -76,7 +75,6 @@ export default function AppRouter() {
         <Route path="volunteers/activities" element={<VolunteersActivitiesPage />} />
         <Route path="volunteers/activities/:id/slots" element={<ActivitySlotsBoardPage />} />
         <Route path="volunteers/history" element={<MemberVolunteerHistoryPage />} />
-        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       {/* Sub-panel SARA — layout propio con sidebar */}

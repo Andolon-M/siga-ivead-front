@@ -8,9 +8,9 @@ import {
   CalendarDays,
   FileText,
   DollarSign,
-  Settings,
   LayoutDashboard,
   Shield,
+  HandHeart,
   X,
 } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
@@ -23,66 +23,96 @@ const SaraIcon = ({ className }: { className?: string }) => (
   />
 )
 
-const menuItems = [
+interface MenuItem {
+  title: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
+interface MenuGroup {
+  label?: string
+  items: MenuItem[]
+}
+
+const menuGroups: MenuGroup[] = [
   {
-    title: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
+    items: [
+      {
+        title: "Inicio",
+        href: "/admin",
+        icon: LayoutDashboard,
+      },
+    ],
   },
   {
-    title: "Usuarios",
-    href: "/admin/users",
-    icon: Users,
+    label: "IVE",
+    items: [
+      {
+        title: "Miembros",
+        href: "/admin/members",
+        icon: UserCircle,
+      },
+      {
+        title: "Ministerios",
+        href: "/admin/ministries",
+        icon: Church,
+      },
+      {
+        title: "Cultos",
+        href: "/admin/services",
+        icon: CalendarDays,
+      },
+      {
+        title: "Voluntarios",
+        href: "/admin/volunteers",
+        icon: HandHeart,
+      },
+      {
+        title: "Eventos",
+        href: "/admin/events",
+        icon: Calendar,
+      },
+      {
+        title: "Archivos",
+        href: "/admin/files",
+        icon: FileText,
+      },
+    ],
   },
   {
-    title: "Miembros",
-    href: "/admin/members",
-    icon: UserCircle,
+    label: "Finanzas",
+    items: [
+      {
+        title: "Reportes Financieros",
+        href: "/admin/reports",
+        icon: DollarSign,
+      },
+    ],
   },
   {
-    title: "Ministerios",
-    href: "/admin/ministries",
-    icon: Church,
+    label: "Agente IA",
+    items: [
+      {
+        title: "SARA",
+        href: "/admin/sara",
+        icon: SaraIcon,
+      },
+    ],
   },
   {
-    title: "Eventos",
-    href: "/admin/events",
-    icon: Calendar,
-  },
-  {
-    title: "Cultos",
-    href: "/admin/services",
-    icon: CalendarDays,
-  },
-  {
-    title: "Reportes Financieros",
-    href: "/admin/reports",
-    icon: DollarSign,
-  },
-  {
-    title: "Archivos",
-    href: "/admin/files",
-    icon: FileText,
-  },
-  {
-    title: "Roles y Permisos",
-    href: "/admin/roles",
-    icon: Shield,
-  },
-  {
-    title: "SARA",
-    href: "/admin/sara",
-    icon: SaraIcon,
-  },
-  {
-    title: "Voluntarios",
-    href: "/admin/volunteers",
-    icon: UserCircle,
-  },
-  {
-    title: "Configuración",
-    href: "/admin/settings",
-    icon: Settings,
+    label: "Configuración",
+    items: [
+      {
+        title: "Usuarios",
+        href: "/admin/users",
+        icon: Users,
+      },
+      {
+        title: "Roles y Permisos",
+        href: "/admin/roles",
+        icon: Shield,
+      },
+    ],
   },
 ]
 
@@ -106,7 +136,7 @@ export function AdminSidebar({ isOpen = true, onClose }: AdminSidebarProps) {
         )}
       >
         {/* Logo */}
-        <div className="p-4 lg:p-6 border-b flex items-center justify-between  shrink-0">
+        <div className="p-4 lg:p-6 border-b flex items-center justify-between shrink-0">
           <Link to="/admin" className="flex items-center gap-3">
             <img src="/images/logo-ive-color.png" alt="IVE Logo" className="w-10 h-10 object-contain dark:hidden" />
             <img
@@ -125,30 +155,39 @@ export function AdminSidebar({ isOpen = true, onClose }: AdminSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                )}
-              >
-                <Icon className="h-5 w-5 flex shrink-0" />
-                <span className="truncate">{item.title}</span>
-              </Link>
-            )
-          })}
+        <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+          {menuGroups.map((group, groupIdx) => (
+            <div key={groupIdx} className="space-y-1">
+              {group.label ? (
+                <p className="text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase px-3 py-1">
+                  {group.label}
+                </p>
+              ) : null}
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon
+                  const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
+                  return (
+                    <Link
+                      key={item.href}
+                      to={item.href}
+                      onClick={onClose}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                      )}
+                    >
+                      <Icon className="h-5 w-5 flex shrink-0" />
+                      <span className="truncate">{item.title}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
-
-        
       </aside>
     </>
   )

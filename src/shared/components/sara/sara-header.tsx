@@ -12,7 +12,7 @@ import {
 } from "@/shared/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar"
 import { useNavigate } from "react-router-dom"
-import { LogOut, Settings } from "lucide-react"
+import { LogOut } from "lucide-react"
 
 interface SaraHeaderProps {
   onMenuClick?: () => void
@@ -62,11 +62,6 @@ export function SaraHeader({ onMenuClick }: SaraHeaderProps) {
                 </p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/admin/settings")}>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Configuración</span>
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
               <LogOut className="mr-2 h-4 w-4" />
