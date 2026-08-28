@@ -111,7 +111,7 @@ export function MetaTemplatesPage() {
             <MetaTemplatesTable
               templates={templates}
               onSearch={setSearchQuery}
-              onView={(id) => navigate(`/admin/meta-templates/${id}`)}
+              onView={(id) => navigate(`/admin/sara/meta-templates/${id}`)}
               onEdit={(template) => {
                 setSelectedTemplate(template)
                 setEditOpen(true)

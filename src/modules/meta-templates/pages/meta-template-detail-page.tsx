@@ -1,11 +1,13 @@
-import { Loader2 } from "lucide-react"
-import { useParams } from "react-router-dom"
+import { ArrowLeft, Loader2 } from "lucide-react"
+import { useNavigate, useParams } from "react-router-dom"
 import { Badge } from "@/shared/components/ui/badge"
+import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { useMetaTemplate } from "../hooks/use-meta-template"
 
 export function MetaTemplateDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { template, loading, error } = useMetaTemplate(id)
 
   if (loading) {
@@ -18,20 +20,31 @@ export function MetaTemplateDetailPage() {
 
   if (error || !template) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>No se pudo cargar la plantilla</CardTitle>
-          <CardDescription>{error?.message ?? "Plantilla no encontrada"}</CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="space-y-6">
+        <Button variant="ghost" className="gap-2" onClick={() => navigate("/admin/sara/meta-templates")}>
+          <ArrowLeft className="h-4 w-4" />
+          Volver a plantillas
+        </Button>
+        <Card>
+          <CardHeader>
+            <CardTitle>No se pudo cargar la plantilla</CardTitle>
+            <CardDescription>{error?.message ?? "Plantilla no encontrada"}</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{template.name}</h1>
-        <p className="text-muted-foreground">Detalle y vista previa de componentes de la plantilla</p>
+      <div className="flex items-center gap-4">
+        <Button variant="outline" size="icon" onClick={() => navigate("/admin/sara/meta-templates")}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">{template.name}</h1>
+          <p className="text-muted-foreground">Detalle y vista previa de componentes de la plantilla</p>
+        </div>
       </div>
 
       <Card>
