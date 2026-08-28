@@ -6,6 +6,9 @@ export interface SidebarItem {
   icon: React.ComponentType<{ className?: string }>
   description?: string
   badge?: string | number
+  permission?: { resource: string; action: string }
+  anyPermissions?: Array<{ resource: string; action: string }>
+  role?: string
 }
 
 export interface SidebarGroup {

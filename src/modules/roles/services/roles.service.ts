@@ -66,6 +66,28 @@ export const rolesService = {
   },
 
   /**
+   * Obtener todos los permisos del sistema
+   * @returns Lista completa de permisos
+   */
+  async getAllPermissions(): Promise<Permission[]> {
+    const response = await axiosInstance.get<ApiResponse<{ permissions: Permission[]; total: number }>>(
+      API_ENDPOINTS.PERMISSIONS.LIST
+    )
+    return response.data.data.permissions
+  },
+
+  /**
+   * Asignar permisos a un rol
+   * @param roleId ID del rol
+   * @param permissionIds Array de IDs de permisos a asignar
+   */
+  async assignPermissions(roleId: string, permissionIds: (string | number)[]): Promise<void> {
+    await axiosInstance.post(API_ENDPOINTS.ROLES.ASSIGN_PERMISSIONS(roleId), {
+      permission_ids: permissionIds,
+    })
+  },
+
+  /**
    * Eliminar rol
    * @param id ID del rol
    */

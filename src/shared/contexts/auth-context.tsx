@@ -80,16 +80,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Verificar si el usuario tiene un permiso específico
   const hasPermission = (resource: string, action: string): boolean => {
     if (!user) return false
+    if (user.role?.name === "Super Admin") return true
     
-    return user.permissions.some(
+    return user.permissions?.some(
       (permission: Permission) =>
         permission.resource === resource && permission.action === action
-    )
+    ) ?? false
   }
 
   // Verificar si el usuario tiene al menos uno de los permisos
   const hasAnyPermission = (permissions: { resource: string; action: string }[]): boolean => {
     if (!user) return false
+    if (user.role?.name === "Super Admin") return true
     
     return permissions.some(({ resource, action }) =>
       hasPermission(resource, action)
@@ -99,7 +101,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Verificar si el usuario tiene un rol específico
   const hasRole = (roleName: string): boolean => {
     if (!user) return false
-    return user.role.name === roleName
+    return user.role?.name === roleName
   }
 
   const value: AuthContextType = {

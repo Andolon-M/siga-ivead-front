@@ -57,43 +57,190 @@ export default function AppRouter() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="users" element={<UsersPage />} />
-        <Route path="members" element={<MembersPage />} />
-        <Route path="members/:id" element={<MemberDetailPage />} />
-        <Route path="ministries" element={<MinistriesPage />} />
-        <Route path="ministries/:id" element={<MinistryDetailPage />} />
-        <Route path="events" element={<EventsPage />} />
-        <Route path="services" element={<ServicesPage />} />
-        <Route path="services/session/:id" element={<SessionDetailPage />} />
-        <Route path="events/:id" element={<EventDetailPage />} />
+        <Route
+          path="users"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "users", action: "read" }}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="members"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "members", action: "read" }}>
+              <MembersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="members/:id"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "members", action: "read" }}>
+              <MemberDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="ministries"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "ministries", action: "read" }}>
+              <MinistriesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="ministries/:id"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "ministries", action: "read" }}>
+              <MinistryDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="events"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "events", action: "read" }}>
+              <EventsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="services"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "services", action: "read" }}>
+              <ServicesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="services/session/:id"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "services", action: "read" }}>
+              <SessionDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="events/:id"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "events", action: "read" }}>
+              <EventDetailPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="teams" element={<TeamsPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="files" element={<FilesPage />} />
-        <Route path="roles" element={<RolesPage />} />
-        <Route path="volunteers" element={<VolunteersTasksPage />} />
-        <Route path="volunteers/occurrences" element={<TaskOccurrencesPage />} />
-        <Route path="volunteers/activities" element={<VolunteersActivitiesPage />} />
-        <Route path="volunteers/activities/:id/slots" element={<ActivitySlotsBoardPage />} />
-        <Route path="volunteers/history" element={<MemberVolunteerHistoryPage />} />
+        <Route
+          path="reports"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "reports", action: "read" }}>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="files"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "files", action: "read" }}>
+              <FilesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="roles"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "roles", action: "read" }}>
+              <RolesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="volunteers"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "volunteers", action: "read" }}>
+              <VolunteersTasksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="volunteers/occurrences"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "volunteers", action: "read" }}>
+              <TaskOccurrencesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="volunteers/activities"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "volunteers", action: "read" }}>
+              <VolunteersActivitiesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="volunteers/activities/:id/slots"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "volunteers", action: "read" }}>
+              <ActivitySlotsBoardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="volunteers/history"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "volunteers", action: "read" }}>
+              <MemberVolunteerHistoryPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Sub-panel SARA — layout propio con sidebar */}
       <Route
         path="/admin/sara"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requirePermission={{ resource: "sara", action: "access" }}>
             <SaraLayout />
           </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="chats" replace />} />
-        <Route path="chats" element={<SaraChatsPage />}>
+        <Route
+          path="chats"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "sara", action: "read_chats" }}>
+              <SaraChatsPage />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<EmptyChatSelection />} />
           <Route path=":id" element={<SaraChatDetailPage />} />
         </Route>
-        <Route path="mass-messaging" element={<MassMessagingPage />} />
-        <Route path="meta-templates" element={<MetaTemplatesPage />} />
-        <Route path="meta-templates/:id" element={<MetaTemplateDetailPage />} />
+        <Route
+          path="mass-messaging"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "mass_messaging", action: "read_campaigns" }}>
+              <MassMessagingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="meta-templates"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "meta_templates", action: "read" }}>
+              <MetaTemplatesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="meta-templates/:id"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "meta_templates", action: "read" }}>
+              <MetaTemplateDetailPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* Ruta por defecto */}

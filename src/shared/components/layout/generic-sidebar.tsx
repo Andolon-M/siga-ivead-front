@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom"
 import { ArrowLeft, X } from "lucide-react"
 import { Button } from "@/shared/components/ui/button"
 import { cn } from "@/shared/lib/utils"
+import { useAuth } from "@/shared/contexts/auth-context"
 import type { ModuleSidebarConfig } from "@/shared/layouts/types/module-sidebar.types"
 
 interface GenericSidebarProps {
@@ -12,6 +13,22 @@ interface GenericSidebarProps {
 
 export function GenericSidebar({ config, isOpen = true, onClose }: GenericSidebarProps) {
   const { pathname } = useLocation()
+  const { hasPermission, hasAnyPermission, hasRole } = useAuth()
+
+  // Filtrar grupos e ítems según permisos del usuario
+  const visibleGroups = config.groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (item.role) return hasRole(item.role)
+        if (item.permission) return hasPermission(item.permission.resource, item.permission.action)
+        if (item.anyPermissions && item.anyPermissions.length > 0) {
+          return hasAnyPermission(item.anyPermissions)
+        }
+        return true
+      }),
+    }))
+    .filter((group) => group.items.length > 0)
 
   return (
     <>
@@ -69,7 +86,7 @@ export function GenericSidebar({ config, isOpen = true, onClose }: GenericSideba
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-2 space-y-4 overflow-y-auto">
-          {config.groups.map((group, idx) => (
+          {visibleGroups.map((group, idx) => (
             <div key={idx} className="space-y-1">
               {group.label && (
                 <p className="text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase px-3 py-1">

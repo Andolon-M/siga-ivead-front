@@ -99,7 +99,17 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/auth/roles/${id}`,
     GET: (id: string) => `/auth/roles/${id}`,
     PERMISSIONS: (roleId: string) => `/auth/roles/${roleId}/permissions`,
+    ASSIGN_PERMISSIONS: (roleId: string) => `/auth/roles/${roleId}/permissions`,
     STATS: "/auth/roles-permissions/stats",
+  },
+
+  // Permisos
+  PERMISSIONS: {
+    LIST: "/auth/permissions",
+    CREATE: "/auth/permissions",
+    GET: (id: string) => `/auth/permissions/${id}`,
+    UPDATE: (id: string) => `/auth/permissions/${id}`,
+    DELETE: (id: string) => `/auth/permissions/${id}`,
   },
   
   // Reports
