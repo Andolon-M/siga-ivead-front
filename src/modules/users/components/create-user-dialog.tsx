@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -13,6 +13,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select"
 import { Loader2 } from "lucide-react"
 import type { CreateUserRequest, Role } from "../types"
+import { useAuth } from "@/shared/contexts/auth-context"
 
 interface CreateUserDialogProps {
   open: boolean
@@ -23,6 +24,20 @@ interface CreateUserDialogProps {
 }
 
 export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoading }: CreateUserDialogProps) {
+  const { user: currentUser } = useAuth()
+  const isCallerSuperAdmin = String(currentUser?.role?.id) === "1" || String(currentUser?.role_id) === "1" || currentUser?.role?.name === "Super Admin"
+
+  // Filtrar roles: ID 0 (IA) nunca se asigna, ID 1 (Super Admin) solo por Super Admin
+  const assignableRoles = useMemo(() => {
+    if (!Array.isArray(roles)) return []
+    return roles.filter((role) => {
+      const roleIdStr = String(role.id)
+      if (roleIdStr === "0" || role.name === "IA") return false
+      if ((roleIdStr === "1" || role.name === "Super Admin") && !isCallerSuperAdmin) return false
+      return true
+    })
+  }, [roles, isCallerSuperAdmin])
+
   // Estados locales del formulario
   const [formData, setFormData] = useState<CreateUserRequest>({
     email: "",
@@ -103,7 +118,7 @@ export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoa
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm text-muted-foreground">Cargando roles...</span>
               </div>
-            ) : !Array.isArray(roles) || roles.length === 0 ? (
+            ) : !Array.isArray(assignableRoles) || assignableRoles.length === 0 ? (
               <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted">
                 <span className="text-sm text-muted-foreground">No hay roles disponibles</span>
               </div>
@@ -117,7 +132,7 @@ export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoa
                   <SelectValue placeholder="Selecciona un rol (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role) => (
+                  {assignableRoles.map((role) => (
                     <SelectItem key={role.id} value={role.id}>
                       {role.name}
                     </SelectItem>

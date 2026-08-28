@@ -179,7 +179,15 @@ export function RolesPage() {
 
   // Eliminar rol
   const handleDeleteRole = async (role: Role) => {
-    if (role.name === "Super Admin" || role.name === "Administrador") {
+    const isProtectedRole =
+      String(role.id) === "0" ||
+      String(role.id) === "1" ||
+      String(role.id) === "2" ||
+      role.name === "Super Admin" ||
+      role.name === "IA" ||
+      role.name === "Administrador"
+
+    if (isProtectedRole) {
       alert("No se puede eliminar un rol del sistema predeterminado.")
       return
     }
@@ -275,7 +283,10 @@ export function RolesPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {roles.map((role) => {
-            const isProtectedRole = role.name === "Super Admin" || role.name === "Administrador"
+            const isSuperAdmin = String(role.id) === "1" || role.name === "Super Admin"
+            const isIA = String(role.id) === "0" || role.name === "IA"
+            const isAdministrator = String(role.id) === "2" || role.name === "Administrador"
+            const isProtectedRole = isSuperAdmin || isIA || isAdministrator
             const permCount = role.permissions?.length || 0
 
             return (
@@ -283,13 +294,27 @@ export function RolesPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <Shield className="h-5 w-5" />
+                      <div
+                        className={`p-2 rounded-lg ${
+                          isSuperAdmin
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : isIA
+                            ? "bg-purple-500/10 text-purple-600"
+                            : "bg-primary/10 text-primary"
+                        }`}
+                      >
+                        {isIA ? <Bot className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
                       </div>
                       <div>
                         <CardTitle className="text-lg leading-tight">{role.name}</CardTitle>
                         <CardDescription className="text-xs mt-0.5">
-                          {isProtectedRole ? "Rol de sistema predeterminado" : "Rol personalizado"}
+                          {isSuperAdmin
+                            ? "Control total sin restricciones"
+                            : isIA
+                            ? "Reservado para el agente IA Sara"
+                            : isProtectedRole
+                            ? "Rol de sistema predeterminado"
+                            : "Rol personalizado"}
                         </CardDescription>
                       </div>
                     </div>
@@ -300,33 +325,53 @@ export function RolesPage() {
                   <div className="flex items-center justify-between p-2.5 bg-muted/40 rounded-lg border">
                     <div className="flex items-center gap-2 text-xs font-medium">
                       <Key className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>Permisos asignados:</span>
+                      <span>{isSuperAdmin ? "Nivel de acceso:" : "Permisos asignados:"}</span>
                     </div>
-                    <Badge variant={permCount > 0 ? "default" : "secondary"}>
-                      {permCount} {permCount === 1 ? "permiso" : "permisos"}
-                    </Badge>
+                    {isSuperAdmin ? (
+                      <Badge className="bg-emerald-600 text-white font-medium text-xs">
+                        Acceso Total (Wildcard)
+                      </Badge>
+                    ) : isIA ? (
+                      <Badge className="bg-purple-600 text-white font-medium text-xs">
+                        Exclusivo IA
+                      </Badge>
+                    ) : (
+                      <Badge variant={permCount > 0 ? "default" : "secondary"}>
+                        {permCount} {permCount === 1 ? "permiso" : "permisos"}
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 pt-2 border-t">
-                    <Can resource="roles" action="assign_permissions">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="flex-1 text-xs"
-                        onClick={() => handleOpenPermissionsModal(role)}
-                      >
-                        <Key className="h-3.5 w-3.5 mr-1.5" />
-                        Permisos
-                      </Button>
-                    </Can>
+                    {isSuperAdmin ? (
+                      <div className="flex-1 py-1.5 px-3 text-center text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+                        Acceso total automático
+                      </div>
+                    ) : isIA ? (
+                      <div className="flex-1 py-1.5 px-3 text-center text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 rounded-md border border-purple-200 dark:border-purple-800/60">
+                        Agente Autónomo
+                      </div>
+                    ) : (
+                      <Can resource="roles" action="assign_permissions">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="flex-1 text-xs"
+                          onClick={() => handleOpenPermissionsModal(role)}
+                        >
+                          <Key className="h-3.5 w-3.5 mr-1.5" />
+                          Permisos
+                        </Button>
+                      </Can>
+                    )}
 
                     <Can resource="roles" action="update">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleOpenEditRole(role)}
-                        disabled={role.name === "Super Admin"}
-                        title="Editar nombre del rol"
+                        disabled={isSuperAdmin || isIA}
+                        title={isSuperAdmin || isIA ? "Rol protegido" : "Editar nombre del rol"}
                       >
                         <Edit2 className="h-3.5 w-3.5" />
                       </Button>

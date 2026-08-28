@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/shared/components/ui/button"
 import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
@@ -13,6 +13,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select"
 import { Loader2 } from "lucide-react"
 import type { User, UpdateUserRequest, Role } from "../types"
+import { useAuth } from "@/shared/contexts/auth-context"
 
 interface EditUserDialogProps {
   open: boolean
@@ -24,6 +25,21 @@ interface EditUserDialogProps {
 }
 
 export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, rolesLoading }: EditUserDialogProps) {
+  const { user: currentUser } = useAuth()
+  const isSelf = Boolean(currentUser && user && String(currentUser.id) === String(user.id))
+  const isCallerSuperAdmin = String(currentUser?.role?.id) === "1" || String(currentUser?.role_id) === "1" || currentUser?.role?.name === "Super Admin"
+
+  // Filtrar roles: ID 0 (IA) nunca se asigna, ID 1 (Super Admin) solo por Super Admin
+  const assignableRoles = useMemo(() => {
+    if (!Array.isArray(roles)) return []
+    return roles.filter((role) => {
+      const roleIdStr = String(role.id)
+      if (roleIdStr === "0" || role.name === "IA") return false
+      if ((roleIdStr === "1" || role.name === "Super Admin") && !isCallerSuperAdmin) return false
+      return true
+    })
+  }, [roles, isCallerSuperAdmin])
+
   // Estados locales del formulario
   const [formData, setFormData] = useState<UpdateUserRequest>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -99,7 +115,7 @@ export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, role
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm text-muted-foreground">Cargando roles...</span>
               </div>
-            ) : !Array.isArray(roles) || roles.length === 0 ? (
+            ) : !Array.isArray(assignableRoles) || assignableRoles.length === 0 ? (
               <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted">
                 <span className="text-sm text-muted-foreground">No hay roles disponibles</span>
               </div>
@@ -107,13 +123,13 @@ export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, role
               <Select
                 value={formData.role_id || user.role_id}
                 onValueChange={(value) => setFormData({ ...formData, role_id: value })}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isSelf}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map((role) => (
+                  {assignableRoles.map((role) => (
                     <SelectItem key={role.id} value={role.id}>
                       {role.name}
                     </SelectItem>
@@ -121,11 +137,17 @@ export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, role
                 </SelectContent>
               </Select>
             )}
-            <p className="text-xs text-muted-foreground">
-              {rolesLoading 
-                ? "Cargando roles disponibles..." 
-                : `Rol actual: ${user.role_name}`}
-            </p>
+            {isSelf ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                Por motivos de seguridad, no puedes modificar tu propio rol.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {rolesLoading 
+                  ? "Cargando roles disponibles..." 
+                  : `Rol actual: ${user.role_name}`}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

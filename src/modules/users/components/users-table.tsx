@@ -17,6 +17,7 @@ import {
 import { Edit, Trash2, Mail, Shield, CheckCircle2, XCircle, User as UserIcon, Loader2, Eye, ExternalLink } from "lucide-react"
 import type { User } from "../types"
 import { formatDateShort } from "@/shared/lib/date-utils"
+import { useAuth } from "@/shared/contexts/auth-context"
 
 interface UsersTableProps {
   users: User[]
@@ -43,6 +44,7 @@ export function UsersTable({
   pagination,
   onPageChange,
 }: UsersTableProps) {
+  const { user: currentUser } = useAuth()
 
   const getUserInitials = (email: string, name?: string | null, lastName?: string | null) => {
     // Si tiene nombre y apellido, usar iniciales de ambos
@@ -198,37 +200,54 @@ export function UsersTable({
 
                     {/* Acciones */}
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => onEdit(user)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                      {(() => {
+                        const isSelf = Boolean(currentUser && String(currentUser.id) === String(user.id))
+                        return (
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => onEdit(user)}>
+                              <Edit className="h-4 w-4" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción eliminará el usuario{" "}
-                                <span className="font-medium">{user.email}</span>. Esta acción no se
-                                puede deshacer.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => onDelete(user.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            {isSelf ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled
+                                title="No puedes eliminar tu propia cuenta"
+                                className="opacity-40 cursor-not-allowed"
                               >
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                            ) : (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta acción eliminará el usuario{" "}
+                                      <span className="font-medium">{user.email}</span>. Esta acción no se
+                                      puede deshacer.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => onDelete(user.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Eliminar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))
