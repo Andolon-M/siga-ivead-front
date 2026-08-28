@@ -225,5 +225,18 @@ export const API_ENDPOINTS = {
     CHATS: "/sara/admin/chats",
     CHAT_MESSAGES: (id: string) => `/sara/admin/chats/${id}/messages`,
   },
+
+  // Songs / Cancionero Musical
+  SONGS: {
+    LIST: "/songs",
+    CREATE: "/songs",
+    GET: (id: string) => `/songs/${id}`,
+    UPDATE: (id: string) => `/songs/${id}`,
+    DELETE: (id: string) => `/songs/${id}`,
+    VERSION_TYPES: "/songs/version-types",
+    CREATE_VERSION_TYPE: "/songs/version-types",
+    UPDATE_VERSION_TYPE: (id: string) => `/songs/version-types/${id}`,
+    DELETE_VERSION_TYPE: (id: string) => `/songs/version-types/${id}`,
+  },
 }
 

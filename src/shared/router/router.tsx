@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { LandingPage } from '@/modules/landing/pages/public/landing-page'
 import { AdminLayout } from '@/shared/layouts/admin-layout'
 import { SaraLayout } from '@/shared/layouts/sara-layout'
+import { SongsLayout } from '@/shared/layouts/songs-layout'
 import { AdminDashboard } from '@/modules/dashboard/pages/dashboard'
 import { UsersPage } from '@/modules/users/pages'
 import { MembersPage, MemberDetailPage } from '@/modules/members/pages'
@@ -15,6 +16,13 @@ import { RolesPage } from '@/modules/roles/pages'
 import { MassMessagingPage } from '@/modules/mass-messaging/pages'
 import { MetaTemplatesPage, MetaTemplateDetailPage } from '@/modules/meta-templates/pages'
 import { SaraChatsPage, SaraChatDetailPage, EmptyChatSelection } from '@/modules/sara-chats/pages'
+import {
+  SongsListPage,
+  SongDetailPage,
+  CreateSongPage,
+  EditSongPage,
+  SongVersionTypesPage,
+} from '@/modules/songs/pages'
 import {
   ActivitySlotsBoardPage,
   MemberVolunteerHistoryPage,
@@ -238,6 +246,43 @@ export default function AppRouter() {
           element={
             <ProtectedRoute requirePermission={{ resource: "meta_templates", action: "read" }}>
               <MetaTemplateDetailPage />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+
+      {/* Sub-panel Cancionero / Canciones — layout modular propio con sidebar */}
+      <Route
+        path="/admin/songs"
+        element={
+          <ProtectedRoute requirePermission={{ resource: "songs", action: "read" }}>
+            <SongsLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<SongsListPage />} />
+        <Route
+          path="new"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "songs", action: "create" }}>
+              <CreateSongPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="version-types"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "songs", action: "manage_types" }}>
+              <SongVersionTypesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path=":id" element={<SongDetailPage />} />
+        <Route
+          path=":id/edit"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "songs", action: "update" }}>
+              <EditSongPage />
             </ProtectedRoute>
           }
         />

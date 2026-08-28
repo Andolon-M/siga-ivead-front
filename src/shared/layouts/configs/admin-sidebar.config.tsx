@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Shield,
   HandHeart,
+  Music,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import type { ModuleSidebarConfig } from "../types/module-sidebar.types"
@@ -90,6 +91,12 @@ export const adminSidebarConfig: ModuleSidebarConfig = {
           href: "/admin/files",
           icon: FileText,
           permission: { resource: "files", action: "read" },
+        },
+        {
+          title: "Cancionero",
+          href: "/admin/songs",
+          icon: Music,
+          permission: { resource: "songs", action: "read" },
         },
       ],
     },
