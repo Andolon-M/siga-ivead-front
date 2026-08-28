@@ -62,6 +62,18 @@ export function ChordSheetViewer({
           );
         }
 
+        // 3.1. Línea de Notas / Melodía / Instrumental / Riff
+        if (line.isRiffOrNotes) {
+          return (
+            <div
+              key={lineIdx}
+              className="my-1.5 py-1 px-3 rounded-md bg-muted/50 border border-border/60 font-mono font-bold text-primary tracking-wider text-[0.9em] break-inside-avoid inline-block"
+            >
+              {line.blocks[0]?.text}
+            </div>
+          );
+        }
+
         // 4. Línea con bloques de acordes y texto
         return (
           <div
@@ -71,7 +83,12 @@ export function ChordSheetViewer({
             {line.blocks.map((block, blockIdx) => (
               <span
                 key={blockIdx}
-                className="inline-flex flex-col align-bottom whitespace-pre"
+                className="inline-flex flex-col align-bottom whitespace-pre pr-0.5"
+                style={{
+                  minWidth: block.chord
+                    ? `${Math.max(block.chord.length + 1, (block.text || '').length)}ch`
+                    : undefined,
+                }}
               >
                 {/* Fila del Acorde */}
                 {showChords && (

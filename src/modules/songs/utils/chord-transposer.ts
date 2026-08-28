@@ -129,7 +129,48 @@ export function transposeChord(chord: string, semitones: number): string {
 }
 
 /**
- * Transpone todo el contenido de la canción respetando corchetes [Acorde]
+ * Transpone tokens de riff / punteo / bajo (ej: "AAA", "EEE", "C#C#", "A-B-C", "D")
+ */
+export function transposeRiffToken(token: string, semitones: number): string {
+  if (semitones === 0) return token;
+
+  // Si es nota repetida (ej: "AAA", "EEE", "FFF", "CC", "DDD")
+  const repeatedMatch = token.match(/^([A-G][#b]?)\1*$/i);
+  if (repeatedMatch) {
+    const singleNote = token.match(/^([A-G][#b]?)/i)?.[1];
+    if (singleNote) {
+      const count = token.length / singleNote.length;
+      const transposed = transposeNote(singleNote.toUpperCase(), semitones);
+      return transposed.repeat(count);
+    }
+  }
+
+  // Si son notas separadas por guión (ej: "A-B-C" o "A-D-E")
+  if (token.includes('-')) {
+    return token.split('-').map((t) => transposeRiffToken(t, semitones)).join('-');
+  }
+
+  // Si es un acorde o nota individual
+  const chordMatch = token.match(/^([A-G][#b]?)(.*)$/);
+  if (chordMatch) {
+    return transposeChord(token, semitones);
+  }
+
+  return token;
+}
+
+/**
+ * Transpone una línea completa de punteo / bajo / notas musicales
+ */
+export function transposeRiffLine(riffContent: string, semitones: number): string {
+  if (semitones === 0) return riffContent;
+  return riffContent.replace(/\b([A-G][#b]?(?:\1*|[0-9a-zA-Z#b\/\-]*))\b/g, (match) => {
+    return transposeRiffToken(match, semitones);
+  });
+}
+
+/**
+ * Transpone todo el contenido de la canción respetando corchetes [Acorde] y [riff:...]
  * Si el contenido viene en texto plano de dos líneas, lo normaliza automáticamente para transponerlo.
  */
 export function transposeSongContent(content: string, semitones: number): string {
@@ -143,8 +184,15 @@ export function transposeSongContent(content: string, semitones: number): string
   if (semitones === 0) return normalized;
 
   return normalized.replace(/\[([^\]]+)\]/g, (match, chordName) => {
-    // Si es un encabezado de sección como [Intro], [Verso 1], [Coro], [Puente], etc., no transponer
     const trimmed = chordName.trim();
+
+    // Riff / notas de bajo (ej: [riff:AAA EEE D E FFF...])
+    if (trimmed.toLowerCase().startsWith('riff:')) {
+      const riffBody = trimmed.slice(5);
+      return `[riff:${transposeRiffLine(riffBody, semitones)}]`;
+    }
+
+    // Si es un encabezado de sección como [Intro], [Verso 1], [Coro], [Puente], etc., no transponer
     if (isSectionHeaderTag(trimmed)) {
       return match;
     }
@@ -160,7 +208,7 @@ export function transposeSongContent(content: string, semitones: number): string
 }
 
 /**
- * Determina si una etiqueta entre corchetes es un encabezado de sección
+ * Determina si una etiqueta entre corchetes es un encabezado de sección o etiqueta informativa
  */
 export function isSectionHeaderTag(tag: string): boolean {
   const lower = tag.toLowerCase().trim();
@@ -188,7 +236,13 @@ export function isSectionHeaderTag(tag: string): boolean {
     lower.startsWith('outro') ||
     lower.startsWith('final') ||
     lower.startsWith('instrumental') ||
-    lower.startsWith('tag')
+    lower.startsWith('tag') ||
+    lower === 'acordes' ||
+    lower.startsWith('acordes:') ||
+    lower.startsWith('bajo') ||
+    lower.startsWith('punteo') ||
+    lower.startsWith('notas') ||
+    lower.startsWith('riff')
   );
 }
 
@@ -222,6 +276,66 @@ export function isChordLine(line: string): boolean {
   // Contar cuántos tokens son acordes válidos
   const chordCount = tokens.filter((t) => isSingleChord(t) || t === '|' || t === '/' || t === '-').length;
   return chordCount / tokens.length >= 0.6;
+}
+
+/**
+ * Determina si una línea es un encabezado de sección o etiqueta informativa sin corchetes
+ * Ej: "acordes", "Acordes:Bajo(puntos):", "Bajo:", "Punteo:", "Intro:", etc.
+ */
+export function isSectionOrInfoLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) return true;
+
+  const lower = trimmed.toLowerCase();
+  return (
+    lower === 'acordes' ||
+    lower.startsWith('acordes:') ||
+    lower.startsWith('bajo') ||
+    lower.startsWith('punteo') ||
+    lower.startsWith('intro') ||
+    lower.startsWith('verso') ||
+    lower.startsWith('verse') ||
+    lower.startsWith('coro') ||
+    lower.startsWith('chorus') ||
+    lower.startsWith('puente') ||
+    lower.startsWith('bridge') ||
+    lower.startsWith('solo') ||
+    lower.startsWith('interludio') ||
+    lower.startsWith('outro') ||
+    lower.startsWith('final') ||
+    lower.startsWith('notas') ||
+    lower.startsWith('riff') ||
+    lower.startsWith('tab') ||
+    lower.endsWith(':')
+  );
+}
+
+/**
+ * Comprueba si una línea contiene notas de punteo, tablatura o notas de bajo repetidas
+ * Ej: "AAA EEE D E FFF   EEE CC A" o "A A A  E E E  D E F F F" o "A - B - C"
+ */
+export function isNoteOrRiffLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) return false;
+
+  const tokens = trimmed.split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return false;
+
+  let noteCount = 0;
+  for (const t of tokens) {
+    const clean = t.replace(/[()]/g, '').trim();
+    if (isSingleChord(clean)) {
+      noteCount++;
+    } else if (/^([A-G][#b]?)+$/i.test(clean)) {
+      noteCount++;
+    } else if (/^[|/\-~0-9]+$/.test(clean)) {
+      noteCount++;
+    }
+  }
+
+  return noteCount / tokens.length >= 0.6;
 }
 
 /**
@@ -282,11 +396,24 @@ export function parseSongLines(content: string): ParsedLine[] {
         isEmpty: true,
         isSectionHeader: false,
         isComment: false,
+        isRiffOrNotes: false,
         blocks: [],
       };
     }
 
-    // Encabezado de sección (ej: [Verso 1], [Coro], [Intro], [Estribillo])
+    // Línea de punteo / notas de bajo (ej: [riff:AAA EEE D E FFF...])
+    if (trimmed.startsWith('[riff:') && trimmed.endsWith(']')) {
+      const riffText = trimmed.slice(6, -1).trim();
+      return {
+        isEmpty: false,
+        isSectionHeader: false,
+        isComment: false,
+        isRiffOrNotes: true,
+        blocks: [{ chord: null, text: riffText }],
+      };
+    }
+
+    // Encabezado de sección (ej: [Verso 1], [Coro], [Intro], [Estribillo], [Acordes])
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
       const inside = trimmed.slice(1, -1).trim();
       if (isSectionHeaderTag(inside)) {
@@ -295,6 +422,7 @@ export function parseSongLines(content: string): ParsedLine[] {
           isSectionHeader: true,
           sectionName: inside,
           isComment: false,
+          isRiffOrNotes: false,
           blocks: [],
         };
       }
@@ -306,6 +434,7 @@ export function parseSongLines(content: string): ParsedLine[] {
         isEmpty: false,
         isSectionHeader: false,
         isComment: true,
+        isRiffOrNotes: false,
         blocks: [{ chord: null, text: trimmed.replace(/^[#\/]+\s*/, '') }],
       };
     }
@@ -345,6 +474,7 @@ export function parseSongLines(content: string): ParsedLine[] {
       isEmpty: false,
       isSectionHeader: false,
       isComment: false,
+      isRiffOrNotes: false,
       blocks: blocks.length > 0 ? blocks : [{ chord: null, text: rawLine }],
     };
   });
@@ -396,20 +526,40 @@ export function convertPlainTextToBracketed(plainText: string): string {
       continue;
     }
 
-    // 4. Si la línea actual ya tiene corchetes de acordes [G]Letra, mantenerla
-    if (/\[[A-G][#b]?[^\]]*\]/.test(current)) {
+    // 4. Encabezado descriptivo sin corchetes (ej: "acordes", "Acordes:Bajo(puntos):", "Bajo:")
+    if (isSectionOrInfoLine(trimmedCurrent) && !isChordLine(trimmedCurrent)) {
+      const cleanHeader = trimmedCurrent.replace(/[:]+$/, '').trim();
+      result.push(`[${cleanHeader}]`);
+      i++;
+      continue;
+    }
+
+    // 5. Si la línea actual ya tiene corchetes de acordes [G]Letra o [riff:...], mantenerla
+    if (/\[[A-G][#b]?[^\]]*\]/.test(current) || /\[riff:[^\]]*\]/i.test(current)) {
       result.push(current);
       i++;
       continue;
     }
 
-    // 5. Verificar si la línea actual es una línea de acordes
+    // 6. Línea de punteo / notas de bajo (ej: "AAA EEE D E FFF   EEE CC A")
+    if (isNoteOrRiffLine(current) && !isChordLine(current)) {
+      result.push(`[riff:${trimmedCurrent}]`);
+      i++;
+      continue;
+    }
+
+    // 7. Verificar si la línea actual es una línea de acordes
     if (isChordLine(current)) {
       const next = lines[i + 1];
-      const isNextChordOrEmpty = !next || !next.trim() || isChordLine(next) || next.trim().startsWith('[');
+      const isNextNonLyric =
+        !next ||
+        !next.trim() ||
+        isChordLine(next) ||
+        isNoteOrRiffLine(next) ||
+        isSectionOrInfoLine(next.trim());
 
-      if (isNextChordOrEmpty) {
-        // Línea de solo acordes (intro/interludio/outro)
+      if (isNextNonLyric) {
+        // Línea de solo acordes (intro/interludio/outro/acordes)
         const chordTokens: { chord: string; index: number }[] = [];
         const tokenRegex = /\S+/g;
         let tm: RegExpExecArray | null;
@@ -433,22 +583,48 @@ export function convertPlainTextToBracketed(plainText: string): string {
           chordTokens.push({ chord: tm[0], index: tm.index });
         }
 
+        // Calcular offset de indentación: la diferencia entre el inicio
+        // del contenido visible en la línea de acordes vs la línea de letra.
+        const chordLineStart = current.search(/\S/);
+        const lyricLineStart = next.search(/\S/);
+        const offset = chordLineStart >= 0 && lyricLineStart >= 0
+          ? chordLineStart - lyricLineStart
+          : 0;
+
         let merged = '';
         let lastCharIdx = 0;
+        let lastChordEndCol = 0;
 
         chordTokens.forEach(({ chord, index }) => {
-          if (index > lastCharIdx && index < next.length) {
-            merged += next.slice(lastCharIdx, index);
-            lastCharIdx = index;
-          } else if (index >= next.length && lastCharIdx < next.length) {
-            merged += next.slice(lastCharIdx);
-            lastCharIdx = next.length;
+          const adjustedIdx = Math.max(0, index - offset);
+
+          if (adjustedIdx < next.length) {
+            // El acorde cae dentro del rango de texto de la letra
+            if (adjustedIdx > lastCharIdx) {
+              merged += next.slice(lastCharIdx, adjustedIdx);
+              lastCharIdx = adjustedIdx;
+            }
+          } else {
+            // El acorde cae DESPUÉS del final de la letra (cola de acordes)
+            if (lastCharIdx < next.length) {
+              merged += next.slice(lastCharIdx);
+              lastCharIdx = next.length;
+            }
+            // Espacio de separación proporcional para que los acordes finales no se peguen
+            if (lastChordEndCol > 0) {
+              const spaceBetween = Math.max(2, index - lastChordEndCol);
+              merged += ' '.repeat(spaceBetween);
+            } else {
+              merged += '  ';
+            }
           }
 
           const chordTag = isSingleChord(chord) ? `[${chord}]` : chord;
           merged += chordTag;
+          lastChordEndCol = index + chord.length;
         });
 
+        // Agregar cualquier texto restante de la letra después del último acorde
         if (lastCharIdx < next.length) {
           merged += next.slice(lastCharIdx);
         }
@@ -464,4 +640,138 @@ export function convertPlainTextToBracketed(plainText: string): string {
   }
 
   return result.join('\n');
+}
+
+/**
+ * Convierte contenido en formato bracketed [Acorde]Letra a formato de texto plano
+ * con acordes en una línea arriba y letra en la línea de abajo.
+ * Esto es el inverso de convertPlainTextToBracketed.
+ */
+export function convertBracketedToPlainText(bracketedContent: string): string {
+  if (!bracketedContent) return '';
+
+  // Si el contenido no tiene corchetes de acordes o riffs, ya es texto plano
+  if (!hasChordBrackets(bracketedContent)) return bracketedContent;
+
+  const lines = bracketedContent.split(/\r?\n/);
+  const result: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Línea vacía
+    if (!trimmed) {
+      result.push('');
+      continue;
+    }
+
+    // Línea de punteo / notas de bajo
+    if (trimmed.startsWith('[riff:') && trimmed.endsWith(']')) {
+      const riffBody = trimmed.slice(6, -1).trim();
+      result.push(riffBody);
+      continue;
+    }
+
+    // Encabezado de sección [Verso 1], [Coro], etc.
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      const inside = trimmed.slice(1, -1).trim();
+      if (isSectionHeaderTag(inside)) {
+        result.push(trimmed);
+        continue;
+      }
+    }
+
+    // Comentario
+    if (trimmed.startsWith('#') || trimmed.startsWith('//')) {
+      result.push(line);
+      continue;
+    }
+
+    // Línea sin corchetes de acordes → pasar tal cual
+    if (!/\[[^\]]+\]/.test(trimmed)) {
+      result.push(line);
+      continue;
+    }
+
+    // ── Parsear bloques {acorde, texto} ──
+    const blocks: { chord: string | null; text: string }[] = [];
+    const regex = /\[([^\]]+)\]/g;
+    let lastIndex = 0;
+    let currentChord: string | null = null;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(line)) !== null) {
+      const textBefore = line.slice(lastIndex, match.index);
+
+      if (textBefore.length > 0 || currentChord !== null) {
+        blocks.push({ chord: currentChord, text: textBefore });
+      }
+
+      currentChord = match[1];
+      lastIndex = regex.lastIndex;
+    }
+
+    const remaining = line.slice(lastIndex);
+    if (remaining.length > 0 || currentChord !== null) {
+      blocks.push({ chord: currentChord, text: remaining });
+    }
+
+    // ── Construir línea de acordes y línea de letra ──
+    let chordLine = '';
+    let lyricsLine = '';
+    let hasAnyChord = false;
+    let hasAnyLyrics = false;
+
+    for (let j = 0; j < blocks.length; j++) {
+      const block = blocks[j];
+      const chord = block.chord || '';
+      const text = block.text;
+      const isLast = j === blocks.length - 1;
+
+      if (chord) hasAnyChord = true;
+      if (text.replace(/\s/g, '')) hasAnyLyrics = true;
+
+      // Ancho mínimo del bloque: el acorde necesita al menos su largo + 1 espacio separador
+      const minChordSpace = chord ? (isLast ? chord.length : chord.length + 1) : 0;
+      const blockWidth = Math.max(minChordSpace, text.length);
+
+      chordLine += chord ? chord.padEnd(blockWidth) : ' '.repeat(blockWidth);
+      lyricsLine += text.padEnd(blockWidth);
+    }
+
+    chordLine = chordLine.trimEnd();
+    lyricsLine = lyricsLine.trimEnd();
+
+    if (hasAnyChord && hasAnyLyrics) {
+      result.push(chordLine);
+      result.push(lyricsLine);
+    } else if (hasAnyChord) {
+      // Línea de solo acordes (intro, interludio, etc.)
+      result.push(chordLine);
+    } else {
+      result.push(lyricsLine);
+    }
+  }
+
+  return result.join('\n');
+}
+
+/**
+ * Verifica si el contenido tiene corchetes de acordes reales o riffs (no solo encabezados de sección)
+ */
+function hasChordBrackets(content: string): boolean {
+  const regex = /\[([^\]]+)\]/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(content)) !== null) {
+    const tag = match[1].trim();
+    if (tag.toLowerCase().startsWith('riff:')) return true;
+    if (!isSectionHeaderTag(tag)) {
+      // Verificar si al menos un token dentro es un acorde
+      const tokens = tag.split(/\s+/);
+      if (tokens.some((t) => isSingleChord(t))) {
+        return true;
+      }
+    }
+  }
+  return false;
 }

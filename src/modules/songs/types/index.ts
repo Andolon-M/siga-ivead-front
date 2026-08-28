@@ -104,6 +104,7 @@ export interface ParsedLine {
   isSectionHeader: boolean;
   sectionName?: string;
   isComment: boolean;
+  isRiffOrNotes?: boolean;
   isEmpty: boolean;
   blocks: ChordBlock[];
 }

@@ -63,6 +63,9 @@ export function PrintSongModal({
         if (line.isComment) {
           return `<div class="comment">${escapeHtml(line.blocks[0]?.text || '')}</div>`;
         }
+        if (line.isRiffOrNotes) {
+          return `<div class="riff-box">${escapeHtml(line.blocks[0]?.text || '')}</div>`;
+        }
 
         const blocksHtml = line.blocks
           .map((b) => {
@@ -73,7 +76,10 @@ export function PrintSongModal({
                 ? '<span class="chord-empty">&nbsp;</span>'
                 : '';
             const textHtml = `<span class="lyric">${b.text ? escapeHtml(b.text) : '&nbsp;'}</span>`;
-            return `<span class="chord-block">${chordHtml}${textHtml}</span>`;
+            const minWidthStyle = b.chord
+              ? `style="min-width: ${Math.max(b.chord.length + 1, (b.text || '').length)}ch;"`
+              : '';
+            return `<span class="chord-block" ${minWidthStyle}>${chordHtml}${textHtml}</span>`;
           })
           .join('');
 
@@ -161,6 +167,7 @@ export function PrintSongModal({
               flex-direction: column;
               vertical-align: bottom;
               white-space: pre;
+              padding-right: 2px;
             }
             .chord {
               font-family: "Courier New", Courier, monospace;
@@ -196,6 +203,21 @@ export function PrintSongModal({
               border: 1px solid #cbd5e1;
               margin-top: 10px;
               margin-bottom: 3px;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .riff-box {
+              background-color: #f1f5f9;
+              border: 1px solid #cbd5e1;
+              color: #0f172a;
+              padding: 3px 8px;
+              border-radius: 4px;
+              font-family: "Courier New", Courier, monospace;
+              font-weight: 700;
+              font-size: 0.9em;
+              margin: 4px 0;
+              display: inline-block;
+              letter-spacing: 0.5px;
               break-inside: avoid;
               page-break-inside: avoid;
             }

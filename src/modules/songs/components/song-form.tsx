@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -25,16 +25,14 @@ import {
   Music,
   Youtube,
   FileAudio,
-  Sparkles,
   Plus,
   Loader2,
   Save,
   ArrowLeft,
-  Wand2,
 } from 'lucide-react';
 import type { Song, CreateSongData, MusicalKey, SongVersionType } from '../types';
 import { songsService } from '../services/songs.service';
-import { MUSICAL_KEY_LABELS, convertPlainTextToBracketed } from '../utils/chord-transposer';
+import { MUSICAL_KEY_LABELS, convertPlainTextToBracketed, convertBracketedToPlainText } from '../utils/chord-transposer';
 import { ChordSheetViewer } from './chord-sheet-viewer';
 
 interface SongFormProps {
@@ -55,7 +53,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
     version_type_id: initialData?.version_type_id || '',
     bpm: initialData?.bpm || null,
     time_signature: initialData?.time_signature || '4/4',
-    content: initialData?.content || '',
+    content: initialData?.content ? convertBracketedToPlainText(initialData.content) : '',
     multitrack_url: initialData?.multitrack_url || '',
     youtube_url: initialData?.youtube_url || '',
     notes: initialData?.notes || '',
@@ -109,13 +107,11 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
     }
   };
 
-  // Convertidor de texto plano a formato bracketed [G]
-  const handleAutoConvertPlainText = () => {
-    if (!formData.content.trim()) return;
-
-    const converted = convertPlainTextToBracketed(formData.content);
-    setFormData((prev) => ({ ...prev, content: converted }));
-  };
+  // Contenido convertido a formato bracketed para vista previa y guardado
+  const previewContent = useMemo(
+    () => convertPlainTextToBracketed(formData.content),
+    [formData.content]
+  );
 
   // Insertar etiqueta de sección
   const insertSectionTag = (tag: string) => {
@@ -145,10 +141,8 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
       return;
     }
 
-    // Auto-convertir si el texto está en formato plano de 2 líneas
-    const finalContent = formData.content.includes('[')
-      ? formData.content
-      : convertPlainTextToBracketed(formData.content);
+    // Convertir siempre a formato bracketed para almacenamiento interno
+    const finalContent = convertPlainTextToBracketed(formData.content);
 
     const submissionData = {
       ...formData,
@@ -463,19 +457,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
                 + Outro
               </Button>
 
-              <div className="ml-auto">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="h-7 text-xs px-2.5 gap-1.5 bg-primary/10 text-primary hover:bg-primary/20"
-                  onClick={handleAutoConvertPlainText}
-                  title="Convierte texto plano o pegado de CifraClub/LaCuerda al formato sincronizado"
-                >
-                  <Wand2 className="h-3.5 w-3.5" />
-                  Auto-Alinear Acordes
-                </Button>
-              </div>
+
             </div>
 
             {activeTab === 'editor' ? (
@@ -491,7 +473,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
             ) : (
               <div className="flex-1 min-h-[420px] p-4 bg-muted/20 border rounded-lg overflow-y-auto">
                 {formData.content.trim() ? (
-                  <ChordSheetViewer content={formData.content} showChords={true} />
+                  <ChordSheetViewer content={previewContent} showChords={true} />
                 ) : (
                   <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                     Escribe letra y acordes en la pestaña Editor para ver el resultado aquí.
