@@ -603,9 +603,52 @@ export function SongDetailPage() {
         )}
       </div>
 
-      {/* Barra de Control y Transposición en Tiempo Real (Solo en Escritorio Grande) */}
+      {/* Reproductor de YouTube Compacto Fijo (Solo en modo normal) */}
+      {!isFullscreen && youtubeVideoId && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 p-2.5 bg-card border rounded-xl shadow-sm overflow-hidden max-w-full">
+          <div className="relative h-[125px] w-full sm:w-[222px] shrink-0 rounded-lg overflow-hidden border bg-black shadow-inner">
+            <iframe
+              width="100%"
+              height="100%"
+              src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+              title={`${song.title} - YouTube`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full border-0"
+            />
+          </div>
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
+              <Youtube className="h-4 w-4 shrink-0" />
+              <span>Video / Audio de Referencia</span>
+            </div>
+            <p className="text-xs text-muted-foreground line-clamp-2">
+              Reproduce la versión guía o el arreglo original directamente mientras visualizas la canción.
+            </p>
+            <a
+              href={`https://www.youtube.com/watch?v=${youtubeVideoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline mt-0.5 w-fit"
+            >
+              <span>Abrir en YouTube</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Notas del arreglo si existen (Solo en modo normal) */}
+      {!isFullscreen && song.notes && (
+        <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-900 dark:text-amber-200 overflow-hidden max-w-full">
+          <span className="font-bold uppercase tracking-wider block mb-0.5">Notas del Arreglo:</span>
+          {song.notes}
+        </div>
+      )}
+
+      {/* Barra de Control y Transposición en Tiempo Real (Fijada en el borde superior al scrollear) */}
       {!isFullscreen && (
-        <div className="hidden lg:flex sticky top-16 z-20 bg-background/95 backdrop-blur border rounded-xl p-3 shadow-md items-center justify-between gap-3 max-w-full">
+        <div className="hidden lg:flex sticky top-[-1.2em] z-30 bg-background/95 backdrop-blur border rounded-xl p-3 shadow-md items-center justify-between gap-3 max-w-full">
           {/* Controles de Transposición de Tono con Ancho Fijo */}
           <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-lg border">
             <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
@@ -729,49 +772,6 @@ export function SongDetailPage() {
               <Maximize className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      )}
-
-      {/* Reproductor de YouTube Compacto Fijo (Solo en modo normal) */}
-      {!isFullscreen && youtubeVideoId && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 p-2.5 bg-card border rounded-xl shadow-sm overflow-hidden max-w-full">
-          <div className="relative h-[125px] w-full sm:w-[222px] shrink-0 rounded-lg overflow-hidden border bg-black shadow-inner">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube.com/embed/${youtubeVideoId}`}
-              title={`${song.title} - YouTube`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full border-0"
-            />
-          </div>
-          <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 px-1">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
-              <Youtube className="h-4 w-4 shrink-0" />
-              <span>Video / Audio de Referencia</span>
-            </div>
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              Reproduce la versión guía o el arreglo original directamente mientras visualizas la canción.
-            </p>
-            <a
-              href={`https://www.youtube.com/watch?v=${youtubeVideoId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline mt-0.5 w-fit"
-            >
-              <span>Abrir en YouTube</span>
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* Notas del arreglo si existen (Solo en modo normal) */}
-      {!isFullscreen && song.notes && (
-        <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-900 dark:text-amber-200 overflow-hidden max-w-full">
-          <span className="font-bold uppercase tracking-wider block mb-0.5">Notas del Arreglo:</span>
-          {song.notes}
         </div>
       )}
 
