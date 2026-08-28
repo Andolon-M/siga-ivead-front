@@ -201,7 +201,7 @@ export function UsersTable({
                     {/* Acciones */}
                     <TableCell className="text-right">
                       {(() => {
-                        const isSelf = Boolean(currentUser && String(currentUser.id) === String(user.id))
+                        const isSelf = Boolean(currentUser && String(currentUser.userId) === String(user.id))
                         return (
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="icon" onClick={() => onEdit(user)}>

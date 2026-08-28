@@ -54,6 +54,7 @@ export function SongDetailPage() {
 
   const [song, setSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isInitialPrefLoaded = useRef<boolean>(false);
 
   // Estados interactivos
   const [semitones, setSemitones] = useState<number>(0);
@@ -118,15 +119,15 @@ export function SongDetailPage() {
       const deltaX = clientX - dragInfoRef.current.startX;
       const deltaY = clientY - dragInfoRef.current.startY;
 
-      if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+      if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
         dragInfoRef.current.moved = true;
       }
 
-      const maxY = window.innerHeight - 200;
-      const newY = Math.max(30, Math.min(maxY, dragInfoRef.current.initialY + deltaY));
+      // Desplazamiento vertical restringido a la ventana
+      const newY = Math.max(70, Math.min(window.innerHeight - 80, dragInfoRef.current.initialY + deltaY));
       setBubbleY(newY);
 
-      // Cambiar de lado según la mitad de la pantalla
+      // Si se arrastra hacia la mitad opuesta de la pantalla, cambiar de lateral
       if (clientX < window.innerWidth / 2) {
         setBubbleSide('left');
       } else {
@@ -140,7 +141,7 @@ export function SongDetailPage() {
 
     window.addEventListener('mousemove', handlePointerMove);
     window.addEventListener('mouseup', handlePointerUp);
-    window.addEventListener('touchmove', handlePointerMove);
+    window.addEventListener('touchmove', handlePointerMove, { passive: false });
     window.addEventListener('touchend', handlePointerUp);
 
     return () => {
@@ -151,21 +152,35 @@ export function SongDetailPage() {
     };
   }, [isDragging]);
 
-  // Sincronizar estado de pantalla completa
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    dragInfoRef.current = {
+      startX: clientX,
+      startY: clientY,
+      initialY: bubbleY,
+      moved: false,
     };
-  }, []);
+    setIsDragging(true);
+  };
 
+  const handleBubbleClick = (e: React.MouseEvent) => {
+    // Si fue un arrastre, no abrir los controles
+    if (dragInfoRef.current.moved) {
+      e.stopPropagation();
+      return;
+    }
+    setIsMobileControlsOpen(true);
+  };
+
+  // Alternar pantalla completa
   const handleToggleFullscreen = async () => {
     try {
-      if (!document.fullscreenElement) {
+      const willBeFullscreen = !isFullscreen;
+      setIsFullscreen(willBeFullscreen);
+
+      if (willBeFullscreen) {
         if (fullscreenContainerRef.current?.requestFullscreen) {
           await fullscreenContainerRef.current.requestFullscreen();
         }
@@ -179,15 +194,38 @@ export function SongDetailPage() {
     }
   };
 
-  // Cargar canción
+  // Cargar canción y preferencias del usuario
   useEffect(() => {
     if (!id) return;
 
-    const loadSong = async () => {
+    const loadSongAndPreferences = async () => {
       setIsLoading(true);
       try {
-        const data = await songsService.getSongById(id);
-        setSong(data);
+        const [songData, prefData] = await Promise.all([
+          songsService.getSongById(id),
+          songsService.getUserPreference(id).catch(() => null),
+        ]);
+
+        setSong(songData);
+
+        if (prefData) {
+          if (typeof prefData.semitones === 'number') {
+            setSemitones(prefData.semitones);
+          }
+          if (typeof prefData.font_size === 'number') {
+            setFontSize(prefData.font_size);
+          }
+          if (typeof prefData.columns === 'number') {
+            setColumns(prefData.columns as any);
+          }
+          if (typeof prefData.show_chords === 'boolean') {
+            setShowChords(prefData.show_chords);
+          }
+        }
+
+        setTimeout(() => {
+          isInitialPrefLoaded.current = true;
+        }, 300);
       } catch (err) {
         console.error('Error al cargar canción:', err);
         alert('No se pudo encontrar la canción solicitada.');
@@ -197,8 +235,39 @@ export function SongDetailPage() {
       }
     };
 
-    loadSong();
+    loadSongAndPreferences();
   }, [id, navigate]);
+
+  // Guardar preferencias en segundo plano (debounce 600ms)
+  useEffect(() => {
+    if (!song || !isInitialPrefLoaded.current) return;
+
+    const timer = setTimeout(() => {
+      songsService.saveUserPreference(song.id, {
+        semitones,
+        font_size: fontSize,
+        columns,
+        show_chords: showChords,
+      }).catch((err) => {
+        console.error('Error guardando preferencia de usuario:', err);
+      });
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [song, semitones, fontSize, columns, showChords]);
+
+  // Restablecer al tono original y guardar preferencia
+  const handleResetToOriginalKey = () => {
+    setSemitones(0);
+    if (song && isInitialPrefLoaded.current) {
+      songsService.saveUserPreference(song.id, {
+        semitones: 0,
+        font_size: fontSize,
+        columns,
+        show_chords: showChords,
+      }).catch(() => {});
+    }
+  };
 
   // Contenido transpuesto en tiempo real
   const transposedContent = useMemo(() => {
@@ -293,7 +362,7 @@ export function SongDetailPage() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-muted-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                onClick={() => setSemitones(0)}
+                onClick={handleResetToOriginalKey}
                 disabled={semitones === 0}
                 title={semitones === 0 ? 'Tono original' : 'Restablecer tono original'}
               >
@@ -380,13 +449,35 @@ export function SongDetailPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{song.title}</h1>
+                {song.theme && (
+                  <Badge
+                    variant="outline"
+                    className="font-normal text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                  >
+                    {song.theme.name}
+                  </Badge>
+                )}
                 {song.version_type && (
                   <Badge variant="secondary" className="font-normal text-xs">
                     {song.version_type.name}
                   </Badge>
                 )}
+                {song.bpm && (
+                  <Badge
+                    variant="outline"
+                    className={`font-normal text-xs ${
+                      song.bpm >= 100
+                        ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30'
+                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                    }`}
+                  >
+                    {song.bpm >= 100 ? '⚡ Rápida' : '🕊️ Lenta'} ({song.bpm} BPM)
+                  </Badge>
+                )}
               </div>
-              <p className="text-sm text-muted-foreground mt-0.5 font-medium">{song.artist}</p>
+              <p className="text-sm text-muted-foreground mt-0.5 font-medium">
+                {song.artist_rel?.name || song.artist}
+              </p>
             </div>
           </div>
 
@@ -545,7 +636,7 @@ export function SongDetailPage() {
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 text-muted-foreground disabled:opacity-20 disabled:cursor-not-allowed"
-                onClick={() => setSemitones(0)}
+                onClick={handleResetToOriginalKey}
                 disabled={semitones === 0}
                 title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tono original'}
               >
@@ -685,7 +776,7 @@ export function SongDetailPage() {
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              onClick={() => setSemitones(0)}
+              onClick={handleResetToOriginalKey}
               disabled={semitones === 0}
               title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tonalidad original'}
             >

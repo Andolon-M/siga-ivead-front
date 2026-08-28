@@ -26,8 +26,8 @@ interface EditUserDialogProps {
 
 export function EditUserDialog({ open, onOpenChange, user, onSubmit, roles, rolesLoading }: EditUserDialogProps) {
   const { user: currentUser } = useAuth()
-  const isSelf = Boolean(currentUser && user && String(currentUser.id) === String(user.id))
-  const isCallerSuperAdmin = String(currentUser?.role?.id) === "1" || String(currentUser?.role_id) === "1" || currentUser?.role?.name === "Super Admin"
+  const isSelf = Boolean(currentUser && user && String(currentUser.userId) === String(user.id))
+  const isCallerSuperAdmin = String(currentUser?.role?.id) === "1" || currentUser?.role?.name === "Super Admin"
 
   // Filtrar roles: ID 0 (IA) nunca se asigna, ID 1 (Super Admin) solo por Super Admin
   const assignableRoles = useMemo(() => {

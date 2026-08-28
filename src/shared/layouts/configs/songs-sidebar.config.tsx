@@ -13,7 +13,7 @@ export const songsSidebarConfig: ModuleSidebarConfig = {
   brand: {
     title: "Cancionero",
     subtitle: "IVE Alabanza & Música",
-    icon: Music,
+    logo: <Music className="h-6 w-6 text-primary" />,
   },
   backTo: {
     to: "/admin",

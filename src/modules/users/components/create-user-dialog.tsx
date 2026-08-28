@@ -25,7 +25,7 @@ interface CreateUserDialogProps {
 
 export function CreateUserDialog({ open, onOpenChange, onSubmit, roles, rolesLoading }: CreateUserDialogProps) {
   const { user: currentUser } = useAuth()
-  const isCallerSuperAdmin = String(currentUser?.role?.id) === "1" || String(currentUser?.role_id) === "1" || currentUser?.role?.name === "Super Admin"
+  const isCallerSuperAdmin = String(currentUser?.role?.id) === "1" || currentUser?.role?.name === "Super Admin"
 
   // Filtrar roles: ID 0 (IA) nunca se asigna, ID 1 (Super Admin) solo por Super Admin
   const assignableRoles = useMemo(() => {

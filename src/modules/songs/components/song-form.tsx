@@ -14,14 +14,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/shared/components/ui/dialog';
-import {
   Music,
   Youtube,
   FileAudio,
@@ -29,11 +21,15 @@ import {
   Loader2,
   Save,
   ArrowLeft,
+  Sparkles,
+  Layers,
+  User,
 } from 'lucide-react';
-import type { Song, CreateSongData, MusicalKey, SongVersionType } from '../types';
+import type { Song, CreateSongData, MusicalKey, SongVersionType, SongArtist, SongTheme } from '../types';
 import { songsService } from '../services/songs.service';
 import { MUSICAL_KEY_LABELS, convertPlainTextToBracketed, convertBracketedToPlainText } from '../utils/chord-transposer';
 import { ChordSheetViewer } from './chord-sheet-viewer';
+import { ComboboxCreatable } from './combobox-creatable';
 
 interface SongFormProps {
   initialData?: Song;
@@ -49,6 +45,8 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
   const [formData, setFormData] = useState<CreateSongData>({
     title: initialData?.title || '',
     artist: initialData?.artist || '',
+    artist_id: initialData?.artist_id || null,
+    theme_id: initialData?.theme_id || null,
     original_key: initialData?.original_key || 'G',
     version_type_id: initialData?.version_type_id || '',
     bpm: initialData?.bpm || null,
@@ -60,50 +58,80 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
   });
 
   const [versionTypes, setVersionTypes] = useState<SongVersionType[]>([]);
-  const [isLoadingTypes, setIsLoadingTypes] = useState(false);
+  const [artists, setArtists] = useState<SongArtist[]>([]);
+  const [themes, setThemes] = useState<SongTheme[]>([]);
+  const [isLoadingCatalogs, setIsLoadingCatalogs] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
 
-  // Modal para nuevo tipo de versión
-  const [isNewTypeModalOpen, setIsNewTypeModalOpen] = useState(false);
-  const [newTypeName, setNewTypeName] = useState('');
-  const [isCreatingType, setIsCreatingType] = useState(false);
-
-  // Cargar tipos de versión
-  const loadVersionTypes = async () => {
-    setIsLoadingTypes(true);
+  // Cargar catálogos (Tipos de Versión, Artistas, Temas Centrales)
+  const loadCatalogs = async () => {
+    setIsLoadingCatalogs(true);
     try {
-      const types = await songsService.getAllVersionTypes();
-      setVersionTypes(types);
-      if (!formData.version_type_id && types.length > 0) {
-        setFormData((prev) => ({ ...prev, version_type_id: types[0].id }));
+      const [typesRes, artistsRes, themesRes] = await Promise.all([
+        songsService.getAllVersionTypes(),
+        songsService.getAllArtists(),
+        songsService.getAllThemes(),
+      ]);
+
+      setVersionTypes(typesRes);
+      setArtists(artistsRes);
+      setThemes(themesRes);
+
+      if (!formData.version_type_id && typesRes.length > 0 && !isEditing) {
+        setFormData((prev) => ({ ...prev, version_type_id: typesRes[0].id }));
       }
     } catch (err) {
-      console.error('Error al cargar tipos de versión:', err);
+      console.error('Error al cargar catálogos de canciones:', err);
     } finally {
-      setIsLoadingTypes(false);
+      setIsLoadingCatalogs(false);
     }
   };
 
   useEffect(() => {
-    loadVersionTypes();
+    loadCatalogs();
   }, []);
 
-  const handleCreateVersionType = async () => {
-    if (!newTypeName.trim()) return;
-
-    setIsCreatingType(true);
+  // Handlers para creación dinámica ("Otro...")
+  const handleCreateVersionType = async (name: string) => {
     try {
-      const created = await songsService.createVersionType(newTypeName.trim());
-      setVersionTypes((prev) => [...prev, created]);
-      setFormData((prev) => ({ ...prev, version_type_id: created.id }));
-      setNewTypeName('');
-      setIsNewTypeModalOpen(false);
+      const created = await songsService.createVersionType(name);
+      setVersionTypes((prev) => {
+        const exists = prev.find((t) => t.id === created.id);
+        return exists ? prev : [...prev, created];
+      });
+      return created;
     } catch (err) {
-      console.error('Error al crear tipo de versión:', err);
-      alert('No se pudo crear el tipo de versión.');
-    } finally {
-      setIsCreatingType(false);
+      console.error('Error creando tipo de versión:', err);
+      return null;
+    }
+  };
+
+  const handleCreateArtist = async (name: string) => {
+    try {
+      const created = await songsService.createArtist(name);
+      setArtists((prev) => {
+        const exists = prev.find((a) => a.id === created.id);
+        return exists ? prev : [...prev, created];
+      });
+      return created;
+    } catch (err) {
+      console.error('Error creando artista:', err);
+      return null;
+    }
+  };
+
+  const handleCreateTheme = async (name: string) => {
+    try {
+      const created = await songsService.createTheme(name);
+      setThemes((prev) => {
+        const exists = prev.find((t) => t.id === created.id);
+        return exists ? prev : [...prev, created];
+      });
+      return created;
+    } catch (err) {
+      console.error('Error creando tema central:', err);
+      return null;
     }
   };
 
@@ -122,7 +150,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
       alert('El título de la canción es obligatorio.');
       return;
     }
-    if (!formData.artist.trim()) {
+    if (!formData.artist && !formData.artist_id) {
       alert('El artista o grupo es obligatorio.');
       return;
     }
@@ -211,7 +239,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
               Datos de la Canción
             </CardTitle>
             <CardDescription className="text-xs">
-              Información musical y técnica básica
+              Información musical y categorización
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-0">
@@ -229,17 +257,52 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
               />
             </div>
 
-            {/* Artista */}
+            {/* Artista / Banda con Buscador y "Otro..." */}
             <div className="space-y-1.5">
-              <Label htmlFor="artist" className="text-xs font-semibold">
+              <Label className="text-xs font-semibold flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 text-muted-foreground" />
                 Artista / Banda <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="artist"
-                placeholder="Ej: Miel San Marcos"
-                value={formData.artist}
-                onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                required
+              <ComboboxCreatable
+                label="Artista"
+                placeholder="Buscar o crear artista..."
+                options={artists}
+                value={formData.artist_id || ''}
+                onChange={(id, item) => {
+                  setFormData({
+                    ...formData,
+                    artist_id: id,
+                    artist: item?.name || formData.artist,
+                  });
+                }}
+                onCreateOption={handleCreateArtist}
+                createModalTitle="Nuevo Artista o Grupo"
+                createModalDescription="Ingresa el nombre del artista, banda o ministerio musical."
+                createInputPlaceholder="Ej: Miel San Marcos, Hillsong..."
+              />
+            </div>
+
+            {/* Tema Central / Categoría con Buscador y "Otro..." */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                Tema Central
+              </Label>
+              <ComboboxCreatable
+                label="Tema Central"
+                placeholder="Seleccionar tema (ej: Alabanza, Adoración)..."
+                options={themes}
+                value={formData.theme_id || ''}
+                onChange={(id) => {
+                  setFormData({
+                    ...formData,
+                    theme_id: id || null,
+                  });
+                }}
+                onCreateOption={handleCreateTheme}
+                createModalTitle="Nuevo Tema Central"
+                createModalDescription="Registra un nuevo tema musical (ej: Gratitud, Intimidad, Guerra Espiritual)."
+                createInputPlaceholder="Ej: Intimidad Personal, Júbilo..."
               />
             </div>
 
@@ -265,36 +328,28 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
               </Select>
             </div>
 
-            {/* Tipo de Versión */}
+            {/* Tipo de Versión con Buscador y "Otro..." */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="version_type" className="text-xs font-semibold">
-                  Tipo de Versión <span className="text-destructive">*</span>
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => setIsNewTypeModalOpen(true)}
-                  className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
-                >
-                  <Plus className="h-3 w-3" /> Nuevo
-                </button>
-              </div>
-              <Select
-                value={formData.version_type_id}
-                onValueChange={(val) => setFormData({ ...formData, version_type_id: val })}
-                disabled={isLoadingTypes}
-              >
-                <SelectTrigger id="version_type">
-                  <SelectValue placeholder="Selecciona tipo de versión" />
-                </SelectTrigger>
-                <SelectContent>
-                  {versionTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs font-semibold flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                Tipo de Versión <span className="text-destructive">*</span>
+              </Label>
+              <ComboboxCreatable
+                label="Tipo de Versión"
+                placeholder="Seleccionar versión..."
+                options={versionTypes}
+                value={formData.version_type_id || ''}
+                onChange={(id) => {
+                  setFormData({
+                    ...formData,
+                    version_type_id: id,
+                  });
+                }}
+                onCreateOption={handleCreateVersionType}
+                createModalTitle="Nuevo Tipo de Versión"
+                createModalDescription="Registra una nueva categoría de versión para las canciones."
+                createInputPlaceholder="Ej: Acústica, Instrumental, En Vivo..."
+              />
             </div>
 
             {/* BPM y Compás */}
@@ -475,50 +530,6 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Modal para crear nuevo tipo de versión */}
-      <Dialog open={isNewTypeModalOpen} onOpenChange={setIsNewTypeModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Nuevo Tipo de Versión</DialogTitle>
-            <DialogDescription>
-              Crea una nueva clasificación para versiones de canciones (ej: "Versión Congreso", "Gospel", etc.)
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <Label htmlFor="new-type-name">Nombre de la Versión</Label>
-            <Input
-              id="new-type-name"
-              placeholder="Ej: Versión Especial 2026"
-              value={newTypeName}
-              onChange={(e) => setNewTypeName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleCreateVersionType();
-                }
-              }}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsNewTypeModalOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleCreateVersionType}
-              disabled={isCreatingType || !newTypeName.trim()}
-            >
-              {isCreatingType && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Crear Versión
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </form>
   );
 }

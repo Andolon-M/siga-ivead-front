@@ -3,6 +3,9 @@ import { API_ENDPOINTS } from '@/shared/api/enpoints';
 import type {
   Song,
   SongVersionType,
+  SongArtist,
+  SongTheme,
+  SongUserPreference,
   CreateSongData,
   UpdateSongData,
   SongFilters,
@@ -17,8 +20,11 @@ export const songsService = {
     const params: Record<string, any> = {};
     if (filters?.search) params.search = filters.search;
     if (filters?.artist) params.artist = filters.artist;
+    if (filters?.artist_id) params.artist_id = filters.artist_id;
+    if (filters?.theme_id) params.theme_id = filters.theme_id;
     if (filters?.key) params.key = filters.key;
     if (filters?.version_type_id) params.version_type_id = filters.version_type_id;
+    if (filters?.tempo_type) params.tempo_type = filters.tempo_type;
     if (filters?.page) params.page = filters.page;
     if (filters?.limit) params.limit = filters.limit;
 
@@ -70,6 +76,132 @@ export const songsService = {
    */
   async deleteSong(id: string): Promise<void> {
     await axiosInstance.delete(API_ENDPOINTS.SONGS.DELETE(id));
+  },
+
+  // ========== PREFERENCIAS DE USUARIO ==========
+
+  /**
+   * Obtiene la preferencia del usuario actual para una canción
+   */
+  async getUserPreference(songId: string): Promise<SongUserPreference | null> {
+    const response = await axiosInstance.get<{
+      status: number;
+      message: string;
+      data: { preference: SongUserPreference | null };
+    }>(API_ENDPOINTS.SONGS.PREFERENCES(songId));
+
+    return response.data.data.preference;
+  },
+
+  /**
+   * Guarda o actualiza la preferencia del usuario actual para una canción
+   */
+  async saveUserPreference(
+    songId: string,
+    data: { semitones?: number; font_size?: number | null; columns?: number | null; show_chords?: boolean }
+  ): Promise<SongUserPreference> {
+    const response = await axiosInstance.put<{
+      status: number;
+      message: string;
+      data: { preference: SongUserPreference };
+    }>(API_ENDPOINTS.SONGS.PREFERENCES(songId), data);
+
+    return response.data.data.preference;
+  },
+
+  /**
+   * Restablece la preferencia del usuario actual para una canción
+   */
+  async deleteUserPreference(songId: string): Promise<void> {
+    await axiosInstance.delete(API_ENDPOINTS.SONGS.PREFERENCES(songId));
+  },
+
+  // ========== ARTISTAS ==========
+
+  /**
+   * Obtiene todos los artistas
+   */
+  async getAllArtists(): Promise<SongArtist[]> {
+    const response = await axiosInstance.get<{ status: number; message: string; data: { artists: SongArtist[] } }>(
+      API_ENDPOINTS.SONGS.ARTISTS
+    );
+
+    return response.data.data.artists;
+  },
+
+  /**
+   * Crea un artista
+   */
+  async createArtist(name: string): Promise<SongArtist> {
+    const response = await axiosInstance.post<{ status: number; message: string; data: { artist: SongArtist } }>(
+      API_ENDPOINTS.SONGS.CREATE_ARTIST,
+      { name }
+    );
+
+    return response.data.data.artist;
+  },
+
+  /**
+   * Actualiza un artista
+   */
+  async updateArtist(id: string, name: string): Promise<SongArtist> {
+    const response = await axiosInstance.put<{ status: number; message: string; data: { artist: SongArtist } }>(
+      API_ENDPOINTS.SONGS.UPDATE_ARTIST(id),
+      { name }
+    );
+
+    return response.data.data.artist;
+  },
+
+  /**
+   * Elimina un artista
+   */
+  async deleteArtist(id: string): Promise<void> {
+    await axiosInstance.delete(API_ENDPOINTS.SONGS.DELETE_ARTIST(id));
+  },
+
+  // ========== TEMAS CENTRALES ==========
+
+  /**
+   * Obtiene todos los temas centrales
+   */
+  async getAllThemes(): Promise<SongTheme[]> {
+    const response = await axiosInstance.get<{ status: number; message: string; data: { themes: SongTheme[] } }>(
+      API_ENDPOINTS.SONGS.THEMES
+    );
+
+    return response.data.data.themes;
+  },
+
+  /**
+   * Crea un tema central
+   */
+  async createTheme(name: string): Promise<SongTheme> {
+    const response = await axiosInstance.post<{ status: number; message: string; data: { theme: SongTheme } }>(
+      API_ENDPOINTS.SONGS.CREATE_THEME,
+      { name }
+    );
+
+    return response.data.data.theme;
+  },
+
+  /**
+   * Actualiza un tema central
+   */
+  async updateTheme(id: string, name: string): Promise<SongTheme> {
+    const response = await axiosInstance.put<{ status: number; message: string; data: { theme: SongTheme } }>(
+      API_ENDPOINTS.SONGS.UPDATE_THEME(id),
+      { name }
+    );
+
+    return response.data.data.theme;
+  },
+
+  /**
+   * Elimina un tema central
+   */
+  async deleteTheme(id: string): Promise<void> {
+    await axiosInstance.delete(API_ENDPOINTS.SONGS.DELETE_THEME(id));
   },
 
   // ========== TIPOS DE VERSIÓN ==========

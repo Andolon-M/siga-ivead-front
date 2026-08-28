@@ -16,6 +16,7 @@ import {
   List,
   Sparkles,
   SlidersHorizontal,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -37,7 +38,7 @@ import {
   TableRow,
 } from '@/shared/components/ui/table';
 import { Can } from '@/shared/components/auth/can';
-import type { Song, MusicalKey, SongVersionType } from '../types';
+import type { Song, MusicalKey, SongVersionType, SongArtist, SongTheme, TempoType } from '../types';
 import { songsService } from '../services/songs.service';
 import { MUSICAL_KEY_LABELS, MUSICAL_KEY_SHORT } from '../utils/chord-transposer';
 
@@ -48,6 +49,8 @@ export function SongsListPage() {
 
   const [songs, setSongs] = useState<Song[]>([]);
   const [versionTypes, setVersionTypes] = useState<SongVersionType[]>([]);
+  const [artists, setArtists] = useState<SongArtist[]>([]);
+  const [themes, setThemes] = useState<SongTheme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
@@ -55,22 +58,32 @@ export function SongsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKey, setSelectedKey] = useState<string>('ALL');
   const [selectedVersionType, setSelectedVersionType] = useState<string>('ALL');
+  const [selectedArtist, setSelectedArtist] = useState<string>('ALL');
+  const [selectedTheme, setSelectedTheme] = useState<string>('ALL');
+  const [selectedTempo, setSelectedTempo] = useState<string>('ALL');
 
-  // Cargar canciones y tipos
+  // Cargar canciones y catálogos
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [songsRes, typesRes] = await Promise.all([
+      const [songsRes, typesRes, artistsRes, themesRes] = await Promise.all([
         songsService.getAllSongs({
           search: searchTerm || undefined,
           key: selectedKey !== 'ALL' ? (selectedKey as MusicalKey) : undefined,
           version_type_id: selectedVersionType !== 'ALL' ? selectedVersionType : undefined,
+          artist_id: selectedArtist !== 'ALL' ? selectedArtist : undefined,
+          theme_id: selectedTheme !== 'ALL' ? selectedTheme : undefined,
+          tempo_type: selectedTempo !== 'ALL' ? (selectedTempo as TempoType) : undefined,
         }),
         songsService.getAllVersionTypes(),
+        songsService.getAllArtists(),
+        songsService.getAllThemes(),
       ]);
 
       setSongs(songsRes.songs);
       setVersionTypes(typesRes);
+      setArtists(artistsRes);
+      setThemes(themesRes);
     } catch (err) {
       console.error('Error al cargar canciones:', err);
     } finally {
@@ -83,7 +96,7 @@ export function SongsListPage() {
       loadData();
     }, 250);
     return () => clearTimeout(timer);
-  }, [searchTerm, selectedKey, selectedVersionType]);
+  }, [searchTerm, selectedKey, selectedVersionType, selectedArtist, selectedTheme, selectedTempo]);
 
   const handleDeleteSong = async (song: Song) => {
     if (!window.confirm(`¿Estás seguro de que deseas eliminar la canción "${song.title}"?`)) {
@@ -97,6 +110,23 @@ export function SongsListPage() {
       console.error('Error al eliminar canción:', err);
       alert('No se pudo eliminar la canción.');
     }
+  };
+
+  const hasActiveFilters =
+    searchTerm !== '' ||
+    selectedKey !== 'ALL' ||
+    selectedVersionType !== 'ALL' ||
+    selectedArtist !== 'ALL' ||
+    selectedTheme !== 'ALL' ||
+    selectedTempo !== 'ALL';
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedKey('ALL');
+    setSelectedVersionType('ALL');
+    setSelectedArtist('ALL');
+    setSelectedTheme('ALL');
+    setSelectedTempo('ALL');
   };
 
   return (
@@ -120,22 +150,101 @@ export function SongsListPage() {
         </div>
       </div>
 
-      {/* Barra de Búsqueda y Filtros */}
-      <div className="flex flex-col md:flex-row gap-3 items-center justify-between bg-card p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por título, artista o fragmento de letra..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
+      {/* Barra de Búsqueda y Filtros Avanzados */}
+      <div className="flex flex-col gap-3.5 bg-card p-4 rounded-xl border shadow-sm">
+        <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por título, artista o fragmento de letra..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 self-end md:self-auto">
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilters}
+                className="text-xs h-8 text-muted-foreground hover:text-foreground"
+              >
+                Limpiar Filtros
+              </Button>
+            )}
+            {/* Toggle de vista cuadrícula / tabla */}
+            <div className="flex items-center border rounded-lg p-0.5 bg-muted">
+              <Button
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setViewMode('grid')}
+                title="Vista en Cuadrícula"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setViewMode('table')}
+                title="Vista en Tabla"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        {/* Fila de Filtros Desplegables */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1">
+          {/* Filtro por Tema Central */}
+          <Select value={selectedTheme} onValueChange={setSelectedTheme}>
+            <SelectTrigger className="w-full text-xs h-9">
+              <SelectValue placeholder="Tema: Todos" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+              <SelectItem value="ALL">Todos los Temas</SelectItem>
+              {themes.map((theme) => (
+                <SelectItem key={theme.id} value={theme.id}>
+                  {theme.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Filtro por Artista */}
+          <Select value={selectedArtist} onValueChange={setSelectedArtist}>
+            <SelectTrigger className="w-full text-xs h-9">
+              <SelectValue placeholder="Artista: Todos" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+              <SelectItem value="ALL">Todos los Artistas</SelectItem>
+              {artists.map((artist) => (
+                <SelectItem key={artist.id} value={artist.id}>
+                  {artist.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Filtro por Velocidad / Tempo (Rápida vs Lenta) */}
+          <Select value={selectedTempo} onValueChange={setSelectedTempo}>
+            <SelectTrigger className="w-full text-xs h-9">
+              <SelectValue placeholder="Tempo: Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Cualquier Tempo</SelectItem>
+              <SelectItem value="fast">⚡ Rápidas (≥ 100 BPM)</SelectItem>
+              <SelectItem value="slow">🕊️ Lentas (&lt; 100 BPM)</SelectItem>
+            </SelectContent>
+          </Select>
+
           {/* Filtro por Tonalidad */}
           <Select value={selectedKey} onValueChange={setSelectedKey}>
-            <SelectTrigger className="w-[140px] text-xs h-9">
+            <SelectTrigger className="w-full text-xs h-9">
               <SelectValue placeholder="Tono: Todos" />
             </SelectTrigger>
             <SelectContent className="max-h-56">
@@ -150,7 +259,7 @@ export function SongsListPage() {
 
           {/* Filtro por Tipo de Versión */}
           <Select value={selectedVersionType} onValueChange={setSelectedVersionType}>
-            <SelectTrigger className="w-[150px] text-xs h-9">
+            <SelectTrigger className="w-full text-xs h-9 col-span-2 sm:col-span-1">
               <SelectValue placeholder="Versión: Todas" />
             </SelectTrigger>
             <SelectContent>
@@ -162,28 +271,6 @@ export function SongsListPage() {
               ))}
             </SelectContent>
           </Select>
-
-          {/* Toggle de vista cuadrícula / tabla */}
-          <div className="flex items-center border rounded-lg p-0.5 bg-muted">
-            <Button
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setViewMode('grid')}
-              title="Vista en Cuadrícula"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setViewMode('table')}
-              title="Vista en Tabla"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -201,7 +288,7 @@ export function SongsListPage() {
           <div>
             <h3 className="font-semibold text-lg">No se encontraron canciones</h3>
             <p className="text-sm text-muted-foreground max-w-sm mt-1">
-              {searchTerm || selectedKey !== 'ALL' || selectedVersionType !== 'ALL'
+              {hasActiveFilters
                 ? 'Prueba modificando los filtros de búsqueda.'
                 : 'Comienza agregando la primera canción al repertorio de la iglesia.'}
             </p>
@@ -229,7 +316,7 @@ export function SongsListPage() {
                       {song.title}
                     </CardTitle>
                     <CardDescription className="text-sm font-medium text-foreground/80 truncate">
-                      {song.artist}
+                      {song.artist_rel?.name || song.artist}
                     </CardDescription>
                   </div>
                   <Badge variant="default" className="font-mono text-sm px-2.5 py-0.5 shrink-0 bg-primary/90">
@@ -240,15 +327,30 @@ export function SongsListPage() {
 
               <CardContent className="space-y-4 pt-0">
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  {song.theme && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                    >
+                      {song.theme.name}
+                    </Badge>
+                  )}
                   {song.version_type?.name && (
                     <Badge variant="secondary" className="text-xs font-normal">
                       {song.version_type.name}
                     </Badge>
                   )}
                   {song.bpm && (
-                    <span className="px-2 py-0.5 bg-muted rounded font-mono">
-                      {song.bpm} BPM
-                    </span>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-normal font-mono ${
+                        song.bpm >= 100
+                          ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30'
+                          : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                      }`}
+                    >
+                      {song.bpm >= 100 ? '⚡ Rápida' : '🕊️ Lenta'} ({song.bpm})
+                    </Badge>
                   )}
                   {song.time_signature && (
                     <span className="px-2 py-0.5 bg-muted rounded font-mono">
@@ -258,51 +360,58 @@ export function SongsListPage() {
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t text-xs">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     {song.youtube_url && (
-                      <span className="text-rose-600 flex items-center gap-1 font-medium" title="Tiene enlace de YouTube">
+                      <span title="Video de referencia" className="flex items-center text-rose-500">
                         <Youtube className="h-4 w-4" />
                       </span>
                     )}
                     {song.multitrack_url && (
-                      <span className="text-indigo-600 flex items-center gap-1 font-medium" title="Tiene enlace de Multitrack / Secuencia">
+                      <span title="Secuencia / Multitrack" className="flex items-center text-indigo-500">
                         <FileAudio className="h-4 w-4" />
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    <Can resource="songs" action="read">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => navigate(`/admin/songs/${song.id}`)}
-                        title="Ver canción"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Can>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/admin/songs/${song.id}`);
+                      }}
+                      title="Ver partitura y acordes"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
                     <Can resource="songs" action="update">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
-                        onClick={() => navigate(`/admin/songs/${song.id}/edit`)}
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/admin/songs/${song.id}/edit`);
+                        }}
                         title="Editar canción"
                       >
-                        <Edit2 className="h-4 w-4" />
+                        <Edit2 className="h-3.5 w-3.5" />
                       </Button>
                     </Can>
                     <Can resource="songs" action="delete">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteSong(song)}
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSong(song);
+                        }}
                         title="Eliminar canción"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </Can>
                   </div>
@@ -319,10 +428,11 @@ export function SongsListPage() {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Artista</TableHead>
-                <TableHead className="text-center">Tono</TableHead>
+                <TableHead>Tema</TableHead>
+                <TableHead>Tono Original</TableHead>
                 <TableHead>Versión</TableHead>
-                <TableHead className="text-center">BPM</TableHead>
-                <TableHead className="text-center">Recursos</TableHead>
+                <TableHead>Tempo / BPM</TableHead>
+                <TableHead>Recursos</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -336,35 +446,76 @@ export function SongsListPage() {
                   <TableCell className="font-semibold text-foreground">
                     {song.title}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{song.artist}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className="font-mono font-bold">
+                  <TableCell className="text-muted-foreground">
+                    {song.artist_rel?.name || song.artist}
+                  </TableCell>
+                  <TableCell>
+                    {song.theme ? (
+                      <Badge
+                        variant="outline"
+                        className="text-xs font-normal bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                      >
+                        {song.theme.name}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono font-bold text-xs bg-primary/10 text-primary border-primary/20">
                       {MUSICAL_KEY_SHORT[song.original_key]}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="font-normal text-xs">
-                      {song.version_type?.name || 'General'}
-                    </Badge>
+                    {song.version_type?.name ? (
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        {song.version_type.name}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
                   </TableCell>
-                  <TableCell className="text-center font-mono text-xs">
-                    {song.bpm ? `${song.bpm}` : '-'}
+                  <TableCell className="font-mono text-xs">
+                    {song.bpm ? (
+                      <Badge
+                        variant="outline"
+                        className={`text-xs font-normal font-mono ${
+                          song.bpm >= 100
+                            ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30'
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                        }`}
+                      >
+                        {song.bpm >= 100 ? '⚡ Rápida' : '🕊️ Lenta'} ({song.bpm})
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {song.youtube_url && <Youtube className="h-4 w-4 text-rose-600" title="YouTube" />}
-                      {song.multitrack_url && <FileAudio className="h-4 w-4 text-indigo-600" title="Multitrack" />}
-                      {!song.youtube_url && !song.multitrack_url && <span className="text-xs text-muted-foreground">-</span>}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {song.youtube_url && (
+                        <span title="Video de referencia" className="text-rose-500">
+                          <Youtube className="h-4 w-4" />
+                        </span>
+                      )}
+                      {song.multitrack_url && (
+                        <span title="Secuencia / Multitrack" className="text-indigo-500">
+                          <FileAudio className="h-4 w-4" />
+                        </span>
+                      )}
+                      {!song.youtube_url && !song.multitrack_url && (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex justify-end gap-1">
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
                         onClick={() => navigate(`/admin/songs/${song.id}`)}
-                        title="Ver canción"
+                        title="Ver"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -374,7 +525,7 @@ export function SongsListPage() {
                           size="icon"
                           className="h-8 w-8"
                           onClick={() => navigate(`/admin/songs/${song.id}/edit`)}
-                          title="Editar canción"
+                          title="Editar"
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
@@ -385,7 +536,7 @@ export function SongsListPage() {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           onClick={() => handleDeleteSong(song)}
-                          title="Eliminar canción"
+                          title="Eliminar"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

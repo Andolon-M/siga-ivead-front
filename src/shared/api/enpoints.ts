@@ -237,6 +237,15 @@ export const API_ENDPOINTS = {
     CREATE_VERSION_TYPE: "/songs/version-types",
     UPDATE_VERSION_TYPE: (id: string) => `/songs/version-types/${id}`,
     DELETE_VERSION_TYPE: (id: string) => `/songs/version-types/${id}`,
+    ARTISTS: "/songs/artists",
+    CREATE_ARTIST: "/songs/artists",
+    UPDATE_ARTIST: (id: string) => `/songs/artists/${id}`,
+    DELETE_ARTIST: (id: string) => `/songs/artists/${id}`,
+    THEMES: "/songs/themes",
+    CREATE_THEME: "/songs/themes",
+    UPDATE_THEME: (id: string) => `/songs/themes/${id}`,
+    DELETE_THEME: (id: string) => `/songs/themes/${id}`,
+    PREFERENCES: (id: string) => `/songs/${id}/preferences`,
   },
 }
 
