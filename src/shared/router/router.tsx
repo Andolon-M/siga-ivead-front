@@ -22,6 +22,7 @@ import {
   CreateSongPage,
   EditSongPage,
   SongVersionTypesPage,
+  SongSettingsPage,
 } from '@/modules/songs/pages'
 import {
   ActivitySlotsBoardPage,
@@ -270,10 +271,18 @@ export default function AppRouter() {
           }
         />
         <Route
+          path="settings"
+          element={
+            <ProtectedRoute requirePermission={{ resource: "songs", action: "manage_types" }}>
+              <SongSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="version-types"
           element={
             <ProtectedRoute requirePermission={{ resource: "songs", action: "manage_types" }}>
-              <SongVersionTypesPage />
+              <SongSettingsPage />
             </ProtectedRoute>
           }
         />

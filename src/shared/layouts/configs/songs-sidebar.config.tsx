@@ -1,5 +1,5 @@
 import React from "react"
-import { Music, Plus, Tag, Disc3 } from "lucide-react"
+import { Music, Plus, Tag, SlidersHorizontal } from "lucide-react"
 import type { ModuleSidebarConfig } from "../types/module-sidebar.types"
 
 const SongsActiveBadge = () => (
@@ -37,10 +37,10 @@ export const songsSidebarConfig: ModuleSidebarConfig = {
           permission: { resource: "songs", action: "create" },
         },
         {
-          title: "Tipos de Versión",
-          href: "/admin/songs/version-types",
-          icon: Tag,
-          description: "Categorías y clasificaciones",
+          title: "Catálogos y Ajustes",
+          href: "/admin/songs/settings",
+          icon: SlidersHorizontal,
+          description: "Tipos, temas, artistas y versiones",
           permission: { resource: "songs", action: "manage_types" },
         },
       ],

@@ -57,6 +57,13 @@ export interface SongTheme {
   updated_at?: string | null;
 }
 
+export interface SongTypeItem {
+  id: string;
+  name: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export interface SongUserPreference {
   id: string;
   user_id: string;
@@ -77,6 +84,8 @@ export interface Song {
   artist_rel?: SongArtist | null;
   theme_id?: string | null;
   theme?: SongTheme | null;
+  song_type_id?: string | null;
+  song_type?: SongTypeItem | null;
   original_key: MusicalKey;
   version_type_id?: string | null;
   version_type?: SongVersionType | null;
@@ -100,6 +109,7 @@ export interface CreateSongData {
   artist?: string;
   artist_id?: string | null;
   theme_id?: string | null;
+  song_type_id?: string | null;
   original_key: MusicalKey;
   version_type_id?: string | null;
   bpm?: number | null;
@@ -117,6 +127,7 @@ export interface SongFilters {
   artist?: string;
   artist_id?: string;
   theme_id?: string;
+  song_type_id?: string;
   key?: MusicalKey;
   version_type_id?: string;
   tempo_type?: TempoType;

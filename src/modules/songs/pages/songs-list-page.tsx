@@ -38,7 +38,7 @@ import {
   TableRow,
 } from '@/shared/components/ui/table';
 import { Can } from '@/shared/components/auth/can';
-import type { Song, MusicalKey, SongVersionType, SongArtist, SongTheme, TempoType } from '../types';
+import type { Song, MusicalKey, SongVersionType, SongArtist, SongTheme, SongTypeItem, TempoType } from '../types';
 import { songsService } from '../services/songs.service';
 import { MUSICAL_KEY_LABELS, MUSICAL_KEY_SHORT } from '../utils/chord-transposer';
 
@@ -49,6 +49,7 @@ export function SongsListPage() {
 
   const [songs, setSongs] = useState<Song[]>([]);
   const [versionTypes, setVersionTypes] = useState<SongVersionType[]>([]);
+  const [songTypes, setSongTypes] = useState<SongTypeItem[]>([]);
   const [artists, setArtists] = useState<SongArtist[]>([]);
   const [themes, setThemes] = useState<SongTheme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +59,7 @@ export function SongsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKey, setSelectedKey] = useState<string>('ALL');
   const [selectedVersionType, setSelectedVersionType] = useState<string>('ALL');
+  const [selectedSongType, setSelectedSongType] = useState<string>('ALL');
   const [selectedArtist, setSelectedArtist] = useState<string>('ALL');
   const [selectedTheme, setSelectedTheme] = useState<string>('ALL');
   const [selectedTempo, setSelectedTempo] = useState<string>('ALL');
@@ -66,22 +68,25 @@ export function SongsListPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [songsRes, typesRes, artistsRes, themesRes] = await Promise.all([
+      const [songsRes, typesRes, songTypesRes, artistsRes, themesRes] = await Promise.all([
         songsService.getAllSongs({
           search: searchTerm || undefined,
           key: selectedKey !== 'ALL' ? (selectedKey as MusicalKey) : undefined,
           version_type_id: selectedVersionType !== 'ALL' ? selectedVersionType : undefined,
+          song_type_id: selectedSongType !== 'ALL' ? selectedSongType : undefined,
           artist_id: selectedArtist !== 'ALL' ? selectedArtist : undefined,
           theme_id: selectedTheme !== 'ALL' ? selectedTheme : undefined,
           tempo_type: selectedTempo !== 'ALL' ? (selectedTempo as TempoType) : undefined,
         }),
         songsService.getAllVersionTypes(),
+        songsService.getAllSongTypes(),
         songsService.getAllArtists(),
         songsService.getAllThemes(),
       ]);
 
       setSongs(songsRes.songs);
       setVersionTypes(typesRes);
+      setSongTypes(songTypesRes);
       setArtists(artistsRes);
       setThemes(themesRes);
     } catch (err) {
@@ -96,7 +101,7 @@ export function SongsListPage() {
       loadData();
     }, 250);
     return () => clearTimeout(timer);
-  }, [searchTerm, selectedKey, selectedVersionType, selectedArtist, selectedTheme, selectedTempo]);
+  }, [searchTerm, selectedKey, selectedVersionType, selectedSongType, selectedArtist, selectedTheme, selectedTempo]);
 
   const handleDeleteSong = async (song: Song) => {
     if (!window.confirm(`¿Estás seguro de que deseas eliminar la canción "${song.title}"?`)) {
@@ -116,6 +121,7 @@ export function SongsListPage() {
     searchTerm !== '' ||
     selectedKey !== 'ALL' ||
     selectedVersionType !== 'ALL' ||
+    selectedSongType !== 'ALL' ||
     selectedArtist !== 'ALL' ||
     selectedTheme !== 'ALL' ||
     selectedTempo !== 'ALL';
@@ -124,6 +130,7 @@ export function SongsListPage() {
     setSearchTerm('');
     setSelectedKey('ALL');
     setSelectedVersionType('ALL');
+    setSelectedSongType('ALL');
     setSelectedArtist('ALL');
     setSelectedTheme('ALL');
     setSelectedTempo('ALL');
@@ -198,8 +205,23 @@ export function SongsListPage() {
           </div>
         </div>
 
-        {/* Fila de Filtros Desplegables */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1">
+        {/* Fila de Filtros Desplegables (6 Filtros adaptativos) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
+          {/* Filtro por Tipo de Canción (Alabanza, Adoración, Intimidad...) */}
+          <Select value={selectedSongType} onValueChange={setSelectedSongType}>
+            <SelectTrigger className="w-full text-xs h-9">
+              <SelectValue placeholder="Tipo: Todos" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+              <SelectItem value="ALL">Todos los Tipos</SelectItem>
+              {songTypes.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Filtro por Tema Central */}
           <Select value={selectedTheme} onValueChange={setSelectedTheme}>
             <SelectTrigger className="w-full text-xs h-9">
@@ -259,7 +281,7 @@ export function SongsListPage() {
 
           {/* Filtro por Tipo de Versión */}
           <Select value={selectedVersionType} onValueChange={setSelectedVersionType}>
-            <SelectTrigger className="w-full text-xs h-9 col-span-2 sm:col-span-1">
+            <SelectTrigger className="w-full text-xs h-9">
               <SelectValue placeholder="Versión: Todas" />
             </SelectTrigger>
             <SelectContent>
@@ -327,6 +349,14 @@ export function SongsListPage() {
 
               <CardContent className="space-y-4 pt-0">
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                  {song.song_type && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
+                    >
+                      {song.song_type.name}
+                    </Badge>
+                  )}
                   {song.theme && (
                     <Badge
                       variant="outline"
@@ -428,7 +458,8 @@ export function SongsListPage() {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Artista</TableHead>
-                <TableHead>Tema</TableHead>
+                <TableHead>Tipo (Momento)</TableHead>
+                <TableHead>Tema Central</TableHead>
                 <TableHead>Tono Original</TableHead>
                 <TableHead>Versión</TableHead>
                 <TableHead>Tempo / BPM</TableHead>
@@ -448,6 +479,18 @@ export function SongsListPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {song.artist_rel?.name || song.artist}
+                  </TableCell>
+                  <TableCell>
+                    {song.song_type ? (
+                      <Badge
+                        variant="outline"
+                        className="text-xs font-normal bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
+                      >
+                        {song.song_type.name}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {song.theme ? (

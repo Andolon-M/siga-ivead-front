@@ -449,6 +449,14 @@ export function SongDetailPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{song.title}</h1>
+                {song.song_type && (
+                  <Badge
+                    variant="outline"
+                    className="font-normal text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
+                  >
+                    {song.song_type.name}
+                  </Badge>
+                )}
                 {song.theme && (
                   <Badge
                     variant="outline"

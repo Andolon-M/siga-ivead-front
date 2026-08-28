@@ -5,6 +5,7 @@ import type {
   SongVersionType,
   SongArtist,
   SongTheme,
+  SongTypeItem,
   SongUserPreference,
   CreateSongData,
   UpdateSongData,
@@ -22,6 +23,7 @@ export const songsService = {
     if (filters?.artist) params.artist = filters.artist;
     if (filters?.artist_id) params.artist_id = filters.artist_id;
     if (filters?.theme_id) params.theme_id = filters.theme_id;
+    if (filters?.song_type_id) params.song_type_id = filters.song_type_id;
     if (filters?.key) params.key = filters.key;
     if (filters?.version_type_id) params.version_type_id = filters.version_type_id;
     if (filters?.tempo_type) params.tempo_type = filters.tempo_type;
@@ -246,5 +248,49 @@ export const songsService = {
    */
   async deleteVersionType(id: string): Promise<void> {
     await axiosInstance.delete(API_ENDPOINTS.SONGS.DELETE_VERSION_TYPE(id));
+  },
+
+  // ========== TIPOS DE CANCIÓN (ALABANZA, ADORACIÓN, INTIMIDAD...) ==========
+
+  /**
+   * Obtiene todos los tipos de canción
+   */
+  async getAllSongTypes(): Promise<SongTypeItem[]> {
+    const response = await axiosInstance.get<{ status: number; message: string; data: { types: SongTypeItem[] } }>(
+      API_ENDPOINTS.SONGS.SONG_TYPES
+    );
+
+    return response.data.data.types;
+  },
+
+  /**
+   * Crea un tipo de canción
+   */
+  async createSongType(name: string): Promise<SongTypeItem> {
+    const response = await axiosInstance.post<{ status: number; message: string; data: { type: SongTypeItem } }>(
+      API_ENDPOINTS.SONGS.CREATE_SONG_TYPE,
+      { name }
+    );
+
+    return response.data.data.type;
+  },
+
+  /**
+   * Actualiza un tipo de canción
+   */
+  async updateSongType(id: string, name: string): Promise<SongTypeItem> {
+    const response = await axiosInstance.put<{ status: number; message: string; data: { type: SongTypeItem } }>(
+      API_ENDPOINTS.SONGS.UPDATE_SONG_TYPE(id),
+      { name }
+    );
+
+    return response.data.data.type;
+  },
+
+  /**
+   * Elimina un tipo de canción
+   */
+  async deleteSongType(id: string): Promise<void> {
+    await axiosInstance.delete(API_ENDPOINTS.SONGS.DELETE_SONG_TYPE(id));
   },
 };
