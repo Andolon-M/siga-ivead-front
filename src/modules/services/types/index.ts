@@ -247,3 +247,17 @@ export interface SessionSongsListResponse {
   songs: MeetingSessionSongItem[]
 }
 
+export interface PublicSetlistSessionInfo {
+  id: string
+  session_date: string
+  start_time: string
+  end_time: string
+  meeting_name: string
+  location?: string | null
+}
+
+export interface PublicSetlistResponse {
+  session: PublicSetlistSessionInfo
+  songs: MeetingSessionSongItem[]
+}
+

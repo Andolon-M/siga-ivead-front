@@ -24,6 +24,7 @@ import type {
   CreateSessionSongRequest,
   UpdateSessionSongRequest,
   SessionSongsListResponse,
+  PublicSetlistResponse,
 } from "../types"
 
 export const meetingsService = {
@@ -262,5 +263,12 @@ export const meetingsService = {
     await axiosInstance.delete(
       API_ENDPOINTS.MEETINGS.SESSIONS.SONGS.DELETE(sessionId, songItemId)
     )
+  },
+
+  async getPublicSetlist(sessionId: string): Promise<PublicSetlistResponse> {
+    const response = await axiosInstance.get<ApiResponse<PublicSetlistResponse>>(
+      API_ENDPOINTS.MEETINGS.SESSIONS.PUBLIC_SETLIST(sessionId)
+    )
+    return response.data.data
   },
 }

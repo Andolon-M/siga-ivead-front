@@ -38,6 +38,7 @@ import {
   ResetPasswordPage,
   PrivacyPolicyPage,
 } from '@/modules/auth/pages/public'
+import { PublicSetlistPage } from '@/modules/songs/pages/public/public-setlist-page'
 import { ProtectedRoute } from '@/shared/components/protected-route'
 import { GuestRoute } from '@/shared/components/guest-route'
 
@@ -46,6 +47,10 @@ export default function AppRouter() {
     <Routes>
       {/* Rutas Públicas */}
       <Route path="/" element={<LandingPage />} />
+
+      {/* Repertorio de Culto Público (Sin login / Para WhatsApp) */}
+      <Route path="/p/setlist/:sessionId" element={<PublicSetlistPage />} />
+      <Route path="/repertorio/:sessionId" element={<PublicSetlistPage />} />
 
       {/* Rutas de Autenticación - Solo para usuarios NO autenticados */}
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />

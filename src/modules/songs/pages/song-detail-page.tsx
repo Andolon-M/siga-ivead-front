@@ -28,6 +28,7 @@ import {
   SkipForward,
   ListMusic,
   MoreVertical,
+  Share2,
   X,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
@@ -52,6 +53,7 @@ import {
 import { ChordSheetViewer } from '../components/chord-sheet-viewer';
 import { PrintSongModal } from '../components/print-song-modal';
 import { SetlistSheet } from '../components/setlist-sheet';
+import { ShareSetlistModal } from '../components/share-setlist-modal';
 
 export function SongDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -71,6 +73,7 @@ export function SongDetailPage() {
   const [currentSession, setCurrentSession] = useState<MeetingSession | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [isSetlistSheetOpen, setIsSetlistSheetOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
 
   // Estados interactivos
   const [semitones, setSemitones] = useState<number>(0);
@@ -837,7 +840,17 @@ export function SongDetailPage() {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuContent align="end" className="w-48">
+                    {sessionId && (
+                      <DropdownMenuItem
+                        onClick={() => setIsShareModalOpen(true)}
+                        className="cursor-pointer gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium"
+                      >
+                        <Share2 className="h-3.5 w-3.5" />
+                        <span>Compartir repertorio</span>
+                      </DropdownMenuItem>
+                    )}
+
                     <Can resource="songs" action="update">
                       <DropdownMenuItem
                         onClick={() => navigate(`/admin/songs/${song.id}/edit`)}
@@ -1345,9 +1358,21 @@ export function SongDetailPage() {
         currentSongId={song.id}
         sessionTitle={currentSession?.recurring_meetings?.name || 'Repertorio del Culto'}
         sessionDate={currentSession?.session_date}
+        sessionId={sessionId || undefined}
         onSelectSong={handleNavigateSong}
         container={fullscreenContainerRef.current}
       />
+
+      {/* Modal para Compartir Repertorio */}
+      {sessionId && (
+        <ShareSetlistModal
+          open={isShareModalOpen}
+          onOpenChange={setIsShareModalOpen}
+          session={currentSession}
+          sessionSongs={sessionSongs}
+          sessionId={sessionId}
+        />
+      )}
     </div>
   );
 }

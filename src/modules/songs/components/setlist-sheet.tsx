@@ -15,9 +15,11 @@ import {
   Music,
   Play,
   Calendar,
+  Share2,
 } from 'lucide-react';
 import type { MeetingSessionSongItem } from '@/modules/services/types';
 import { MUSICAL_KEY_SHORT } from '../utils/chord-transposer';
+import { ShareSetlistModal } from './share-setlist-modal';
 
 interface SetlistSheetProps {
   open: boolean;
@@ -26,6 +28,7 @@ interface SetlistSheetProps {
   currentSongId?: string;
   sessionTitle?: string;
   sessionDate?: string;
+  sessionId?: string;
   onSelectSong: (songId: string) => void;
   container?: HTMLElement | null;
 }
@@ -37,10 +40,12 @@ export function SetlistSheet({
   currentSongId,
   sessionTitle,
   sessionDate,
+  sessionId,
   onSelectSong,
   container,
 }: SetlistSheetProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Formato de fecha legible
   const formattedSessionDate = useMemo(() => {
@@ -79,169 +84,202 @@ export function SetlistSheet({
   }, [sessionSongs, currentSongId]);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        container={container}
-        className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l shadow-2xl z-[120]"
-      >
-        {/* Cabecera del panel */}
-        <SheetHeader className="p-4 sm:p-5 border-b bg-muted/30">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-primary/10 text-primary">
-              <ListMusic className="h-5 w-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <SheetTitle className="text-base sm:text-lg font-bold truncate">
-                {sessionTitle || 'Repertorio del Culto'}
-              </SheetTitle>
-              <SheetDescription className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                {formattedSessionDate && (
-                  <span className="inline-flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formattedSessionDate}
-                  </span>
-                )}
-                {formattedSessionDate && <span>•</span>}
-                <span>{sessionSongs.length} canciones</span>
-              </SheetDescription>
-            </div>
-          </div>
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="right"
+          container={container}
+          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l shadow-2xl z-[120]"
+        >
+          {/* Cabecera del panel */}
+          <SheetHeader className="p-4 sm:p-5 border-b bg-muted/30">
+            <div className="flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+                  <ListMusic className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <SheetTitle className="text-base sm:text-lg font-bold truncate">
+                    {sessionTitle || 'Repertorio del Culto'}
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                    {formattedSessionDate && (
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {formattedSessionDate}
+                      </span>
+                    )}
+                    {formattedSessionDate && <span>•</span>}
+                    <span>{sessionSongs.length} canciones</span>
+                  </SheetDescription>
+                </div>
+              </div>
 
-          {/* Buscador rápido de canciones */}
-          {sessionSongs.length > 4 && (
-            <div className="relative mt-3">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar canción en el repertorio..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 h-8 text-xs bg-background"
-              />
-            </div>
-          )}
-        </SheetHeader>
-
-        {/* Lista de Canciones */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
-          {filteredSongs.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground text-xs">
-              No se encontraron canciones en el repertorio.
-            </div>
-          ) : (
-            filteredSongs.map((item) => {
-              const originalIndex = sessionSongs.findIndex((s) => s.id === item.id);
-              const isCurrent =
-                item.song_id === currentSongId || item.song?.id === currentSongId;
-              const isNext = originalIndex === currentIndex + 1;
-              const keyDisplay = item.song?.original_key
-                ? MUSICAL_KEY_SHORT[item.song.original_key] || item.song.original_key
-                : null;
-
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => {
-                    onSelectSong(item.song_id);
-                    onOpenChange(false);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 select-none group ${
-                    isCurrent
-                      ? 'bg-primary/10 dark:bg-primary/15 border-primary shadow-xs ring-1 ring-primary/30'
-                      : 'bg-card hover:bg-muted/60 border-border/70 hover:border-border'
-                  }`}
+              {/* Botón de Compartir en la cabecera */}
+              {sessionId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2.5 gap-1.5 text-xs font-semibold border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 shrink-0"
+                  onClick={() => setIsShareModalOpen(true)}
+                  title="Compartir repertorio por WhatsApp o enlace público"
                 >
-                  {/* Número de orden o indicador de estado */}
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Compartir</span>
+                </Button>
+              )}
+            </div>
+
+            {/* Buscador rápido de canciones */}
+            {sessionSongs.length > 4 && (
+              <div className="relative mt-3">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar canción en el repertorio..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 h-8 text-xs bg-background"
+                />
+              </div>
+            )}
+          </SheetHeader>
+
+          {/* Lista de Canciones */}
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2">
+            {filteredSongs.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-xs">
+                No se encontraron canciones en el repertorio.
+              </div>
+            ) : (
+              filteredSongs.map((item) => {
+                const originalIndex = sessionSongs.findIndex((s) => s.id === item.id);
+                const isCurrent =
+                  item.song_id === currentSongId || item.song?.id === currentSongId;
+                const isNext = originalIndex === currentIndex + 1;
+                const keyDisplay = item.song?.original_key
+                  ? MUSICAL_KEY_SHORT[item.song.original_key] || item.song.original_key
+                  : null;
+
+                return (
                   <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-mono font-bold text-xs ${
+                    key={item.id}
+                    onClick={() => {
+                      onSelectSong(item.song_id);
+                      onOpenChange(false);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 select-none group ${
                       isCurrent
-                        ? 'bg-primary text-primary-foreground shadow-xs animate-pulse'
-                        : 'bg-muted text-muted-foreground group-hover:bg-muted-foreground/20'
+                        ? 'bg-primary/10 dark:bg-primary/15 border-primary shadow-xs ring-1 ring-primary/30'
+                        : 'bg-card hover:bg-muted/60 border-border/70 hover:border-border'
                     }`}
                   >
-                    {originalIndex + 1}
-                  </div>
-
-                  {/* Detalles de la canción */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <h4
-                        className={`text-sm font-semibold truncate ${
-                          isCurrent ? 'text-primary' : 'text-foreground'
-                        }`}
-                      >
-                        {item.song?.title || 'Canción sin título'}
-                      </h4>
-
-                      {isCurrent && (
-                        <Badge
-                          variant="default"
-                          className="text-[10px] px-1.5 py-0 h-4 bg-primary shrink-0"
-                        >
-                          En vivo
-                        </Badge>
-                      )}
-
-                      {isNext && !isCurrent && (
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] px-1.5 py-0 h-4 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10 shrink-0"
-                        >
-                          Siguiente
-                        </Badge>
-                      )}
+                    {/* Número de orden o indicador de estado */}
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-mono font-bold text-xs ${
+                        isCurrent
+                          ? 'bg-primary text-primary-foreground shadow-xs animate-pulse'
+                          : 'bg-muted text-muted-foreground group-hover:bg-muted-foreground/20'
+                      }`}
+                    >
+                      {originalIndex + 1}
                     </div>
 
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                      <span className="truncate max-w-[140px] sm:max-w-[180px]">
-                        {item.song?.artist_rel?.name || item.song?.artist || 'Autor desconocido'}
-                      </span>
+                    {/* Detalles de la canción */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4
+                          className={`text-sm font-semibold truncate ${
+                            isCurrent ? 'text-primary' : 'text-foreground'
+                          }`}
+                        >
+                          {item.song?.title || 'Canción sin título'}
+                        </h4>
 
-                      {keyDisplay && (
-                        <>
-                          <span>•</span>
-                          <span className="font-mono font-bold text-primary text-[11px]">
-                            {keyDisplay}
-                          </span>
-                        </>
-                      )}
+                        {isCurrent && (
+                          <Badge
+                            variant="default"
+                            className="text-[10px] px-1.5 py-0 h-4 bg-primary shrink-0"
+                          >
+                            En vivo
+                          </Badge>
+                        )}
 
-                      {item.song?.bpm && (
-                        <>
-                          <span>•</span>
-                          <span className="font-mono text-[11px]">
-                            {item.song.bpm} BPM
-                          </span>
-                        </>
-                      )}
+                        {isNext && !isCurrent && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 h-4 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10 shrink-0"
+                          >
+                            Siguiente
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                        <span className="truncate max-w-[140px] sm:max-w-[180px]">
+                          {item.song?.artist_rel?.name || item.song?.artist || 'Autor desconocido'}
+                        </span>
+
+                        {keyDisplay && (
+                          <>
+                            <span>•</span>
+                            <span className="font-mono font-bold text-primary text-[11px]">
+                              {keyDisplay}
+                            </span>
+                          </>
+                        )}
+
+                        {item.song?.bpm && (
+                          <>
+                            <span>•</span>
+                            <span className="font-mono text-[11px]">
+                              {item.song.bpm} BPM
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Botón de acción */}
+                    <div className="shrink-0 text-muted-foreground group-hover:text-primary">
+                      <Play className={`h-4 w-4 ${isCurrent ? 'text-primary fill-primary' : 'opacity-40 group-hover:opacity-100'}`} />
                     </div>
                   </div>
+                );
+              })
+            )}
+          </div>
 
-                  {/* Botón de acción */}
-                  <div className="shrink-0 text-muted-foreground group-hover:text-primary">
-                    <Play className={`h-4 w-4 ${isCurrent ? 'text-primary fill-primary' : 'opacity-40 group-hover:opacity-100'}`} />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+          {/* Pie del panel con atajos / información */}
+          <div className="p-3 border-t bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>Usa las flechas ◀ ▶ para cambiar rápido</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => onOpenChange(false)}
+            >
+              Cerrar
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-        {/* Pie del panel con atajos / información */}
-        <div className="p-3 border-t bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
-          <span>Usa las flechas ◀ ▶ para cambiar rápido</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => onOpenChange(false)}
-          >
-            Cerrar
-          </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+      {/* Modal para Compartir Repertorio */}
+      {sessionId && (
+        <ShareSetlistModal
+          open={isShareModalOpen}
+          onOpenChange={setIsShareModalOpen}
+          session={{
+            id: sessionId,
+            session_date: sessionDate || '',
+            recurring_meetings: { name: sessionTitle || 'Culto de Adoración' },
+          } as any}
+          sessionSongs={sessionSongs}
+          sessionId={sessionId}
+        />
+      )}
+    </>
   );
 }

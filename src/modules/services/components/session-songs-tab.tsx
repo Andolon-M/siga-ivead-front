@@ -26,10 +26,12 @@ import {
   User,
   ListMusic,
   Check,
+  Share2,
 } from "lucide-react"
 import { meetingsService } from "../services/meetings.service"
 import { songsService } from "@/modules/songs/services/songs.service"
 import { MUSICAL_KEY_SHORT } from "@/modules/songs/utils/chord-transposer"
+import { ShareSetlistModal } from "@/modules/songs/components/share-setlist-modal"
 import type { MeetingSessionSongItem } from "../types"
 import type { Song } from "@/modules/songs/types"
 
@@ -44,6 +46,7 @@ export function SessionSongsTab({ sessionId, sessionName, sessionDate }: Session
   const [songsList, setSongsList] = useState<MeetingSessionSongItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   // Estados del modal de agregar canción
   const [availableSongs, setAvailableSongs] = useState<Song[]>([])
@@ -164,15 +167,27 @@ export function SessionSongsTab({ sessionId, sessionName, sessionDate }: Session
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {songsList.length > 0 && (
-            <Button
-              onClick={handleStartLiveMode}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-semibold"
-            >
-              <Play className="h-4 w-4 fill-current" />
-              Modo En Vivo / Atril
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setIsShareModalOpen(true)}
+                className="gap-2 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 font-semibold"
+                title="Compartir repertorio por WhatsApp o enlace público"
+              >
+                <Share2 className="h-4 w-4" />
+                Compartir
+              </Button>
+
+              <Button
+                onClick={handleStartLiveMode}
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-semibold"
+              >
+                <Play className="h-4 w-4 fill-current" />
+                Modo En Vivo / Atril
+              </Button>
+            </>
           )}
 
           <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
@@ -432,6 +447,19 @@ export function SessionSongsTab({ sessionId, sessionName, sessionDate }: Session
           })}
         </div>
       )}
+
+      {/* Modal para Compartir Repertorio */}
+      <ShareSetlistModal
+        open={isShareModalOpen}
+        onOpenChange={setIsShareModalOpen}
+        session={{
+          id: sessionId,
+          session_date: sessionDate || '',
+          recurring_meetings: { name: sessionName || 'Culto de Adoración' },
+        } as any}
+        sessionSongs={songsList}
+        sessionId={sessionId}
+      />
     </div>
   )
 }
