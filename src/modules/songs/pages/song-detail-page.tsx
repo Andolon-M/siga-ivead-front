@@ -114,10 +114,6 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isMobileControlsOpen, setIsMobileControlsOpen] = useState<boolean>(false);
 
-  // Estado para colapsar / ocultar la barra flotante de navegación inferior deslizándola a la derecha
-  const [isBottomNavCollapsed, setIsBottomNavCollapsed] = useState<boolean>(false);
-  const bottomNavTouchStart = useRef<{ x: number; y: number } | null>(null);
-  const bottomNavMouseStart = useRef<number | null>(null);
 
   // Estados de posicionamiento y arrastre de la burbuja flotante móvil
   const [bubbleSide, setBubbleSide] = useState<'left' | 'right'>('right');
@@ -400,45 +396,6 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
         handleNavigateSong(nextSongItem.song_id);
       } else if (deltaX > 0 && prevSongItem) {
         handleNavigateSong(prevSongItem.song_id);
-      }
-    }
-  };
-
-  // Gestos táctiles para deslizar y ocultar/mostrar la barra flotante de navegación inferior
-  const handleBottomNavTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      bottomNavTouchStart.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-      };
-    }
-  };
-
-  const handleBottomNavTouchEnd = (e: React.TouchEvent) => {
-    if (!bottomNavTouchStart.current || e.changedTouches.length === 0) return;
-    const deltaX = e.changedTouches[0].clientX - bottomNavTouchStart.current.x;
-    const deltaY = e.changedTouches[0].clientY - bottomNavTouchStart.current.y;
-    bottomNavTouchStart.current = null;
-
-    if (deltaX > 20 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      setIsBottomNavCollapsed(true);
-    } else if (deltaX < -20 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      setIsBottomNavCollapsed(false);
-    }
-  };
-
-  const handleBottomNavMouseDown = (e: React.MouseEvent) => {
-    bottomNavMouseStart.current = e.clientX;
-  };
-
-  const handleBottomNavMouseUp = (e: React.MouseEvent) => {
-    if (bottomNavMouseStart.current !== null) {
-      const deltaX = e.clientX - bottomNavMouseStart.current;
-      bottomNavMouseStart.current = null;
-      if (deltaX > 20) {
-        setIsBottomNavCollapsed(true);
-      } else if (deltaX < -20) {
-        setIsBottomNavCollapsed(false);
       }
     }
   };
@@ -1137,37 +1094,11 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
         )}
       </div>
 
-      {/* Barra Flotante de Navegación Inferior Derecha en Móvil (Deslizable a la derecha para ocultar) */}
+      {/* Barra Flotante de Navegación Inferior Derecha en Móvil */}
       {sessionId && sessionSongs.length > 0 && (
-        <div
-          onTouchStart={handleBottomNavTouchStart}
-          onTouchEnd={handleBottomNavTouchEnd}
-          onMouseDown={handleBottomNavMouseDown}
-          onMouseUp={handleBottomNavMouseUp}
-          className={`lg:hidden fixed bottom-1.5 z-40 transition-all duration-300 ease-out select-none flex items-center ${
-            isBottomNavCollapsed
-              ? 'right-0 translate-x-[calc(100%-14px)]'
-              : 'right-1 translate-x-0'
-          }`}
-        >
-          {/* Pestaña / Handle para expandir o colapsar */}
-          <button
-            onClick={() => setIsBottomNavCollapsed(!isBottomNavCollapsed)}
-            className={`h-9 w-3.5 bg-background/95 backdrop-blur border border-r-0 border-border/80 shadow-lg rounded-l-lg flex items-center justify-center text-muted-foreground hover:text-primary transition-colors cursor-pointer ${
-              !isBottomNavCollapsed ? 'opacity-40 hover:opacity-100' : 'opacity-90'
-            }`}
-            title={isBottomNavCollapsed ? 'Mostrar navegación' : 'Ocultar navegación'}
-          >
-            {isBottomNavCollapsed ? (
-              <ChevronLeft className="h-3 w-3" />
-            ) : (
-              <ChevronRight className="h-3 w-3" />
-            )}
-          </button>
-
-          {/* Widget de botones */}
-          <div className="bg-background/90 dark:bg-background/95 backdrop-blur-md border border-border/80 shadow-2xl rounded-r-xl p-0.5 flex flex-col items-center">
-            <div className="flex items-center gap-0.2">
+        <div className="lg:hidden fixed bottom-2.5 right-2.5 z-40 select-none">
+          <div className="bg-background/90 dark:bg-background/95 backdrop-blur-md border border-border/80 shadow-2xl rounded-xl p-1 flex flex-col items-center">
+            <div className="flex items-center gap-0.5">
               <Button
                 variant="ghost"
                 size="icon"
@@ -1191,7 +1122,7 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
               </Button>
             </div>
 
-            <span className="text-[9px] font-bold font-mono text-muted-foreground leading-none pb-0.5">
+            <span className="text-[9px] font-bold font-mono text-muted-foreground leading-none pt-0.5 pb-0.5">
               {currentIndex >= 0 ? `${currentIndex + 1}/${sessionSongs.length}` : ''}
             </span>
           </div>

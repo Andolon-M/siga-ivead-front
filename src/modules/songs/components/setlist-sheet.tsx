@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -16,6 +16,7 @@ import {
   Play,
   Calendar,
   Share2,
+  ChevronRight,
 } from 'lucide-react';
 import type { MeetingSessionSongItem } from '@/modules/services/types';
 import { MUSICAL_KEY_SHORT } from '../utils/chord-transposer';
@@ -46,6 +47,30 @@ export function SetlistSheet({
 }: SetlistSheetProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  // Gesto táctil de deslizamiento hacia la derecha (swipe right) para cerrar el panel
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || e.changedTouches.length === 0) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    // Si desliza hacia la derecha (> 50px) cerramos el panel
+    if (deltaX > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+      onOpenChange(false);
+    }
+  };
 
   // Formato de fecha legible
   const formattedSessionDate = useMemo(() => {
@@ -89,10 +114,12 @@ export function SetlistSheet({
         <SheetContent
           side="right"
           container={container}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l shadow-2xl z-[120]"
         >
-          {/* Cabecera del panel */}
-          <SheetHeader className="p-4 sm:p-5 border-b bg-muted/30">
+          {/* Cabecera del panel con espacio para el botón de cerrar 'X' */}
+          <SheetHeader className="p-4 sm:p-5 border-b bg-muted/30 pr-12">
             <div className="flex items-center justify-between gap-2.5">
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
@@ -253,7 +280,7 @@ export function SetlistSheet({
 
           {/* Pie del panel con atajos / información */}
           <div className="p-3 border-t bg-muted/20 flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>Usa las flechas ◀ ▶ para cambiar rápido</span>
+            <span>Desliza a la derecha 👉 o toca Cerrar</span>
             <Button
               variant="ghost"
               size="sm"
