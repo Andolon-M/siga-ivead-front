@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   Music,
   ArrowLeft,
@@ -55,11 +55,25 @@ import { PrintSongModal } from '../components/print-song-modal';
 import { SetlistSheet } from '../components/setlist-sheet';
 import { ShareSetlistModal } from '../components/share-setlist-modal';
 
-export function SongDetailPage() {
-  const { id } = useParams<{ id: string }>();
+interface SongDetailPageProps {
+  isPublicMode?: boolean;
+}
+
+export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
+  const { id: paramSongId, sessionId: paramSessionId } = useParams<{ id?: string; sessionId?: string }>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const sessionId = searchParams.get('sessionId');
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Determinar si está en modo público (sin requerir sesión/auth)
+  const isPublic =
+    isPublicMode ||
+    location.pathname.startsWith('/p/') ||
+    location.pathname.startsWith('/repertorio');
+
+  const sessionId = paramSessionId || searchParams.get('sessionId');
+  const querySongId = searchParams.get('songId');
+  const activeTargetId = paramSongId || querySongId;
 
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const mobileControlsRef = useRef<HTMLDivElement>(null);
@@ -75,12 +89,18 @@ export function SongDetailPage() {
   const [isSetlistSheetOpen, setIsSetlistSheetOpen] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
 
-  // Estados interactivos
+  // Estados interactivos (Tono, Acordes, Zoom, Columnas)
   const [semitones, setSemitones] = useState<number>(0);
-  const [showChords, setShowChords] = useState<boolean>(true);
+  const [showChords, setShowChords] = useState<boolean>(() => {
+    // Si es visitante público en móvil, comenzar en modo letra limpia
+    if (typeof window !== 'undefined' && (isPublic || window.innerWidth < 768)) {
+      return !isPublic;
+    }
+    return true;
+  });
   const [fontSize, setFontSize] = useState<number>(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return 13;
+      return 15;
     }
     return 18;
   });
@@ -159,11 +179,9 @@ export function SongDetailPage() {
         dragInfoRef.current.moved = true;
       }
 
-      // Desplazamiento vertical restringido a la ventana
       const newY = Math.max(70, Math.min(window.innerHeight - 80, dragInfoRef.current.initialY + deltaY));
       setBubbleY(newY);
 
-      // Si se arrastra hacia la mitad opuesta de la pantalla, cambiar de lateral
       if (clientX < window.innerWidth / 2) {
         setBubbleSide('left');
       } else {
@@ -207,32 +225,78 @@ export function SongDetailPage() {
     }
   };
 
-  // Cargar canción y preferencias del usuario
+  // Cargar canción y setlist según modo (Público vs Autenticado)
   useEffect(() => {
-    if (!id) return;
-
-    const loadSongAndPreferences = async () => {
+    const loadSongAndSetlist = async () => {
       setIsLoading(true);
       try {
-        const [songData, prefData] = await Promise.all([
-          songsService.getSongById(id),
-          songsService.getUserPreference(id).catch(() => null),
-        ]);
+        if (isPublic) {
+          if (!sessionId) {
+            alert('Enlace de culto no válido.');
+            return;
+          }
 
-        setSong(songData);
+          const publicData = await meetingsService.getPublicSetlist(sessionId);
+          setSessionSongs(publicData.songs || []);
+          setCurrentSession({
+            id: publicData.session.id,
+            session_date: publicData.session.session_date,
+            recurring_meetings: {
+              name: publicData.session.meeting_name,
+              location: publicData.session.location,
+            },
+          } as any);
 
-        if (prefData) {
-          if (typeof prefData.semitones === 'number') {
-            setSemitones(prefData.semitones);
+          // Buscar la canción objetivo o usar la primera del culto
+          let targetSong = publicData.songs?.[0]?.song || null;
+          if (activeTargetId) {
+            const found = publicData.songs.find(
+              (s) => s.song_id === activeTargetId || s.song?.id === activeTargetId
+            );
+            if (found?.song) {
+              targetSong = found.song;
+            }
           }
-          if (typeof prefData.font_size === 'number') {
-            setFontSize(prefData.font_size);
+
+          setSong(targetSong);
+
+          // Cargar preferencia guardada en localStorage para este navegador
+          if (targetSong) {
+            try {
+              const savedPref = localStorage.getItem(`song_pref_${targetSong.id}`);
+              if (savedPref) {
+                const parsed = JSON.parse(savedPref);
+                if (typeof parsed.semitones === 'number') setSemitones(parsed.semitones);
+                if (typeof parsed.font_size === 'number') setFontSize(parsed.font_size);
+                if (typeof parsed.show_chords === 'boolean') setShowChords(parsed.show_chords);
+              }
+            } catch {}
           }
-          if (typeof prefData.columns === 'number') {
-            setColumns(prefData.columns as any);
+        } else {
+          // Modo normal dentro del panel de administración
+          if (!paramSongId) return;
+
+          const [songData, prefData] = await Promise.all([
+            songsService.getSongById(paramSongId),
+            songsService.getUserPreference(paramSongId).catch(() => null),
+          ]);
+
+          setSong(songData);
+
+          if (prefData) {
+            if (typeof prefData.semitones === 'number') setSemitones(prefData.semitones);
+            if (typeof prefData.font_size === 'number') setFontSize(prefData.font_size);
+            if (typeof prefData.columns === 'number') setColumns(prefData.columns as any);
+            if (typeof prefData.show_chords === 'boolean') setShowChords(prefData.show_chords);
           }
-          if (typeof prefData.show_chords === 'boolean') {
-            setShowChords(prefData.show_chords);
+
+          if (sessionId) {
+            const [songsData, sessionData] = await Promise.all([
+              meetingsService.getSessionSongs(sessionId).catch(() => []),
+              meetingsService.getSessionById(sessionId).catch(() => null),
+            ]);
+            setSessionSongs(songsData);
+            if (sessionData) setCurrentSession(sessionData);
           }
         }
 
@@ -240,49 +304,20 @@ export function SongDetailPage() {
           isInitialPrefLoaded.current = true;
         }, 300);
       } catch (err) {
-        console.error('Error al cargar canción:', err);
-        alert('No se pudo encontrar la canción solicitada.');
-        navigate('/admin/songs');
+        console.error('Error al cargar canción o repertorio:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadSongAndPreferences();
-  }, [id, navigate]);
-
-  // Cargar lista de canciones de la sesión si se accede en contexto de un culto
-  useEffect(() => {
-    if (!sessionId) {
-      setSessionSongs([]);
-      setCurrentSession(null);
-      return;
-    }
-
-    const loadSessionSetlist = async () => {
-      try {
-        setIsLoadingSession(true);
-        const [songsData, sessionData] = await Promise.all([
-          meetingsService.getSessionSongs(sessionId),
-          meetingsService.getSessionById(sessionId).catch(() => null),
-        ]);
-        setSessionSongs(songsData);
-        if (sessionData) setCurrentSession(sessionData);
-      } catch (err) {
-        console.error('Error al cargar setlist de la sesión:', err);
-      } finally {
-        setIsLoadingSession(false);
-      }
-    };
-
-    loadSessionSetlist();
-  }, [sessionId]);
+    loadSongAndSetlist();
+  }, [paramSongId, sessionId, activeTargetId, isPublic]);
 
   // Posición actual en el setlist del culto
   const currentIndex = useMemo(() => {
-    if (!sessionId || sessionSongs.length === 0 || !id) return -1;
-    return sessionSongs.findIndex((s) => s.song_id === id || s.song?.id === id);
-  }, [sessionId, sessionSongs, id]);
+    if (!song || sessionSongs.length === 0) return -1;
+    return sessionSongs.findIndex((s) => s.song_id === song.id || s.song?.id === song.id);
+  }, [sessionSongs, song]);
 
   const prevSongItem = useMemo(() => {
     if (currentIndex > 0) return sessionSongs[currentIndex - 1];
@@ -296,11 +331,37 @@ export function SongDetailPage() {
     return null;
   }, [currentIndex, sessionSongs]);
 
+  // Navegación entre canciones
   const handleNavigateSong = (targetSongId: string) => {
-    navigate(`/admin/songs/${targetSongId}?sessionId=${sessionId}`);
+    if (isPublic) {
+      const found = sessionSongs.find((s) => s.song_id === targetSongId || s.song?.id === targetSongId);
+      if (found?.song) {
+        setSong(found.song);
+        setSemitones(0); // Restablecer tono a la nueva canción
+        setSearchParams({ songId: targetSongId });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      navigate(`/admin/songs/${targetSongId}?sessionId=${sessionId}`);
+    }
   };
 
-  // Atajos de teclado en vivo para cambiar de canción (Flecha Izq / Flecha Der / PageUp / PageDown)
+  // Botón Volver
+  const handleGoBack = () => {
+    if (isPublic) {
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        setIsSetlistSheetOpen(true);
+      }
+    } else if (sessionId) {
+      navigate(`/admin/services/session/${sessionId}`);
+    } else {
+      navigate('/admin/songs');
+    }
+  };
+
+  // Atajos de teclado en vivo para cambiar de canción (Flechas / PageUp / PageDown)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
@@ -316,9 +377,9 @@ export function SongDetailPage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [prevSongItem, nextSongItem, sessionId]);
+  }, [prevSongItem, nextSongItem, isPublic]);
 
-  // Gestos táctiles de navegación horizontal
+  // Gestos táctiles de navegación horizontal (Swipe)
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       touchStartPos.current = {
@@ -334,7 +395,6 @@ export function SongDetailPage() {
     const deltaY = e.changedTouches[0].clientY - touchStartPos.current.y;
     touchStartPos.current = null;
 
-    // Solo si el deslizamiento horizontal es mayor a 65px y más pronunciado que el scroll vertical
     if (Math.abs(deltaX) > 65 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
       if (deltaX < 0 && nextSongItem) {
         handleNavigateSong(nextSongItem.song_id);
@@ -387,6 +447,16 @@ export function SongDetailPage() {
   useEffect(() => {
     if (!song || !isInitialPrefLoaded.current) return;
 
+    if (isPublic) {
+      try {
+        localStorage.setItem(
+          `song_pref_${song.id}`,
+          JSON.stringify({ semitones, font_size: fontSize, columns, show_chords: showChords })
+        );
+      } catch {}
+      return;
+    }
+
     const timer = setTimeout(() => {
       songsService.saveUserPreference(song.id, {
         semitones,
@@ -399,12 +469,12 @@ export function SongDetailPage() {
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [song, semitones, fontSize, columns, showChords]);
+  }, [song, semitones, fontSize, columns, showChords, isPublic]);
 
   // Restablecer al tono original y guardar preferencia
   const handleResetToOriginalKey = () => {
     setSemitones(0);
-    if (song && isInitialPrefLoaded.current) {
+    if (song && isInitialPrefLoaded.current && !isPublic) {
       songsService.saveUserPreference(song.id, {
         semitones: 0,
         font_size: fontSize,
@@ -452,14 +522,29 @@ export function SongDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-80 gap-3">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Cargando canción...</p>
+        <p className="text-sm text-muted-foreground">Cargando repertorio y acordes...</p>
       </div>
     );
   }
 
-  if (!song) return null;
+  if (!song) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center max-w-md mx-auto">
+        <div className="p-4 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-4">
+          <ListMusic className="h-10 w-10" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">Canción no encontrada</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          No se pudo encontrar la canción o el repertorio de este culto.
+        </p>
+        <Button onClick={handleGoBack} variant="outline" className="gap-2">
+          Volver
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -490,7 +575,7 @@ export function SongDetailPage() {
                     <span className="text-[10px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
                       &gt; Siguiente:
                     </span>
-                    <span className="font-semibold text-xs truncate max-w-[140px] sm:max-w-[200px]">
+                    <span className="font-semibold text-xs truncate max-w-[140px] sm:max-w-[220px]">
                       {nextSongItem.song?.title}
                     </span>
                     <ChevronRight className="h-3 w-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
@@ -719,11 +804,7 @@ export function SongDetailPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0 mt-0.5"
-                  onClick={() =>
-                    sessionId
-                      ? navigate(`/admin/services/session/${sessionId}`)
-                      : navigate('/admin/songs')
-                  }
+                  onClick={handleGoBack}
                   title={sessionId ? 'Volver a la sesión del culto' : 'Volver a la lista de canciones'}
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -828,7 +909,7 @@ export function SongDetailPage() {
                   <span className="hidden sm:inline">Imprimir / PDF</span>
                 </Button>
 
-                {/* Menú de Más Opciones (Tres puntos ⋮ con Editar y Eliminar) */}
+                {/* Menú de Más Opciones (Tres puntos ⋮ con Compartir, Editar y Eliminar) */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -851,25 +932,29 @@ export function SongDetailPage() {
                       </DropdownMenuItem>
                     )}
 
-                    <Can resource="songs" action="update">
-                      <DropdownMenuItem
-                        onClick={() => navigate(`/admin/songs/${song.id}/edit`)}
-                        className="cursor-pointer gap-2 text-xs"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        <span>Editar canción</span>
-                      </DropdownMenuItem>
-                    </Can>
+                    {!isPublic && (
+                      <>
+                        <Can resource="songs" action="update">
+                          <DropdownMenuItem
+                            onClick={() => navigate(`/admin/songs/${song.id}/edit`)}
+                            className="cursor-pointer gap-2 text-xs"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            <span>Editar canción</span>
+                          </DropdownMenuItem>
+                        </Can>
 
-                    <Can resource="songs" action="delete">
-                      <DropdownMenuItem
-                        onClick={handleDeleteSong}
-                        className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive focus:bg-destructive/10"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        <span>Eliminar canción</span>
-                      </DropdownMenuItem>
-                    </Can>
+                        <Can resource="songs" action="delete">
+                          <DropdownMenuItem
+                            onClick={handleDeleteSong}
+                            className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive focus:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>Eliminar canción</span>
+                          </DropdownMenuItem>
+                        </Can>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
