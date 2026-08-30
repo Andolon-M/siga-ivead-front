@@ -54,6 +54,11 @@ import { ChordSheetViewer } from '../components/chord-sheet-viewer';
 import { PrintSongModal } from '../components/print-song-modal';
 import { SetlistSheet } from '../components/setlist-sheet';
 import { ShareSetlistModal } from '../components/share-setlist-modal';
+import { HolyricsBridgeModal } from '../components/holyrics-bridge-modal';
+import { holyricsBridgeService } from '../services/holyrics-bridge.service';
+import { getSharedSocket } from '@/shared/lib/socket';
+import type { LiveSyncState } from '../types/live-sync.types';
+import { Radio, Tv, Zap } from 'lucide-react';
 
 interface SongDetailPageProps {
   isPublicMode?: boolean;
@@ -113,7 +118,12 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isMobileControlsOpen, setIsMobileControlsOpen] = useState<boolean>(false);
+  const [isHolyricsModalOpen, setIsHolyricsModalOpen] = useState<boolean>(false);
 
+  // Estados de Sincronización en Tiempo Real (Live Sync con Ableton Live)
+  const [liveState, setLiveState] = useState<LiveSyncState | null>(null);
+  const [isLiveSynced, setIsLiveSynced] = useState<boolean>(true);
+  const isAutoScrollingRef = useRef<boolean>(false);
 
   // Estados de posicionamiento y arrastre de la burbuja flotante móvil
   const [bubbleSide, setBubbleSide] = useState<'left' | 'right'>('right');
@@ -328,7 +338,12 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
   }, [currentIndex, sessionSongs]);
 
   // Navegación entre canciones
-  const handleNavigateSong = (targetSongId: string) => {
+  const handleNavigateSong = (targetSongId: string, isAutoNav = false) => {
+    if (!isAutoNav) {
+      // Si el músico navega manualmente, pausar el seguimiento automático
+      setIsLiveSynced(false);
+    }
+
     if (isPublic) {
       const found = sessionSongs.find((s) => s.song_id === targetSongId || s.song?.id === targetSongId);
       if (found?.song) {
@@ -338,9 +353,111 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else {
-      navigate(`/admin/songs/${targetSongId}?sessionId=${sessionId}`);
+      navigate(`/admin/songs/${targetSongId}?sessionId=${sessionId || ''}`);
     }
   };
+
+  // Re-acoplar la vista al punto actual de la sesión en vivo de Ableton
+  const handleReSync = () => {
+    setIsLiveSynced(true);
+    if (liveState) {
+      if (liveState.songId && String(liveState.songId) !== String(song?.id)) {
+        handleNavigateSong(String(liveState.songId), true);
+      }
+
+      setTimeout(() => {
+        const targetEl =
+          document.getElementById(`song-section-${liveState.sectionSlug}`) ||
+          document.querySelector(`[data-section-slug="${liveState.sectionSlug}"]`);
+
+        if (targetEl) {
+          isAutoScrollingRef.current = true;
+          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => {
+            isAutoScrollingRef.current = false;
+          }, 800);
+        }
+      }, 200);
+    }
+  };
+
+  // Escuchar eventos de sincronización en tiempo real desde el Backend VPS (Ableton Live -> VPS -> Clientes)
+  useEffect(() => {
+    const socket = getSharedSocket();
+    const targetRoomId = sessionId || '__global__';
+
+    socket.emit('live_sync:subscribe', { sessionId: targetRoomId });
+
+    const handleSyncState = (state: LiveSyncState | null) => {
+      if (!state) return;
+      setLiveState(state);
+
+      // Reenviar al puente local de Holyrics si está activo en esta máquina
+      holyricsBridgeService.handleLiveSyncTrigger(state);
+
+      // Si el músico está acoplado a la sincronización en vivo:
+      if (isLiveSynced) {
+        // 1. Si cambió de canción, saltar a la nueva canción
+        if (state.songId && String(state.songId) !== String(song?.id)) {
+          handleNavigateSong(String(state.songId), true);
+        }
+
+        // 2. Centrar automáticamente la sección activa en pantalla
+        if (state.sectionSlug) {
+          setTimeout(() => {
+            const targetEl =
+              document.getElementById(`song-section-${state.sectionSlug}`) ||
+              document.querySelector(`[data-section-slug="${state.sectionSlug}"]`);
+
+            if (targetEl) {
+              isAutoScrollingRef.current = true;
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              setTimeout(() => {
+                isAutoScrollingRef.current = false;
+              }, 800);
+            }
+          }, 150);
+        }
+      }
+    };
+
+    socket.on('live_sync:state', handleSyncState);
+    socket.on('live_sync:section_changed', (payload: any) => {
+      handleSyncState({
+        sessionId: sessionId || undefined,
+        songId: String(payload.songId),
+        section: payload.section,
+        normalizedSection: payload.section,
+        sectionSlug: payload.sectionSlug,
+        measure: payload.measure,
+        timestamp: payload.timestamp || Date.now(),
+      });
+    });
+
+    return () => {
+      socket.emit('live_sync:unsubscribe', { sessionId: targetRoomId });
+      socket.off('live_sync:state', handleSyncState);
+      socket.off('live_sync:section_changed');
+    };
+  }, [sessionId, isLiveSynced, song?.id]);
+
+  // Detectar interacción manual del usuario (scroll / touch) para pausar la sincronización sin molestar al músico
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      if (isAutoScrollingRef.current) return;
+      if (isLiveSynced && liveState) {
+        setIsLiveSynced(false);
+      }
+    };
+
+    window.addEventListener('wheel', handleUserInteraction, { passive: true });
+    window.addEventListener('touchmove', handleUserInteraction, { passive: true });
+
+    return () => {
+      window.removeEventListener('wheel', handleUserInteraction);
+      window.removeEventListener('touchmove', handleUserInteraction);
+    };
+  }, [isLiveSynced, liveState]);
 
   // Botón Volver
   const handleGoBack = () => {
@@ -1277,8 +1394,44 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
             )}
           </div>
 
-          {/* Controles de Visualización: Acordes, Zoom, Columnas, Fullscreen */}
-          <div className="flex items-center gap-2">
+            {/* Controles de Sincronización en Vivo y Puente Holyrics */}
+            <div className="flex items-center gap-1.5 border-l pl-2 ml-1">
+              {liveState && (
+                isLiveSynced ? (
+                  <Badge
+                    variant="default"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold gap-1.5 py-1 px-2.5 shadow-xs"
+                    title="Siguiendo automáticamente a Ableton Live"
+                  >
+                    <Radio className="h-3 w-3 animate-pulse" />
+                    <span>En Vivo: {liveState.normalizedSection}</span>
+                  </Badge>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReSync}
+                    className="h-8 text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/25 gap-1.5"
+                    title="Haz clic para volver a seguir a la banda"
+                  >
+                    <Radio className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>Acoplar ({liveState.normalizedSection})</span>
+                  </Button>
+                )
+              )}
+
+              {/* Botón de Configuración del Puente Holyrics */}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsHolyricsModalOpen(true)}
+                title="Configurar Puente de Proyección Holyrics"
+              >
+                <Tv className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              </Button>
+            </div>
+
             {/* Toggle Acordes */}
             <Button
               variant={showChords ? 'default' : 'outline'}
@@ -1345,7 +1498,21 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
         </div>
       )}
 
-      {/* Visor Principal de Acordes y Letras con Scroll Interno */}
+      {/* Botón Flotante de Re-Acople cuando el músico se encuentra desacoplado */}
+      {!isLiveSynced && liveState && (
+        <div className="fixed bottom-16 sm:bottom-8 right-4 sm:right-8 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <Button
+            onClick={handleReSync}
+            size="lg"
+            className="rounded-full shadow-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2.5 sm:py-3 border-2 border-white/40 gap-2 flex items-center hover:scale-105 active:scale-95 transition-all"
+          >
+            <Radio className="h-4 w-4 animate-pulse text-white" />
+            <span>Acoplar a En Vivo ({liveState.normalizedSection})</span>
+          </Button>
+        </div>
+      )}
+
+      {/* Visor Principal de Acordes y Letras con Scroll Interno y Resaltado de Sección */}
       <Card className={isFullscreen ? 'border-0 shadow-none bg-transparent overflow-hidden' : 'shadow-sm overflow-hidden max-w-full'}>
         <CardContent className={isFullscreen ? 'p-0 overflow-x-auto max-w-full' : 'p-4 sm:p-6 md:p-8 overflow-x-auto max-w-full'}>
           <ChordSheetViewer
@@ -1353,9 +1520,17 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
             showChords={showChords}
             fontSize={fontSize}
             columns={columns}
+            activeSectionSlug={liveState?.sectionSlug}
+            activeSectionName={liveState?.normalizedSection}
           />
         </CardContent>
       </Card>
+
+      {/* Modal de Configuración del Puente Holyrics */}
+      <HolyricsBridgeModal
+        open={isHolyricsModalOpen}
+        onOpenChange={setIsHolyricsModalOpen}
+      />
 
       {/* Modal de Impresión */}
       <PrintSongModal
