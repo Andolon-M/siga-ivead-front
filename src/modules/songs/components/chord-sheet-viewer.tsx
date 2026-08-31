@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { parseSongLines, filterVisibleSongLines, ParsedLine } from '../utils/chord-transposer';
-import { normalizeSectionSlug } from '../types/live-sync.types';
+import { parseSongLines, filterVisibleSongLines } from '../utils/chord-transposer';
+import type { ParsedLine } from '../types';
+import { getCanonicalSectionKey } from '../types/live-sync.types';
 
 interface ChordSheetViewerProps {
   content: string;
@@ -52,11 +53,11 @@ export function ChordSheetViewer({
           blocks.push(currentBlock);
         }
 
-        const slug = normalizeSectionSlug(line.sectionName);
+        const key = getCanonicalSectionKey(line.sectionName);
         currentBlock = {
-          id: `song-section-${slug}-${blocks.length}`,
+          id: `song-section-${key}-${blocks.length}`,
           name: line.sectionName,
-          slug,
+          slug: key,
           lines: [line],
         };
       } else {
@@ -78,6 +79,8 @@ export function ChordSheetViewer({
     3: 'columns-1 md:columns-2 lg:columns-3 gap-6 [column-rule:1px_solid_var(--border)]',
   }[columns];
 
+  const targetKey = getCanonicalSectionKey(activeSectionSlug || activeSectionName || '');
+
   return (
     <div className="w-full max-w-full overflow-x-auto pb-2">
       <div
@@ -85,23 +88,25 @@ export function ChordSheetViewer({
         style={{ fontSize: `${fontSize}px` }}
       >
         {sectionBlocks.map((block, blockIdx) => {
-          const isActive =
-            Boolean(activeSectionSlug && block.slug && (
-              activeSectionSlug === block.slug ||
-              activeSectionSlug.includes(block.slug) ||
-              block.slug.includes(activeSectionSlug)
-            )) ||
-            Boolean(activeSectionName && block.name && (
-              activeSectionName.toLowerCase().trim() === block.name.toLowerCase().trim()
-            ));
+          const blockKey = getCanonicalSectionKey(block.name || block.slug);
+          const isActive = Boolean(
+            targetKey && blockKey && (
+              targetKey === blockKey ||
+              (targetKey === 'coro1' && blockKey === 'coro') ||
+              (targetKey === 'coro' && blockKey === 'coro1') ||
+              (targetKey === 'puente1' && blockKey === 'puente') ||
+              (targetKey === 'puente' && blockKey === 'puente1')
+            )
+          );
 
           return (
             <div
               key={block.id || blockIdx}
-              id={`song-section-${block.slug}`}
-              data-section-slug={block.slug}
+              id={`song-section-${blockKey}`}
+              data-section-key={blockKey}
+              data-section-slug={blockKey}
               data-section-name={block.name}
-              onClick={() => block.name && onSectionClick?.(block.name, block.slug)}
+              onClick={() => block.name && onSectionClick?.(block.name, blockKey)}
               className={`rounded-xl transition-all duration-300 break-inside-avoid my-3 p-2 sm:p-3 ${
                 isActive
                   ? 'bg-primary/10 dark:bg-primary/15 border-l-4 border-primary ring-1 ring-primary/30 shadow-sm'

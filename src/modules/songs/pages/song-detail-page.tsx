@@ -57,7 +57,7 @@ import { ShareSetlistModal } from '../components/share-setlist-modal';
 import { HolyricsBridgeModal } from '../components/holyrics-bridge-modal';
 import { holyricsBridgeService } from '../services/holyrics-bridge.service';
 import { getSharedSocket } from '@/shared/lib/socket';
-import type { LiveSyncState } from '../types/live-sync.types';
+import { getCanonicalSectionKey, type LiveSyncState } from '../types/live-sync.types';
 import { Radio, Tv, Zap } from 'lucide-react';
 
 interface SongDetailPageProps {
@@ -124,6 +124,7 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
   const [liveState, setLiveState] = useState<LiveSyncState | null>(null);
   const [isLiveSynced, setIsLiveSynced] = useState<boolean>(true);
   const isAutoScrollingRef = useRef<boolean>(false);
+  const mountTimeRef = useRef<number>(Date.now());
 
   // Estados de posicionamiento y arrastre de la burbuja flotante móvil
   const [bubbleSide, setBubbleSide] = useState<'left' | 'right'>('right');
@@ -366,9 +367,11 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
       }
 
       setTimeout(() => {
+        const targetKey = getCanonicalSectionKey(liveState.sectionSlug || liveState.section || liveState.normalizedSection);
         const targetEl =
-          document.getElementById(`song-section-${liveState.sectionSlug}`) ||
-          document.querySelector(`[data-section-slug="${liveState.sectionSlug}"]`);
+          document.getElementById(`song-section-${targetKey}`) ||
+          document.querySelector(`[data-section-key="${targetKey}"]`) ||
+          document.querySelector(`[data-section-slug="${targetKey}"]`);
 
         if (targetEl) {
           isAutoScrollingRef.current = true;
@@ -388,7 +391,7 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
 
     socket.emit('live_sync:subscribe', { sessionId: targetRoomId });
 
-    const handleSyncState = (state: LiveSyncState | null) => {
+    const handleSyncState = (state: LiveSyncState | null, isRealtime = false) => {
       if (!state) return;
       setLiveState(state);
 
@@ -397,17 +400,21 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
 
       // Si el músico está acoplado a la sincronización en vivo:
       if (isLiveSynced) {
-        // 1. Si cambió de canción, saltar a la nueva canción
-        if (state.songId && String(state.songId) !== String(song?.id)) {
+        const isSameSong = String(state.songId) === String(song?.id);
+
+        // 1. Solo saltar automáticamente de canción si es un evento nuevo emitido en vivo desde Ableton
+        if (!isSameSong && state.songId && isRealtime) {
           handleNavigateSong(String(state.songId), true);
         }
 
-        // 2. Centrar automáticamente la sección activa en pantalla
-        if (state.sectionSlug) {
+        // 2. Si estamos en la misma canción, centrar automáticamente la sección activa en pantalla
+        if (isSameSong && (state.sectionSlug || state.section)) {
           setTimeout(() => {
+            const targetKey = getCanonicalSectionKey(state.sectionSlug || state.section || state.normalizedSection);
             const targetEl =
-              document.getElementById(`song-section-${state.sectionSlug}`) ||
-              document.querySelector(`[data-section-slug="${state.sectionSlug}"]`);
+              document.getElementById(`song-section-${targetKey}`) ||
+              document.querySelector(`[data-section-key="${targetKey}"]`) ||
+              document.querySelector(`[data-section-slug="${targetKey}"]`);
 
             if (targetEl) {
               isAutoScrollingRef.current = true;
@@ -421,25 +428,49 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
       }
     };
 
-    socket.on('live_sync:state', handleSyncState);
+    // Estado inicial recibido al suscribirse (solo informativo, no redirige la canción abierta manualmente)
+    socket.on('live_sync:state', (state: LiveSyncState | null) => {
+      handleSyncState(state, false);
+    });
+
+    // Eventos disparados en vivo durante la reproducción de Ableton
     socket.on('live_sync:section_changed', (payload: any) => {
-      handleSyncState({
-        sessionId: sessionId || undefined,
-        songId: String(payload.songId),
-        section: payload.section,
-        normalizedSection: payload.section,
-        sectionSlug: payload.sectionSlug,
-        measure: payload.measure,
-        timestamp: payload.timestamp || Date.now(),
-      });
+      handleSyncState(
+        {
+          sessionId: sessionId || undefined,
+          songId: String(payload.songId),
+          section: payload.section,
+          normalizedSection: payload.section,
+          sectionSlug: payload.sectionSlug,
+          measure: payload.measure,
+          timestamp: payload.timestamp || Date.now(),
+        },
+        true
+      );
+    });
+
+    socket.on('live_sync:song_changed', (payload: any) => {
+      handleSyncState(
+        {
+          sessionId: sessionId || undefined,
+          songId: String(payload.songId),
+          songTitle: payload.songTitle,
+          section: 'Intro',
+          normalizedSection: 'Intro',
+          sectionSlug: 'intro',
+          timestamp: payload.timestamp || Date.now(),
+        },
+        true
+      );
     });
 
     return () => {
       socket.emit('live_sync:unsubscribe', { sessionId: targetRoomId });
-      socket.off('live_sync:state', handleSyncState);
+      socket.off('live_sync:state');
       socket.off('live_sync:section_changed');
+      socket.off('live_sync:song_changed');
     };
-  }, [sessionId, isLiveSynced, song?.id]);
+  }, [sessionId, isLiveSynced, song?.id, isPublic]);
 
   // Detectar interacción manual del usuario (scroll / touch) para pausar la sincronización sin molestar al músico
   useEffect(() => {
@@ -1394,43 +1425,43 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
             )}
           </div>
 
+          {/* Lado derecho: Sincronización, Holyrics y Controles de Visualización */}
+          <div className="flex items-center gap-2">
             {/* Controles de Sincronización en Vivo y Puente Holyrics */}
-            <div className="flex items-center gap-1.5 border-l pl-2 ml-1">
-              {liveState && (
-                isLiveSynced ? (
-                  <Badge
-                    variant="default"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold gap-1.5 py-1 px-2.5 shadow-xs"
-                    title="Siguiendo automáticamente a Ableton Live"
-                  >
-                    <Radio className="h-3 w-3 animate-pulse" />
-                    <span>En Vivo: {liveState.normalizedSection}</span>
-                  </Badge>
-                ) : (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReSync}
-                    className="h-8 text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/25 gap-1.5"
-                    title="Haz clic para volver a seguir a la banda"
-                  >
-                    <Radio className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                    <span>Acoplar ({liveState.normalizedSection})</span>
-                  </Button>
-                )
-              )}
+            {liveState && (
+              isLiveSynced ? (
+                <Badge
+                  variant="default"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold gap-1.5 py-1 px-2.5 shadow-xs"
+                  title="Siguiendo automáticamente a Ableton Live"
+                >
+                  <Radio className="h-3 w-3 animate-pulse" />
+                  <span>En Vivo: {liveState.normalizedSection}</span>
+                </Badge>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReSync}
+                  className="h-8 text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/25 gap-1.5"
+                  title="Haz clic para volver a seguir a la banda"
+                >
+                  <Radio className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Acoplar ({liveState.normalizedSection})</span>
+                </Button>
+              )
+            )}
 
-              {/* Botón de Configuración del Puente Holyrics */}
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setIsHolyricsModalOpen(true)}
-                title="Configurar Puente de Proyección Holyrics"
-              >
-                <Tv className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              </Button>
-            </div>
+            {/* Botón de Configuración del Puente Holyrics */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsHolyricsModalOpen(true)}
+              title="Configurar Puente de Proyección Holyrics"
+            >
+              <Tv className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </Button>
 
             {/* Toggle Acordes */}
             <Button
@@ -1520,8 +1551,8 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
             showChords={showChords}
             fontSize={fontSize}
             columns={columns}
-            activeSectionSlug={liveState?.sectionSlug}
-            activeSectionName={liveState?.normalizedSection}
+            activeSectionSlug={liveState && String(liveState.songId) === String(song?.id) ? liveState.sectionSlug : undefined}
+            activeSectionName={liveState && String(liveState.songId) === String(song?.id) ? liveState.normalizedSection : undefined}
           />
         </CardContent>
       </Card>

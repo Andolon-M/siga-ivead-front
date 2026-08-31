@@ -1,4 +1,4 @@
-import { HolyricsConfig, LiveSyncState } from '../types/live-sync.types';
+import type { HolyricsConfig, LiveSyncState } from '../types/live-sync.types';
 
 const STORAGE_KEY = 'holyrics_bridge_config';
 
@@ -118,11 +118,17 @@ class HolyricsBridgeService {
     try {
       this.addLog('info', `Enviando a Holyrics: [${sectionName}] para "${songTitle}"`);
 
-      // Intentar disparar vía endpoint genérico de acción / diapositiva de Holyrics
+      // Payload enriquecido compatible con las etiquetas ##(...) de Holyrics
       const payload = {
         song_id: state.songId,
         song_title: songTitle,
         section: sectionName,
+        description: sectionName,
+        tag: sectionName,
+        name: sectionName,
+        item: sectionName,
+        parent_section: state.parentSection || sectionName,
+        slide_index: state.slideIndex || 1,
         section_slug: state.sectionSlug,
         action: 'show_section',
       };
@@ -142,7 +148,7 @@ class HolyricsBridgeService {
             Authorization: token ? `Bearer ${token}` : '',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ item: sectionName, ...payload }),
+          body: JSON.stringify(payload),
         });
       });
 

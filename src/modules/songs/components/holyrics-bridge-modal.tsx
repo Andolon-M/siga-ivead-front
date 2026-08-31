@@ -22,7 +22,7 @@ import {
   Terminal,
   ExternalLink,
 } from 'lucide-react';
-import { holyricsBridgeService, BridgeLogEntry } from '../services/holyrics-bridge.service';
+import { holyricsBridgeService, type BridgeLogEntry } from '../services/holyrics-bridge.service';
 import type { HolyricsConfig } from '../types/live-sync.types';
 
 interface HolyricsBridgeModalProps {
