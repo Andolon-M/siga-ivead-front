@@ -79,8 +79,8 @@ export function formatSongForHolyrics(rawContent: string): string {
     if (line.type === 'section' || line.isSectionHeader) {
       flushCurrentLyrics();
       currentSectionName = line.sectionName || 'Verso 1';
-    } else if (line.type === 'lyrics' || line.lyrics || (line.type === 'pair' && line.lyrics)) {
-      const text = (line.text || line.lyrics || '').trim();
+    } else if (line.type === 'lyrics') {
+      const text = (line.text || '').trim();
       if (text) {
         currentLyricsLines.push(text);
       }
