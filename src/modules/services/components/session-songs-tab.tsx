@@ -255,9 +255,9 @@ export function SessionSongsTab({ sessionId, sessionName, sessionDate }: Session
                           </div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
                             <span>{song.artist_rel?.name || song.artist}</span>
-                            {song.song_type && (
-                              <span className="text-indigo-500 font-medium">
-                                • {song.song_type.name}
+                            {song.tags && song.tags.length > 0 && (
+                              <span className="text-primary font-medium truncate">
+                                • {song.tags.map((t) => t.name).join(", ")}
                               </span>
                             )}
                             {song.bpm && <span>• {song.bpm} BPM</span>}
@@ -363,22 +363,15 @@ export function SessionSongsTab({ sessionId, sessionName, sessionDate }: Session
                       <span className="font-medium text-foreground/80">
                         {song.artist_rel?.name || song.artist}
                       </span>
-                      {song.song_type && (
+                      {song.tags && song.tags.length > 0 && song.tags.map((tag) => (
                         <Badge
+                          key={tag.id}
                           variant="outline"
-                          className="text-[11px] font-normal bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 py-0"
+                          className="text-[11px] font-normal bg-primary/10 text-primary border-primary/20 py-0"
                         >
-                          {song.song_type.name}
+                          {tag.name}
                         </Badge>
-                      )}
-                      {song.theme && (
-                        <Badge
-                          variant="outline"
-                          className="text-[11px] font-normal bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 py-0"
-                        >
-                          {song.theme.name}
-                        </Badge>
-                      )}
+                      ))}
                       {song.bpm && (
                         <Badge
                           variant="outline"

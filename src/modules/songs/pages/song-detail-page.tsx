@@ -951,23 +951,15 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
                       </Badge>
                     )}
 
-                    {song.song_type && (
+                    {song.tags && song.tags.length > 0 && song.tags.map((tag) => (
                       <Badge
+                        key={tag.id}
                         variant="outline"
-                        className="font-normal text-[11px] h-5 px-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
+                        className="font-normal text-[11px] h-5 px-2 bg-primary/10 text-primary border-primary/20"
                       >
-                        {song.song_type.name}
+                        {tag.name}
                       </Badge>
-                    )}
-
-                    {song.theme && (
-                      <Badge
-                        variant="outline"
-                        className="font-normal text-[11px] h-5 px-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                      >
-                        {song.theme.name}
-                      </Badge>
-                    )}
+                    ))}
                   </div>
                 </div>
               </div>

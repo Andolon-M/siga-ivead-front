@@ -17,6 +17,7 @@ import {
   Sparkles,
   SlidersHorizontal,
   Zap,
+  Tag,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -38,7 +39,7 @@ import {
   TableRow,
 } from '@/shared/components/ui/table';
 import { Can } from '@/shared/components/auth/can';
-import type { Song, MusicalKey, SongVersionType, SongArtist, SongTheme, SongTypeItem, TempoType } from '../types';
+import type { Song, MusicalKey, SongVersionType, SongArtist, SongTag, TempoType } from '../types';
 import { songsService } from '../services/songs.service';
 import { MUSICAL_KEY_LABELS, MUSICAL_KEY_SHORT } from '../utils/chord-transposer';
 
@@ -49,9 +50,8 @@ export function SongsListPage() {
 
   const [songs, setSongs] = useState<Song[]>([]);
   const [versionTypes, setVersionTypes] = useState<SongVersionType[]>([]);
-  const [songTypes, setSongTypes] = useState<SongTypeItem[]>([]);
+  const [tags, setTags] = useState<SongTag[]>([]);
   const [artists, setArtists] = useState<SongArtist[]>([]);
-  const [themes, setThemes] = useState<SongTheme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
@@ -59,36 +59,32 @@ export function SongsListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKey, setSelectedKey] = useState<string>('ALL');
   const [selectedVersionType, setSelectedVersionType] = useState<string>('ALL');
-  const [selectedSongType, setSelectedSongType] = useState<string>('ALL');
+  const [selectedTag, setSelectedTag] = useState<string>('ALL');
   const [selectedArtist, setSelectedArtist] = useState<string>('ALL');
-  const [selectedTheme, setSelectedTheme] = useState<string>('ALL');
   const [selectedTempo, setSelectedTempo] = useState<string>('ALL');
 
   // Cargar canciones y catálogos
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [songsRes, typesRes, songTypesRes, artistsRes, themesRes] = await Promise.all([
+      const [songsRes, typesRes, tagsRes, artistsRes] = await Promise.all([
         songsService.getAllSongs({
           search: searchTerm || undefined,
           key: selectedKey !== 'ALL' ? (selectedKey as MusicalKey) : undefined,
           version_type_id: selectedVersionType !== 'ALL' ? selectedVersionType : undefined,
-          song_type_id: selectedSongType !== 'ALL' ? selectedSongType : undefined,
+          tag_ids: selectedTag !== 'ALL' ? selectedTag : undefined,
           artist_id: selectedArtist !== 'ALL' ? selectedArtist : undefined,
-          theme_id: selectedTheme !== 'ALL' ? selectedTheme : undefined,
           tempo_type: selectedTempo !== 'ALL' ? (selectedTempo as TempoType) : undefined,
         }),
         songsService.getAllVersionTypes(),
-        songsService.getAllSongTypes(),
+        songsService.getAllTags(),
         songsService.getAllArtists(),
-        songsService.getAllThemes(),
       ]);
 
       setSongs(songsRes.songs);
       setVersionTypes(typesRes);
-      setSongTypes(songTypesRes);
+      setTags(tagsRes);
       setArtists(artistsRes);
-      setThemes(themesRes);
     } catch (err) {
       console.error('Error al cargar canciones:', err);
     } finally {
@@ -101,7 +97,7 @@ export function SongsListPage() {
       loadData();
     }, 250);
     return () => clearTimeout(timer);
-  }, [searchTerm, selectedKey, selectedVersionType, selectedSongType, selectedArtist, selectedTheme, selectedTempo]);
+  }, [searchTerm, selectedKey, selectedVersionType, selectedTag, selectedArtist, selectedTempo]);
 
   const handleDeleteSong = async (song: Song) => {
     if (!window.confirm(`¿Estás seguro de que deseas eliminar la canción "${song.title}"?`)) {
@@ -121,18 +117,16 @@ export function SongsListPage() {
     searchTerm !== '' ||
     selectedKey !== 'ALL' ||
     selectedVersionType !== 'ALL' ||
-    selectedSongType !== 'ALL' ||
+    selectedTag !== 'ALL' ||
     selectedArtist !== 'ALL' ||
-    selectedTheme !== 'ALL' ||
     selectedTempo !== 'ALL';
 
   const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedKey('ALL');
     setSelectedVersionType('ALL');
-    setSelectedSongType('ALL');
+    setSelectedTag('ALL');
     setSelectedArtist('ALL');
-    setSelectedTheme('ALL');
     setSelectedTempo('ALL');
   };
 
@@ -205,33 +199,18 @@ export function SongsListPage() {
           </div>
         </div>
 
-        {/* Fila de Filtros Desplegables (6 Filtros adaptativos) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
-          {/* Filtro por Tipo de Canción (Alabanza, Adoración, Intimidad...) */}
-          <Select value={selectedSongType} onValueChange={setSelectedSongType}>
+        {/* Fila de Filtros Desplegables (5 Filtros adaptativos) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1">
+          {/* Filtro por Etiqueta (Alabanza, Adoración, Sanidad, Gratitud...) */}
+          <Select value={selectedTag} onValueChange={setSelectedTag}>
             <SelectTrigger className="w-full text-xs h-9">
-              <SelectValue placeholder="Tipo: Todos" />
+              <SelectValue placeholder="Etiqueta: Todas" />
             </SelectTrigger>
             <SelectContent className="max-h-56">
-              <SelectItem value="ALL">Todos los Tipos</SelectItem>
-              {songTypes.map((t) => (
+              <SelectItem value="ALL">Todas las Etiquetas</SelectItem>
+              {tags.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
                   {t.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Filtro por Tema Central */}
-          <Select value={selectedTheme} onValueChange={setSelectedTheme}>
-            <SelectTrigger className="w-full text-xs h-9">
-              <SelectValue placeholder="Tema: Todos" />
-            </SelectTrigger>
-            <SelectContent className="max-h-56">
-              <SelectItem value="ALL">Todos los Temas</SelectItem>
-              {themes.map((theme) => (
-                <SelectItem key={theme.id} value={theme.id}>
-                  {theme.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -349,22 +328,15 @@ export function SongsListPage() {
 
               <CardContent className="p-4 pt-1 space-y-3.5 w-full min-w-0 overflow-hidden flex-1 flex flex-col justify-between">
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground w-full min-w-0">
-                  {song.song_type && (
+                  {song.tags && song.tags.length > 0 && song.tags.map((tag) => (
                     <Badge
+                      key={tag.id}
                       variant="outline"
-                      className="text-[11px] font-normal bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
+                      className="text-[11px] font-normal bg-primary/10 text-primary border-primary/20"
                     >
-                      {song.song_type.name}
+                      {tag.name}
                     </Badge>
-                  )}
-                  {song.theme && (
-                    <Badge
-                      variant="outline"
-                      className="text-[11px] font-normal bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                    >
-                      {song.theme.name}
-                    </Badge>
-                  )}
+                  ))}
                   {song.version_type?.name && (
                     <Badge variant="secondary" className="text-[11px] font-normal">
                       {song.version_type.name}
@@ -389,30 +361,28 @@ export function SongsListPage() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-2.5 border-t text-xs">
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                {/* Footer de la tarjeta */}
+                <div className="pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
                     {song.youtube_url && (
-                      <span title="Video de referencia" className="flex items-center text-rose-500">
-                        <Youtube className="h-4 w-4" />
+                      <span className="text-red-500 flex items-center gap-0.5" title="Video de YouTube">
+                        <Youtube className="h-3.5 w-3.5" />
                       </span>
                     )}
                     {song.multitrack_url && (
-                      <span title="Secuencia / Multitrack" className="flex items-center text-indigo-500">
-                        <FileAudio className="h-4 w-4" />
+                      <span className="text-blue-500 flex items-center gap-0.5" title="Secuencia / Multitrack">
+                        <FileAudio className="h-3.5 w-3.5" />
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/admin/songs/${song.id}`);
-                      }}
-                      title="Ver partitura y acordes"
+                      className="h-7 w-7"
+                      onClick={() => navigate(`/admin/songs/${song.id}`)}
+                      title="Ver letra y acordes"
                     >
                       <Eye className="h-3.5 w-3.5" />
                     </Button>
@@ -420,11 +390,8 @@ export function SongsListPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/admin/songs/${song.id}/edit`);
-                        }}
+                        className="h-7 w-7"
+                        onClick={() => navigate(`/admin/songs/${song.id}/edit`)}
                         title="Editar canción"
                       >
                         <Edit2 className="h-3.5 w-3.5" />
@@ -434,7 +401,7 @@ export function SongsListPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteSong(song);
@@ -458,8 +425,7 @@ export function SongsListPage() {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Artista</TableHead>
-                <TableHead>Tipo (Momento)</TableHead>
-                <TableHead>Tema Central</TableHead>
+                <TableHead>Etiquetas</TableHead>
                 <TableHead>Tono Original</TableHead>
                 <TableHead>Versión</TableHead>
                 <TableHead>Tempo / BPM</TableHead>
@@ -481,25 +447,18 @@ export function SongsListPage() {
                     {song.artist_rel?.name || song.artist}
                   </TableCell>
                   <TableCell>
-                    {song.song_type ? (
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-normal bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
-                      >
-                        {song.song_type.name}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {song.theme ? (
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-normal bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                      >
-                        {song.theme.name}
-                      </Badge>
+                    {song.tags && song.tags.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {song.tags.map((tag) => (
+                          <Badge
+                            key={tag.id}
+                            variant="outline"
+                            className="text-xs font-normal bg-primary/10 text-primary border-primary/20"
+                          >
+                            {tag.name}
+                          </Badge>
+                        ))}
+                      </div>
                     ) : (
                       <span className="text-muted-foreground text-xs">—</span>
                     )}

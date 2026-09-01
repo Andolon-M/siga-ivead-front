@@ -27,13 +27,15 @@ import {
   Copy,
   Check,
   Tv,
+  Tag,
 } from 'lucide-react';
 import { songsService } from '../services/songs.service';
 import { MUSICAL_KEY_LABELS, convertPlainTextToBracketed, convertBracketedToPlainText } from '../utils/chord-transposer';
 import { formatSongForHolyrics } from '../utils/holyrics-formatter';
 import { ChordSheetViewer } from './chord-sheet-viewer';
 import { ComboboxCreatable } from './combobox-creatable';
-import type { Song, MusicalKey, SongVersionType, SongArtist, SongTheme, SongTypeItem, CreateSongData } from '../types';
+import { TagsMultiSelect } from './tags-multi-select';
+import type { Song, MusicalKey, SongVersionType, SongArtist, SongTag, CreateSongData } from '../types';
 
 interface SongFormProps {
   initialData?: Song;
@@ -52,8 +54,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
     title: initialData?.title || '',
     artist: initialData?.artist || '',
     artist_id: initialData?.artist_id || null,
-    theme_id: initialData?.theme_id || null,
-    song_type_id: initialData?.song_type_id || null,
+    tag_ids: initialData?.tags?.map((t) => t.id) || [],
     original_key: initialData?.original_key || 'G',
     version_type_id: initialData?.version_type_id || '',
     bpm: initialData?.bpm || null,
@@ -64,10 +65,9 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
     notes: initialData?.notes || '',
   });
 
-  const [songTypes, setSongTypes] = useState<SongTypeItem[]>([]);
+  const [tags, setTags] = useState<SongTag[]>([]);
   const [versionTypes, setVersionTypes] = useState<SongVersionType[]>([]);
   const [artists, setArtists] = useState<SongArtist[]>([]);
-  const [themes, setThemes] = useState<SongTheme[]>([]);
   const [isLoadingCatalogs, setIsLoadingCatalogs] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
@@ -121,21 +121,19 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
     return () => clearTimeout(timer);
   }, [formData, isEditing, initialData]);
 
-  // Cargar catálogos (Tipos de Canción, Tipos de Versión, Artistas, Temas Centrales)
+  // Cargar catálogos (Etiquetas, Tipos de Versión, Artistas)
   const loadCatalogs = async () => {
     setIsLoadingCatalogs(true);
     try {
-      const [songTypesRes, typesRes, artistsRes, themesRes] = await Promise.all([
-        songsService.getAllSongTypes(),
+      const [tagsRes, typesRes, artistsRes] = await Promise.all([
+        songsService.getAllTags(),
         songsService.getAllVersionTypes(),
         songsService.getAllArtists(),
-        songsService.getAllThemes(),
       ]);
 
-      setSongTypes(songTypesRes);
+      setTags(tagsRes);
       setVersionTypes(typesRes);
       setArtists(artistsRes);
-      setThemes(themesRes);
 
       if (!formData.version_type_id && typesRes.length > 0 && !isEditing) {
         setFormData((prev) => ({ ...prev, version_type_id: typesRes[0].id }));
@@ -152,16 +150,16 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
   }, []);
 
   // Handlers para creación dinámica ("Otro...")
-  const handleCreateSongType = async (name: string) => {
+  const handleCreateTag = async (name: string) => {
     try {
-      const created = await songsService.createSongType(name);
-      setSongTypes((prev) => {
+      const created = await songsService.createTag(name);
+      setTags((prev) => {
         const exists = prev.find((t) => t.id === created.id);
         return exists ? prev : [...prev, created];
       });
       return created;
     } catch (err) {
-      console.error('Error creando tipo de canción:', err);
+      console.error('Error creando etiqueta:', err);
       return null;
     }
   };
@@ -190,20 +188,6 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
       return created;
     } catch (err) {
       console.error('Error creando artista:', err);
-      return null;
-    }
-  };
-
-  const handleCreateTheme = async (name: string) => {
-    try {
-      const created = await songsService.createTheme(name);
-      setThemes((prev) => {
-        const exists = prev.find((t) => t.id === created.id);
-        return exists ? prev : [...prev, created];
-      });
-      return created;
-    } catch (err) {
-      console.error('Error creando tema central:', err);
       return null;
     }
   };
@@ -455,51 +439,22 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
               />
             </div>
 
-            {/* Tipo de Canción (Alabanza, Adoración, Intimidad...) con Buscador y "Otro..." */}
-            <div className="space-y-1.5">
+            {/* Etiquetas (Alabanza, Adoración, Agradecimiento, Sanidad, Perdón...) */}
+            <div className="space-y-1.5 md:col-span-2 lg:col-span-2">
               <Label className="text-xs font-semibold flex items-center gap-1.5">
-                <Music className="h-3.5 w-3.5 text-indigo-500" />
-                Tipo de Canción (Momento)
+                <Tag className="h-3.5 w-3.5 text-primary" />
+                Etiquetas / Categorías
               </Label>
-              <ComboboxCreatable
-                label="Tipo de Canción"
-                placeholder="Seleccionar tipo (ej: Alabanza, Adoración)..."
-                options={songTypes}
-                value={formData.song_type_id || ''}
-                onChange={(id) => {
+              <TagsMultiSelect
+                options={tags}
+                selectedIds={formData.tag_ids || []}
+                onChange={(ids) => {
                   setFormData({
                     ...formData,
-                    song_type_id: id || null,
+                    tag_ids: ids,
                   });
                 }}
-                onCreateOption={handleCreateSongType}
-                createModalTitle="Nuevo Tipo de Canción"
-                createModalDescription="Registra una nueva categoría litúrgica o momento de servicio (ej: Alabanza, Adoración, Intimidad Personal, Júbilo)."
-                createInputPlaceholder="Ej: Intimidad Personal, Alabanza..."
-              />
-            </div>
-
-            {/* Tema Central Doctrinal con Buscador y "Otro..." */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                Tema Central
-              </Label>
-              <ComboboxCreatable
-                label="Tema Central"
-                placeholder="Seleccionar tema (ej: Cruz, Gratitud, Fe)..."
-                options={themes}
-                value={formData.theme_id || ''}
-                onChange={(id) => {
-                  setFormData({
-                    ...formData,
-                    theme_id: id || null,
-                  });
-                }}
-                onCreateOption={handleCreateTheme}
-                createModalTitle="Nuevo Tema Central"
-                createModalDescription="Registra un nuevo enfoque temático o doctrinal (ej: Cruz y Redención, Espíritu Santo, Fe, Sanidad)."
-                createInputPlaceholder="Ej: Cruz y Redención, Gratitud..."
+                onCreateOption={handleCreateTag}
               />
             </div>
 
