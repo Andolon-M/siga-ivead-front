@@ -324,35 +324,35 @@ export function SongsListPage() {
         </div>
       ) : viewMode === 'grid' ? (
         /* Vista en Cuadrícula */
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {songs.map((song) => (
             <Card
               key={song.id}
-              className="group flex flex-col justify-between hover:shadow-md hover:border-primary/40 transition-all cursor-pointer"
+              className="group flex flex-col justify-between hover:shadow-md hover:border-primary/40 transition-all cursor-pointer overflow-hidden w-full max-w-full py-0 gap-0"
               onClick={() => navigate(`/admin/songs/${song.id}`)}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <CardTitle className="text-lg font-bold truncate group-hover:text-primary transition-colors">
+              <CardHeader className="p-4 pb-2.5 w-full min-w-0 block">
+                <div className="flex items-start justify-between gap-2.5 w-full min-w-0">
+                  <div className="space-y-1 flex-1 min-w-0 overflow-hidden">
+                    <CardTitle className="text-base sm:text-lg font-bold truncate group-hover:text-primary transition-colors block" title={song.title}>
                       {song.title}
                     </CardTitle>
-                    <CardDescription className="text-sm font-medium text-foreground/80 truncate">
+                    <CardDescription className="text-xs sm:text-sm font-medium text-foreground/80 truncate block" title={song.artist_rel?.name || song.artist}>
                       {song.artist_rel?.name || song.artist}
                     </CardDescription>
                   </div>
-                  <Badge variant="default" className="font-mono text-sm px-2.5 py-0.5 shrink-0 bg-primary/90">
+                  <Badge variant="default" className="font-mono text-xs sm:text-sm px-2.5 py-0.5 shrink-0 bg-primary text-primary-foreground font-bold shadow-xs">
                     {MUSICAL_KEY_SHORT[song.original_key]}
                   </Badge>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4 pt-0">
-                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              <CardContent className="p-4 pt-1 space-y-3.5 w-full min-w-0 overflow-hidden flex-1 flex flex-col justify-between">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground w-full min-w-0">
                   {song.song_type && (
                     <Badge
                       variant="outline"
-                      className="text-xs font-normal bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
+                      className="text-[11px] font-normal bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30"
                     >
                       {song.song_type.name}
                     </Badge>
@@ -360,20 +360,20 @@ export function SongsListPage() {
                   {song.theme && (
                     <Badge
                       variant="outline"
-                      className="text-xs font-normal bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                      className="text-[11px] font-normal bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
                     >
                       {song.theme.name}
                     </Badge>
                   )}
                   {song.version_type?.name && (
-                    <Badge variant="secondary" className="text-xs font-normal">
+                    <Badge variant="secondary" className="text-[11px] font-normal">
                       {song.version_type.name}
                     </Badge>
                   )}
                   {song.bpm && (
                     <Badge
                       variant="outline"
-                      className={`text-xs font-normal font-mono ${
+                      className={`text-[11px] font-normal font-mono ${
                         song.bpm >= 100
                           ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30'
                           : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
@@ -383,13 +383,13 @@ export function SongsListPage() {
                     </Badge>
                   )}
                   {song.time_signature && (
-                    <span className="px-2 py-0.5 bg-muted rounded font-mono">
+                    <span className="px-1.5 py-0.2 bg-muted/60 border rounded text-[11px] font-mono">
                       {song.time_signature}
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t text-xs">
+                <div className="flex items-center justify-between pt-2.5 border-t text-xs">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     {song.youtube_url && (
                       <span title="Video de referencia" className="flex items-center text-rose-500">

@@ -72,6 +72,55 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
 
+  // Estado para el guardado automático (Auto-Save) en modo edición
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const lastSavedDataRef = React.useRef<string>(
+    isEditing && initialData ? JSON.stringify(formData) : ''
+  );
+  const isInitialMount = React.useRef(true);
+
+  // Auto-Save en modo edición con delay prudente (1800ms)
+  useEffect(() => {
+    if (!isEditing || !initialData) return;
+
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Validar campos mínimos requeridos para no auto-guardar datos vacíos o incompletos
+    if (
+      !formData.title.trim() ||
+      (!formData.artist && !formData.artist_id) ||
+      !formData.version_type_id ||
+      !formData.content.trim()
+    ) {
+      return;
+    }
+
+    const currentPayload = JSON.stringify(formData);
+    if (currentPayload === lastSavedDataRef.current) {
+      return;
+    }
+
+    setAutoSaveStatus('saving');
+
+    const timer = setTimeout(async () => {
+      try {
+        await songsService.updateSong(initialData.id, formData, { silent: true });
+        lastSavedDataRef.current = JSON.stringify(formData);
+        setAutoSaveStatus('saved');
+        setLastSavedTime(new Date());
+      } catch (err) {
+        console.error('Error en auto-guardado:', err);
+        setAutoSaveStatus('error');
+      }
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [formData, isEditing, initialData]);
+
   // Cargar catálogos (Tipos de Canción, Tipos de Versión, Artistas, Temas Centrales)
   const loadCatalogs = async () => {
     setIsLoadingCatalogs(true);
@@ -309,7 +358,32 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          {isEditing && (
+            <div className="text-xs text-muted-foreground mr-1 select-none">
+              {autoSaveStatus === 'saving' && (
+                <span className="flex items-center gap-1.5 text-primary">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Auto-guardando...</span>
+                </span>
+              )}
+              {autoSaveStatus === 'saved' && (
+                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium animate-in fade-in duration-150">
+                  <Check className="h-3.5 w-3.5" />
+                  <span>
+                    Guardado autom.{' '}
+                    {lastSavedTime
+                      ? lastSavedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : ''}
+                  </span>
+                </span>
+              )}
+              {autoSaveStatus === 'error' && (
+                <span className="text-rose-500 font-medium">Error en auto-guardado</span>
+              )}
+            </div>
+          )}
+
           <Button
             type="button"
             variant="outline"

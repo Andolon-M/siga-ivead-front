@@ -137,9 +137,6 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
     moved: false,
   });
 
-  // Gestos táctiles de deslizamiento (swipe horizontal) para cambiar canciones en móvil/tablet
-  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
-
   // Sincronizar estado con evento nativo de pantalla completa (por ejemplo al pulsar tecla Esc)
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -539,32 +536,7 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [prevSongItem, nextSongItem, isPublic]);
 
-  // Gestos táctiles de navegación horizontal (Swipe)
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchStartPos.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-      };
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!touchStartPos.current || e.changedTouches.length === 0) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartPos.current.x;
-    const deltaY = e.changedTouches[0].clientY - touchStartPos.current.y;
-    touchStartPos.current = null;
-
-    if (Math.abs(deltaX) > 65 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-      if (deltaX < 0 && nextSongItem) {
-        handleNavigateSong(nextSongItem.song_id);
-      } else if (deltaX > 0 && prevSongItem) {
-        handleNavigateSong(prevSongItem.song_id);
-      }
-    }
-  };
-
-  // Guardar preferencias en segundo plano (debounce 600ms)
+  // Guardar preferencias en segundo plano de manera invisible (debounce 1200ms)
   useEffect(() => {
     if (!song || !isInitialPrefLoaded.current) return;
 
@@ -587,22 +559,14 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
       }).catch((err) => {
         console.error('Error guardando preferencia de usuario:', err);
       });
-    }, 600);
+    }, 1200);
 
     return () => clearTimeout(timer);
   }, [song, semitones, fontSize, columns, showChords, isPublic]);
 
-  // Restablecer al tono original y guardar preferencia
+  // Restablecer al tono original (el useEffect se encarga de guardar silenciosamente tras el debounce)
   const handleResetToOriginalKey = () => {
     setSemitones(0);
-    if (song && isInitialPrefLoaded.current && !isPublic) {
-      songsService.saveUserPreference(song.id, {
-        semitones: 0,
-        font_size: fontSize,
-        columns,
-        show_chords: showChords,
-      }).catch(() => {});
-    }
   };
 
   // Contenido transpuesto en tiempo real
@@ -670,8 +634,6 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
   return (
     <div
       ref={fullscreenContainerRef}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       className={`space-y-6 max-w-6xl mx-auto pb-16 transition-colors ${
         isFullscreen
           ? 'bg-background text-foreground fixed inset-0 z-[100] max-w-none p-4 sm:p-8 overflow-y-auto'
@@ -971,6 +933,15 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
                         }`}
                       >
                         {song.bpm >= 100 ? '⚡ Rápida' : '🕊️ Lenta'} ({song.bpm} BPM)
+                      </Badge>
+                    )}
+
+                    {song.time_signature && (
+                      <Badge
+                        variant="outline"
+                        className="font-normal font-mono text-[11px] h-5 px-2 bg-muted/40"
+                      >
+                        Compás: {song.time_signature}
                       </Badge>
                     )}
 
@@ -1363,185 +1334,188 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
 
       {/* Barra de Control y Transposición en Tiempo Real (Fijada en el borde superior al scrollear en escritorio) */}
       {!isFullscreen && (
-        <div className="hidden lg:flex sticky top-[-1.2em] z-30 bg-background/95 backdrop-blur border rounded-xl p-3 shadow-md items-center justify-between gap-3 max-w-full">
-          {/* Controles de Transposición de Tono y Lista de Canciones */}
-          <div className="flex items-center gap-2">
-            {/* Botón de Lista de Canciones si está en sesión */}
-            {sessionId && sessionSongs.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 gap-1.5 text-xs font-semibold bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:text-primary shadow-xs"
-                onClick={() => setIsSetlistSheetOpen(true)}
-                title="Permite ver toda la lista e ir directo a otra canción"
-              >
-                <ListMusic className="h-4 w-4" />
-                <span>Repertorio</span>
-                <span className="text-[10px] font-mono bg-primary text-primary-foreground px-1.5 py-0.2 rounded-full font-bold">
-                  {sessionSongs.length}
-                </span>
-              </Button>
-            )}
-
-            <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-lg border">
-              <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded"
-                onClick={() => setSemitones((prev) => prev - 1)}
-                title="Bajar medio tono (-1 semitono)"
-              >
-                <Minus className="h-3.5 w-3.5" />
-              </Button>
-
-              <div className="w-[84px] h-7 bg-primary text-primary-foreground font-mono font-bold text-sm rounded shadow-xs flex items-center justify-center gap-1 shrink-0 select-none">
-                <span>{currentKeyDisplay}</span>
-                {semitones !== 0 && (
-                  <span className="text-[10px] opacity-85 font-normal">
-                    ({semitones > 0 ? `+${semitones}` : semitones})
-                  </span>
-                )}
-              </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded"
-                onClick={() => setSemitones((prev) => prev + 1)}
-                title="Subir medio tono (+1 semitono)"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                onClick={handleResetToOriginalKey}
-                disabled={semitones === 0}
-                title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tonalidad original'}
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Parámetros musicales (BPM / Compás) */}
-          <div className="hidden md:flex items-center gap-2 text-xs">
-            {song.bpm && (
-              <Badge variant="outline" className="font-mono">
-                Tempo: {song.bpm} BPM
-              </Badge>
-            )}
-            {song.time_signature && (
-              <Badge variant="outline" className="font-mono">
-                Compás: {song.time_signature}
-              </Badge>
-            )}
-          </div>
-
-          {/* Lado derecho: Sincronización, Holyrics y Controles de Visualización */}
-          <div className="flex items-center gap-2">
-            {/* Controles de Sincronización en Vivo y Puente Holyrics */}
-            {liveState && (
-              isLiveSynced ? (
-                <Badge
-                  variant="default"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold gap-1.5 py-1 px-2.5 shadow-xs"
-                  title="Siguiendo automáticamente a Ableton Live"
-                >
-                  <Radio className="h-3 w-3 animate-pulse" />
-                  <span>En Vivo: {liveState.normalizedSection}</span>
-                </Badge>
-              ) : (
+        <div className="hidden lg:flex flex-col gap-2 sticky top-[-1.2em] z-30 max-w-full">
+          {/* Barra Principal de Lectura y Ajustes Musicales */}
+          <div className="flex items-center justify-between gap-3 bg-background/95 backdrop-blur border rounded-xl p-2.5 sm:p-3 shadow-md max-w-full overflow-x-auto scrollbar-none">
+            {/* Controles de Transposición de Tono y Lista de Canciones */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Botón de Lista de Canciones si está en sesión */}
+              {sessionId && sessionSongs.length > 0 && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleReSync}
-                  className="h-8 text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/25 gap-1.5"
-                  title="Haz clic para volver a seguir a la banda"
+                  className="h-9 gap-1.5 text-xs font-semibold bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 hover:text-primary shadow-xs shrink-0"
+                  onClick={() => setIsSetlistSheetOpen(true)}
+                  title="Permite ver toda la lista e ir directo a otra canción"
                 >
-                  <Radio className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>Acoplar ({liveState.normalizedSection})</span>
+                  <ListMusic className="h-4 w-4" />
+                  <span>Repertorio</span>
+                  <span className="text-[10px] font-mono bg-primary text-primary-foreground px-1.5 py-0.2 rounded-full font-bold">
+                    {sessionSongs.length}
+                  </span>
                 </Button>
-              )
-            )}
+              )}
 
-            {/* Botón de Configuración del Puente Holyrics */}
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setIsHolyricsModalOpen(true)}
-              title="Configurar Puente de Proyección Holyrics"
-            >
-              <Tv className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            </Button>
-
-            {/* Toggle Acordes */}
-            <Button
-              variant={showChords ? 'default' : 'outline'}
-              size="sm"
-              className="h-8 text-xs gap-1.5"
-              onClick={() => setShowChords(!showChords)}
-            >
-              {showChords ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-              {showChords ? 'Acordes Visibles' : 'Solo Letra'}
-            </Button>
-
-            {/* Zoom Letra */}
-            <div className="flex items-center border rounded-lg p-0.5 bg-muted/40">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
-                disabled={fontSize <= 10}
-                title="Reducir tamaño de letra"
-              >
-                <ZoomOut className="h-3.5 w-3.5" />
-              </Button>
-              <span className="text-xs font-mono px-1.5 select-none">{fontSize}px</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setFontSize((prev) => Math.min(28, prev + 1))}
-                disabled={fontSize >= 28}
-                title="Aumentar tamaño de letra"
-              >
-                <ZoomIn className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
-            {/* Selector de Columnas */}
-            <div className="hidden sm:flex items-center border rounded-lg p-0.5 bg-muted/40">
-              {([1, 2, 3] as const).map((col) => (
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-muted/60 p-1.5 rounded-lg border shrink-0">
+                <span className="text-xs font-semibold text-muted-foreground px-1">Tono:</span>
                 <Button
-                  key={col}
-                  variant={columns === col ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-2 text-xs font-mono"
-                  onClick={() => setColumns(col)}
-                  title={`${col} Columna${col > 1 ? 's' : ''}`}
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded"
+                  onClick={() => setSemitones((prev) => prev - 1)}
+                  title="Bajar medio tono (-1 semitono)"
                 >
-                  {col} Col
+                  <Minus className="h-3.5 w-3.5" />
                 </Button>
-              ))}
+
+                <div className="w-[80px] sm:w-[84px] h-7 bg-primary text-primary-foreground font-mono font-bold text-sm rounded shadow-xs flex items-center justify-center gap-1 shrink-0 select-none">
+                  <span>{currentKeyDisplay}</span>
+                  {semitones !== 0 && (
+                    <span className="text-[10px] opacity-85 font-normal">
+                      ({semitones > 0 ? `+${semitones}` : semitones})
+                    </span>
+                  )}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded"
+                  onClick={() => setSemitones((prev) => prev + 1)}
+                  title="Subir medio tono (+1 semitono)"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                  onClick={handleResetToOriginalKey}
+                  disabled={semitones === 0}
+                  title={semitones === 0 ? 'Tonalidad original' : 'Restablecer tonalidad original'}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
 
-            {/* Botón Pantalla Completa Rápido */}
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleToggleFullscreen}
-              title="Modo pantalla completa (Atril)"
-            >
-              <Maximize className="h-4 w-4" />
-            </Button>
+            {/* Lado derecho: Controles de Visualización (Acordes, Zoom, Columnas, Pantalla Completa) */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Toggle Acordes */}
+              <Button
+                variant={showChords ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 text-xs gap-1.5 shrink-0"
+                onClick={() => setShowChords(!showChords)}
+              >
+                {showChords ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                <span>{showChords ? 'Acordes Visibles' : 'Solo Letra'}</span>
+              </Button>
+
+              {/* Zoom Letra */}
+              <div className="flex items-center border rounded-lg p-0.5 bg-muted/40 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setFontSize((prev) => Math.max(10, prev - 1))}
+                  disabled={fontSize <= 10}
+                  title="Reducir tamaño de letra"
+                >
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </Button>
+                <span className="text-xs font-mono px-1.5 select-none">{fontSize}px</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setFontSize((prev) => Math.min(28, prev + 1))}
+                  disabled={fontSize >= 28}
+                  title="Aumentar tamaño de letra"
+                >
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              {/* Selector de Columnas */}
+              <div className="hidden sm:flex items-center border rounded-lg p-0.5 bg-muted/40 shrink-0">
+                {([1, 2, 3] as const).map((col) => (
+                  <Button
+                    key={col}
+                    variant={columns === col ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 px-2 text-xs font-mono"
+                    onClick={() => setColumns(col)}
+                    title={`${col} Columna${col > 1 ? 's' : ''}`}
+                  >
+                    {col} Col
+                  </Button>
+                ))}
+              </div>
+
+              {/* Botón Pantalla Completa Rápido */}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={handleToggleFullscreen}
+                title="Modo pantalla completa (Atril)"
+              >
+                <Maximize className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+
+          {/* Sub-barra de Sincronización en Vivo y Proyección Holyrics (Aparece cuando hay actividad en vivo o puente) */}
+          {(liveState || !isPublic) && (
+            <div className="flex items-center justify-between gap-3 px-3.5 py-1.5 bg-card/90 backdrop-blur-sm border rounded-lg shadow-xs text-xs max-w-full overflow-x-auto scrollbar-none animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 shrink-0">
+                {liveState ? (
+                  isLiveSynced ? (
+                    <Badge
+                      variant="default"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold gap-1.5 py-1 px-2.5 shadow-xs shrink-0"
+                      title="Siguiendo automáticamente a Ableton Live"
+                    >
+                      <Radio className="h-3 w-3 animate-pulse" />
+                      <span>En Vivo: {liveState.normalizedSection}</span>
+                    </Badge>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleReSync}
+                      className="h-7 text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/25 gap-1.5 py-0 px-2.5 shrink-0"
+                      title="Haz clic para volver a sincronizarte con la banda"
+                    >
+                      <Radio className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>Acoplar a En Vivo ({liveState.normalizedSection})</span>
+                    </Button>
+                  )
+                ) : (
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Radio className="h-3 w-3 text-muted-foreground/60" />
+                    <span>Sincronización en Vivo (Ableton / Holyrics lista)</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Botón de Configuración del Puente Holyrics */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2.5 text-xs text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 gap-1.5 shrink-0"
+                  onClick={() => setIsHolyricsModalOpen(true)}
+                  title="Configurar Puente de Proyección Holyrics"
+                >
+                  <Tv className="h-3.5 w-3.5" />
+                  <span>Proyección Holyrics</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

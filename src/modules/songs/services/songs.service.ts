@@ -64,10 +64,11 @@ export const songsService = {
   /**
    * Actualiza una canción existente
    */
-  async updateSong(id: string, data: UpdateSongData): Promise<Song> {
+  async updateSong(id: string, data: UpdateSongData, options?: { silent?: boolean }): Promise<Song> {
     const response = await axiosInstance.put<{ status: number; message: string; data: { song: Song } }>(
       API_ENDPOINTS.SONGS.UPDATE(id),
-      data
+      data,
+      options?.silent ? ({ silent: true } as any) : undefined
     );
 
     return response.data.data.song;
@@ -96,7 +97,7 @@ export const songsService = {
   },
 
   /**
-   * Guarda o actualiza la preferencia del usuario actual para una canción
+   * Guarda o actualiza la preferencia del usuario actual para una canción de forma silenciosa
    */
   async saveUserPreference(
     songId: string,
@@ -106,7 +107,9 @@ export const songsService = {
       status: number;
       message: string;
       data: { preference: SongUserPreference };
-    }>(API_ENDPOINTS.SONGS.PREFERENCES(songId), data);
+    }>(API_ENDPOINTS.SONGS.PREFERENCES(songId), data, {
+      silent: true,
+    } as any);
 
     return response.data.data.preference;
   },

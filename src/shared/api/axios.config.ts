@@ -36,18 +36,27 @@ axiosInstance.interceptors.request.use(
 // Interceptor de Response - Manejar respuestas y errores
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
-    // Si la respuesta tiene un mensaje de éxito, mostrarlo
-    if (response.data?.message) {
+    // Si la petición tiene la propiedad silent/skipToast, no mostrar toast de éxito
+    const isSilent = Boolean(
+      (response.config as any)?.silent ||
+      (response.config as any)?.skipToast ||
+      response.config.headers?.['X-Silent'] === 'true' ||
+      response.config.headers?.['x-silent'] === 'true' ||
+      response.config.headers?.['X-Skip-Toast'] === 'true'
+    );
+
+    // Si la respuesta tiene un mensaje de éxito y no es silenciosa, mostrarlo
+    if (!isSilent && response.data?.message) {
       // Solo mostrar toast en operaciones POST, PUT, DELETE (no en GET)
-      const method = response.config.method?.toUpperCase()
+      const method = response.config.method?.toUpperCase();
       if (method !== "GET") {
         toast.success(response.data.message, {
           duration: 3000,
-        })
+        });
       }
     }
     
-    return response
+    return response;
   },
   (error: AxiosError<ApiResponse>) => {
     // Manejar diferentes tipos de errores
