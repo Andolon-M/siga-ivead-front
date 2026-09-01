@@ -24,9 +24,13 @@ import {
   Sparkles,
   Layers,
   User,
+  Copy,
+  Check,
+  Tv,
 } from 'lucide-react';
 import { songsService } from '../services/songs.service';
 import { MUSICAL_KEY_LABELS, convertPlainTextToBracketed, convertBracketedToPlainText } from '../utils/chord-transposer';
+import { formatSongForHolyrics } from '../utils/holyrics-formatter';
 import { ChordSheetViewer } from './chord-sheet-viewer';
 import { ComboboxCreatable } from './combobox-creatable';
 import type { Song, MusicalKey, SongVersionType, SongArtist, SongTheme, SongTypeItem, CreateSongData } from '../types';
@@ -40,6 +44,8 @@ const MUSICAL_KEYS = Object.keys(MUSICAL_KEY_LABELS) as MusicalKey[];
 
 export function SongForm({ initialData, isEditing = false }: SongFormProps) {
   const navigate = useNavigate();
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [copiedHolyrics, setCopiedHolyrics] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<CreateSongData>({
@@ -153,12 +159,87 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
     }
   };
 
-  // Insertar etiqueta de sección
-  const insertSectionTag = (tag: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      content: prev.content ? `${prev.content}\n\n[${tag}]\n` : `[${tag}]\n`,
-    }));
+  // Insertar etiqueta de sección inteligente calculando el siguiente correlativo y en la posición del cursor
+  const insertSmartSectionTag = (type: 'intro' | 'verso' | 'coro' | 'puente' | 'precoro' | 'outro' | 'solo') => {
+    const currentContent = formData.content || '';
+    let tagLabel = '';
+
+    if (type === 'verso') {
+      const matches = Array.from(currentContent.matchAll(/\[(?:verso|verse|estrofa)\s*(\d+)?\]/gi));
+      const numbers = matches.map((m) => (m[1] ? parseInt(m[1], 10) : 1));
+      const nextNum = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+      tagLabel = `VERSO ${nextNum}`;
+    } else if (type === 'coro') {
+      const matches = Array.from(currentContent.matchAll(/\[(?:coro|chorus|estribillo)\s*(\d+)?\]/gi));
+      const numbers = matches.map((m) => (m[1] ? parseInt(m[1], 10) : 1));
+      if (numbers.length === 0) {
+        tagLabel = 'CORO';
+      } else {
+        const nextNum = Math.max(...numbers) + 1;
+        tagLabel = `CORO ${nextNum}`;
+      }
+    } else if (type === 'puente') {
+      const matches = Array.from(currentContent.matchAll(/\[(?:puente|bridge)\s*(\d+)?\]/gi));
+      const numbers = matches.map((m) => (m[1] ? parseInt(m[1], 10) : 1));
+      if (numbers.length === 0) {
+        tagLabel = 'PUENTE';
+      } else {
+        const nextNum = Math.max(...numbers) + 1;
+        tagLabel = `PUENTE ${nextNum}`;
+      }
+    } else if (type === 'precoro') {
+      tagLabel = 'PRE-CORO';
+    } else if (type === 'intro') {
+      tagLabel = 'INTRO';
+    } else if (type === 'outro') {
+      tagLabel = 'OUTRO';
+    } else if (type === 'solo') {
+      tagLabel = 'SOLO';
+    }
+
+    const tagToInsert = `[${tagLabel}]`;
+    const textarea = textareaRef.current;
+
+    if (textarea) {
+      const start = textarea.selectionStart ?? currentContent.length;
+      const end = textarea.selectionEnd ?? currentContent.length;
+      const before = currentContent.substring(0, start);
+      const after = currentContent.substring(end);
+
+      // Espaciado inteligente antes y después
+      const prefix = before.length === 0 ? '' : before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n';
+      const suffix = after.length === 0 ? '\n' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n';
+
+      const inserted = `${prefix}${tagToInsert}${suffix}`;
+      const newContent = before + inserted + after;
+      setFormData((prev) => ({ ...prev, content: newContent }));
+
+      // Restaurar el cursor justo después de la etiqueta
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const newPos = start + inserted.length;
+          textareaRef.current.setSelectionRange(newPos, newPos);
+        }
+      });
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        content: prev.content ? `${prev.content}\n\n${tagToInsert}\n` : `${tagToInsert}\n`,
+      }));
+    }
+  };
+
+  // Copiar letra en formato Holyrics ##(...)
+  const handleCopyHolyrics = () => {
+    const formatted = formatSongForHolyrics(formData.content);
+    if (!formatted) {
+      alert('No hay letra suficiente para generar el formato de Holyrics.');
+      return;
+    }
+    navigator.clipboard.writeText(formatted);
+    setCopiedHolyrics(true);
+    setTimeout(() => setCopiedHolyrics(false), 2500);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -497,60 +578,108 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
 
           <CardContent className="flex-1 flex flex-col pt-0 space-y-3">
             {/* Barra de herramientas rápidas */}
-            <div className="flex flex-wrap items-center gap-1.5 p-2 bg-muted/40 rounded-lg border text-xs">
-              <span className="font-semibold text-muted-foreground mr-1">Secciones:</span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2"
-                onClick={() => insertSectionTag('Intro')}
-              >
-                + Intro
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2"
-                onClick={() => insertSectionTag('Verso 1')}
-              >
-                + Verso
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2"
-                onClick={() => insertSectionTag('Coro')}
-              >
-                + Coro
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2"
-                onClick={() => insertSectionTag('Puente')}
-              >
-                + Puente
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2"
-                onClick={() => insertSectionTag('Outro')}
-              >
-                + Outro
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-1.5 p-2 bg-muted/40 rounded-lg border text-xs">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-semibold text-muted-foreground mr-1">Secciones:</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 hover:bg-primary/10 hover:text-primary"
+                  onClick={() => insertSmartSectionTag('intro')}
+                  title="Insertar etiqueta [INTRO] en el cursor"
+                >
+                  + Intro
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 font-medium hover:bg-emerald-500/10 hover:text-emerald-600"
+                  onClick={() => insertSmartSectionTag('verso')}
+                  title="Calcula automáticamente el siguiente número: [VERSO 1], [VERSO 2]..."
+                >
+                  + Verso
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 font-medium hover:bg-blue-500/10 hover:text-blue-600"
+                  onClick={() => insertSmartSectionTag('coro')}
+                  title="Inserta [CORO], [CORO 2] en el cursor"
+                >
+                  + Coro
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 hover:bg-indigo-500/10 hover:text-indigo-600"
+                  onClick={() => insertSmartSectionTag('precoro')}
+                  title="Inserta [PRE-CORO] en el cursor"
+                >
+                  + Pre-Coro
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 font-medium hover:bg-amber-500/10 hover:text-amber-600"
+                  onClick={() => insertSmartSectionTag('puente')}
+                  title="Inserta [PUENTE], [PUENTE 2] en el cursor"
+                >
+                  + Puente
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 hover:bg-purple-500/10 hover:text-purple-600"
+                  onClick={() => insertSmartSectionTag('solo')}
+                  title="Inserta [SOLO] en el cursor"
+                >
+                  + Solo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 hover:bg-muted"
+                  onClick={() => insertSmartSectionTag('outro')}
+                  title="Inserta [OUTRO] en el cursor"
+                >
+                  + Outro
+                </Button>
+              </div>
 
-
+              {/* Botón de exportación rápida para Holyrics */}
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-7 text-xs px-2.5 gap-1.5 font-semibold text-purple-700 dark:text-purple-300 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30"
+                onClick={handleCopyHolyrics}
+                title="Genera y copia al portapapeles la letra con diapositivas ##(verso 1.1), ##(coro 1.1) para pegar en Holyrics"
+              >
+                {copiedHolyrics ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>¡Copiado para Holyrics!</span>
+                  </>
+                ) : (
+                  <>
+                    <Tv className="h-3.5 w-3.5" />
+                    <span>📋 Copiar formato Holyrics</span>
+                  </>
+                )}
+              </Button>
             </div>
 
             {activeTab === 'editor' ? (
               <div className="flex-1 min-h-[420px] flex flex-col">
                 <Textarea
+                  ref={textareaRef}
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   placeholder={`Pega aquí los acordes sobre la letra como en CifraClub o LaCuerda:\n\n[Intro]\nAm   F7M   Em7   Am   F7M\n\n[Verso 1]\nAm            F7M       Em7     Am   F7M  \n   Grande y fuerte es nuestro Dios`}

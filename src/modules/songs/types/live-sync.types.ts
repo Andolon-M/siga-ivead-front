@@ -4,6 +4,7 @@ export interface LiveSyncState {
   songTitle?: string;
   section: string;
   normalizedSection: string;
+  rawSection?: string;
   sectionSlug: string;
   slideIndex?: number;
   parentSection?: string;

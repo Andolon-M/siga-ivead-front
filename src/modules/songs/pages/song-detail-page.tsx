@@ -395,8 +395,10 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
       if (!state) return;
       setLiveState(state);
 
-      // Reenviar al puente local de Holyrics si está activo en esta máquina
-      holyricsBridgeService.handleLiveSyncTrigger(state);
+      // Reenviar al puente local de Holyrics ÚNICAMENTE si es un evento emitido en tiempo real desde Ableton
+      if (isRealtime) {
+        holyricsBridgeService.handleLiveSyncTrigger(state);
+      }
 
       // Si el músico está acoplado a la sincronización en vivo:
       if (isLiveSynced) {
@@ -439,9 +441,13 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
         {
           sessionId: sessionId || undefined,
           songId: String(payload.songId),
+          songTitle: payload.songTitle || (String(payload.songId) === String(song?.id) ? song?.title : undefined),
           section: payload.section,
           normalizedSection: payload.section,
+          rawSection: payload.rawSection || payload.section,
           sectionSlug: payload.sectionSlug,
+          slideIndex: payload.slideIndex,
+          parentSection: payload.parentSection,
           measure: payload.measure,
           timestamp: payload.timestamp || Date.now(),
         },
@@ -464,11 +470,21 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
       );
     });
 
+    // Eventos de reproducción Ableton (Play / Stop)
+    socket.on('live_sync:playback', (payload: any) => {
+      holyricsBridgeService.handlePlaybackState({
+        isPlaying: Boolean(payload.isPlaying),
+        songId: payload.songId ? String(payload.songId) : (song?.id ? String(song.id) : undefined),
+        songTitle: song?.title,
+      });
+    });
+
     return () => {
       socket.emit('live_sync:unsubscribe', { sessionId: targetRoomId });
       socket.off('live_sync:state');
       socket.off('live_sync:section_changed');
       socket.off('live_sync:song_changed');
+      socket.off('live_sync:playback');
     };
   }, [sessionId, isLiveSynced, song?.id, isPublic]);
 
@@ -1561,6 +1577,8 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
       <HolyricsBridgeModal
         open={isHolyricsModalOpen}
         onOpenChange={setIsHolyricsModalOpen}
+        songContent={song?.content}
+        songTitle={song?.title}
       />
 
       {/* Modal de Impresión */}

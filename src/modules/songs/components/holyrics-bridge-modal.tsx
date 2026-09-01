@@ -21,20 +21,26 @@ import {
   Sliders,
   Terminal,
   ExternalLink,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { holyricsBridgeService, type BridgeLogEntry } from '../services/holyrics-bridge.service';
+import { formatSongForHolyrics } from '../utils/holyrics-formatter';
 import type { HolyricsConfig } from '../types/live-sync.types';
 
 interface HolyricsBridgeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  songContent?: string;
+  songTitle?: string;
 }
 
-export function HolyricsBridgeModal({ open, onOpenChange }: HolyricsBridgeModalProps) {
+export function HolyricsBridgeModal({ open, onOpenChange, songContent, songTitle }: HolyricsBridgeModalProps) {
   const [config, setConfig] = useState<HolyricsConfig>(holyricsBridgeService.getConfig());
   const [logs, setLogs] = useState<BridgeLogEntry[]>([]);
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [copiedSong, setCopiedSong] = useState<boolean>(false);
 
   useEffect(() => {
     if (open) {
@@ -179,8 +185,46 @@ export function HolyricsBridgeModal({ open, onOpenChange }: HolyricsBridgeModalP
             )}
           </div>
 
+          {/* Exportación rápida de la canción actual */}
+          {songContent && (
+            <div className="flex items-center justify-between p-3 rounded-xl border bg-purple-500/5 border-purple-500/20">
+              <div className="space-y-0.5">
+                <p className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                  {songTitle ? `Letra de "${songTitle}"` : 'Letra de la canción actual'}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Copia las diapositivas con etiquetas ##(verso 1.1), ##(coro 1.1) para pegar en Holyrics.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-8 text-xs px-3 gap-1.5 font-semibold text-purple-700 dark:text-purple-300 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 shrink-0"
+                onClick={() => {
+                  const formatted = formatSongForHolyrics(songContent);
+                  navigator.clipboard.writeText(formatted);
+                  setCopiedSong(true);
+                  setTimeout(() => setCopiedSong(false), 2500);
+                }}
+              >
+                {copiedSong ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copiar para Holyrics</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
           {/* Consola de Actividad y Logs en Vivo */}
-          <div className="space-y-1.5 pt-2">
+          <div className="space-y-1.5 pt-1">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
               <div className="flex items-center gap-1.5">
                 <Terminal className="h-3.5 w-3.5" />
@@ -189,13 +233,13 @@ export function HolyricsBridgeModal({ open, onOpenChange }: HolyricsBridgeModalP
               <span className="text-[10px]">{logs.length} eventos</span>
             </div>
 
-            <div className="h-32 rounded-xl bg-black/90 text-zinc-300 font-mono text-[11px] p-2.5 overflow-y-auto space-y-1 border border-zinc-800">
+            <div className="h-44 max-h-56 rounded-xl bg-black/90 text-zinc-300 font-mono text-[11px] p-3 overflow-y-auto overflow-x-auto space-y-2 border border-zinc-800 scrollbar-thin">
               {logs.length === 0 ? (
                 <p className="text-zinc-600 italic">Esperando eventos de sincronización...</p>
               ) : (
                 logs.map((log) => (
-                  <div key={log.id} className="flex items-start gap-2 leading-tight">
-                    <span className="text-zinc-500 shrink-0">[{log.timestamp}]</span>
+                  <div key={log.id} className="flex items-start gap-2 leading-relaxed whitespace-pre-wrap break-words min-w-full">
+                    <span className="text-zinc-500 shrink-0 select-none">[{log.timestamp}]</span>
                     <span
                       className={
                         log.type === 'success'
