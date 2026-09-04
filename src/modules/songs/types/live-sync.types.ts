@@ -19,6 +19,7 @@ export interface HolyricsConfig {
   port: number;
   token: string;
   autoTrigger: boolean;
+  songMappings?: Record<string, string>;
 }
 
 /**

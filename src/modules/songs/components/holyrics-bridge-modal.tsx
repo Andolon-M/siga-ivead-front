@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,15 +14,15 @@ import { Switch } from '@/shared/components/ui/switch';
 import { Badge } from '@/shared/components/ui/badge';
 import {
   Tv,
-  Radio,
   CheckCircle2,
   AlertCircle,
   RefreshCw,
-  Sliders,
   Terminal,
-  ExternalLink,
   Copy,
   Check,
+  Link as LinkIcon,
+  Play,
+  Search,
 } from 'lucide-react';
 import { holyricsBridgeService, type BridgeLogEntry } from '../services/holyrics-bridge.service';
 import { formatSongForHolyrics } from '../utils/holyrics-formatter';
@@ -31,21 +31,37 @@ import type { HolyricsConfig } from '../types/live-sync.types';
 interface HolyricsBridgeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  songContent?: string;
+  songId?: string | number;
   songTitle?: string;
+  songContent?: string;
+  artist?: string;
 }
 
-export function HolyricsBridgeModal({ open, onOpenChange, songContent, songTitle }: HolyricsBridgeModalProps) {
+export function HolyricsBridgeModal({
+  open,
+  onOpenChange,
+  songId,
+  songTitle,
+  songContent,
+  artist,
+}: HolyricsBridgeModalProps) {
   const [config, setConfig] = useState<HolyricsConfig>(holyricsBridgeService.getConfig());
   const [logs, setLogs] = useState<BridgeLogEntry[]>([]);
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [copiedSong, setCopiedSong] = useState<boolean>(false);
+  const [holyricsSongs, setHolyricsSongs] = useState<Array<{ id: string; title: string }>>([]);
+  const [isOpeningSong, setIsOpeningSong] = useState<boolean>(false);
+  const [songSearchFilter, setSongSearchFilter] = useState<string>('');
 
   useEffect(() => {
     if (open) {
       setConfig(holyricsBridgeService.getConfig());
       const unsubscribe = holyricsBridgeService.subscribeLogs(setLogs);
+      // Cargar lista de canciones de Holyrics si está conectado
+      holyricsBridgeService.getHolyricsSongs().then((songs) => {
+        if (songs) setHolyricsSongs(songs);
+      });
       return unsubscribe;
     }
   }, [open]);
@@ -67,12 +83,42 @@ export function HolyricsBridgeModal({ open, onOpenChange, songContent, songTitle
     holyricsBridgeService.saveConfig(config);
     const result = await holyricsBridgeService.testConnection();
     setTestResult(result);
+    if (result.success) {
+      const songs = await holyricsBridgeService.getHolyricsSongs(true);
+      setHolyricsSongs(songs);
+    }
     setIsTesting(false);
   };
 
+  const matchedSongInfo = useMemo(() => {
+    if (!songId) return null;
+    return holyricsBridgeService.getMatchedHolyricsSong(String(songId), songTitle, artist);
+  }, [songId, songTitle, artist, holyricsSongs, config.songMappings]);
+
+  const handleSelectHolyricsSong = (targetHolyricsId: string) => {
+    if (!songId) return;
+    holyricsBridgeService.linkSong(String(songId), targetHolyricsId);
+    setConfig(holyricsBridgeService.getConfig());
+  };
+
+  const handleTestOpenSong = async () => {
+    if (!songId) return;
+    setIsOpeningSong(true);
+    await holyricsBridgeService.openSong(String(songId), songTitle || '');
+    setIsOpeningSong(false);
+  };
+
+  const filteredHolyricsSongs = useMemo(() => {
+    if (!songSearchFilter) return holyricsSongs.slice(0, 50);
+    const q = songSearchFilter.toLowerCase();
+    return holyricsSongs.filter((s) => s.title.toLowerCase().includes(q)).slice(0, 50);
+  }, [holyricsSongs, songSearchFilter]);
+
+  const currentLinkedId = songId ? config.songMappings?.[String(songId)] || '' : '';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
@@ -81,7 +127,7 @@ export function HolyricsBridgeModal({ open, onOpenChange, songContent, songTitle
             <div>
               <DialogTitle className="text-lg">Puente Local de Holyrics</DialogTitle>
               <DialogDescription className="text-xs">
-                Sincroniza automáticamente las diapositivas de proyección con Ableton Live.
+                Sincroniza automáticamente las diapositivas de proyección con Ableton Live y SIGA.
               </DialogDescription>
             </div>
           </div>
@@ -180,10 +226,118 @@ export function HolyricsBridgeModal({ open, onOpenChange, songContent, songTitle
                 }`}
               >
                 {testResult.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                <span className="truncate max-w-[260px]">{testResult.message}</span>
+                <span className="truncate max-w-[280px]">{testResult.message}</span>
               </div>
             )}
           </div>
+
+          {/* Vinculación de Canción en Holyrics */}
+          {songTitle && (
+            <div className="p-3.5 rounded-xl border bg-muted/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  <span className="text-xs font-bold text-foreground">
+                    Vinculación en Holyrics para: &quot;{songTitle}&quot;
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1 text-purple-600 dark:text-purple-400 border-purple-500/30 hover:bg-purple-500/10"
+                  onClick={handleTestOpenSong}
+                  disabled={isOpeningSong}
+                  title="Abre la canción inmediatamente en la ventana de presentación de Holyrics"
+                >
+                  <Play className={`h-3 w-3 ${isOpeningSong ? 'animate-spin' : ''}`} />
+                  <span>Probar Abrir en Holyrics</span>
+                </Button>
+              </div>
+
+              {matchedSongInfo ? (
+                <div className="flex items-center justify-between bg-background border p-2.5 rounded-lg text-xs">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground font-medium">Asociada con:</span>
+                      <span className="font-bold text-foreground">{matchedSongInfo.title}</span>
+                      {matchedSongInfo.isManual ? (
+                        <Badge variant="default" className="text-[10px] bg-purple-600 py-0 px-1.5">
+                          Manual
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] border-emerald-500/50 text-emerald-600 py-0 px-1.5">
+                          Auto ({matchedSongInfo.score} pts)
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {currentLinkedId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[11px] text-muted-foreground hover:text-rose-500"
+                      onClick={() => handleSelectHolyricsSong('')}
+                    >
+                      Restablecer a Auto
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-amber-600 dark:text-amber-400 italic">
+                  ⚠️ No se ha detectado coincidencia automática en el catálogo de Holyrics.
+                </p>
+              )}
+
+              {/* Selector de anulación manual de catálogo */}
+              {holyricsSongs.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <Label className="text-[11px] text-muted-foreground">
+                    Cambiar o forzar canción en Holyrics (Opcional):
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar canción en Holyrics..."
+                        value={songSearchFilter}
+                        onChange={(e) => setSongSearchFilter(e.target.value)}
+                        className="h-8 pl-8 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {songSearchFilter && (
+                    <div className="max-h-36 overflow-y-auto border rounded-lg bg-background p-1 space-y-0.5">
+                      {filteredHolyricsSongs.length === 0 ? (
+                        <p className="text-xs text-muted-foreground p-2 italic text-center">
+                          No se encontraron canciones con ese nombre en Holyrics
+                        </p>
+                      ) : (
+                        filteredHolyricsSongs.map((hs) => (
+                          <button
+                            key={hs.id}
+                            type="button"
+                            onClick={() => {
+                              handleSelectHolyricsSong(hs.id);
+                              setSongSearchFilter('');
+                            }}
+                            className={`w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center justify-between hover:bg-purple-500/10 transition-colors ${
+                              currentLinkedId === hs.id ? 'bg-purple-500/15 font-bold text-purple-700 dark:text-purple-300' : ''
+                            }`}
+                          >
+                            <span className="truncate">{hs.title}</span>
+                            <span className="text-[10px] font-mono opacity-60">ID: {hs.id}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Exportación rápida de la canción actual */}
           {songContent && (

@@ -30,6 +30,8 @@ import {
   MoreVertical,
   Share2,
   X,
+  Sun,
+  SunDim,
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -58,6 +60,7 @@ import { HolyricsBridgeModal } from '../components/holyrics-bridge-modal';
 import { holyricsBridgeService } from '../services/holyrics-bridge.service';
 import { getSharedSocket } from '@/shared/lib/socket';
 import { getCanonicalSectionKey, type LiveSyncState } from '../types/live-sync.types';
+import { useWakeLock } from '@/shared/hooks/use-wake-lock';
 import { Radio, Tv, Zap } from 'lucide-react';
 
 interface SongDetailPageProps {
@@ -82,6 +85,13 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
 
   const fullscreenContainerRef = useRef<HTMLDivElement>(null);
   const mobileControlsRef = useRef<HTMLDivElement>(null);
+
+  // Evitar que la pantalla se apague en dispositivos móviles/tablets (Screen Wake Lock API)
+  const {
+    isSupported: isWakeLockSupported,
+    isLocked: isWakeLocked,
+    toggle: toggleWakeLock,
+  } = useWakeLock({ autoLock: true });
 
   const [song, setSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -794,6 +804,32 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
                 ))}
               </div>
 
+              {/* Toggle Pantalla Siempre Encendida (Wake Lock) */}
+              {isWakeLockSupported && (
+                <Button
+                  variant={isWakeLocked ? 'default' : 'outline'}
+                  size="sm"
+                  className={`gap-1.5 text-xs transition-colors ${
+                    isWakeLocked
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-xs'
+                      : 'border-border text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={toggleWakeLock}
+                  title={
+                    isWakeLocked
+                      ? 'Pantalla siempre activa (Evita suspensión) - Clic para desactivar'
+                      : 'Activar pantalla siempre encendida (Wake Lock)'
+                  }
+                >
+                  {isWakeLocked ? (
+                    <Sun className="h-3.5 w-3.5 animate-pulse text-white" />
+                  ) : (
+                    <SunDim className="h-3.5 w-3.5" />
+                  )}
+                  <span>{isWakeLocked ? 'Pantalla Activa' : 'Pantalla Normal'}</span>
+                </Button>
+              )}
+
               {/* Salir de Pantalla Completa */}
               <Button
                 variant="outline"
@@ -1207,7 +1243,32 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
               </Button>
             </div>
 
-            {/* 4. Pantalla Completa / Salir */}
+            {/* 4. Toggle Pantalla Siempre Encendida (Wake Lock Móvil) */}
+            {isWakeLockSupported && (
+              <Button
+                variant={isWakeLocked ? 'default' : 'outline'}
+                size="icon"
+                className={`h-7 w-7 rounded-xl transition-all ${
+                  isWakeLocked
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-sm'
+                    : 'text-muted-foreground'
+                }`}
+                onClick={toggleWakeLock}
+                title={
+                  isWakeLocked
+                    ? 'Pantalla siempre activa (Evita que el móvil se apague) - Clic para desactivar'
+                    : 'Activar pantalla siempre encendida'
+                }
+              >
+                {isWakeLocked ? (
+                  <Sun className="h-3.5 w-3.5 animate-pulse text-white" />
+                ) : (
+                  <SunDim className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            )}
+
+            {/* 5. Pantalla Completa / Salir */}
             <Button
               variant={isFullscreen ? 'secondary' : 'outline'}
               size="icon"
@@ -1446,6 +1507,34 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
                 ))}
               </div>
 
+              {/* Toggle Pantalla Siempre Encendida (Wake Lock) */}
+              {isWakeLockSupported && (
+                <Button
+                  variant={isWakeLocked ? 'default' : 'outline'}
+                  size="sm"
+                  className={`h-8 text-xs gap-1.5 shrink-0 transition-colors ${
+                    isWakeLocked
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={toggleWakeLock}
+                  title={
+                    isWakeLocked
+                      ? 'Pantalla siempre activa (Evita que el dispositivo se apague) - Clic para desactivar'
+                      : 'Activar pantalla siempre encendida (Wake Lock)'
+                  }
+                >
+                  {isWakeLocked ? (
+                    <Sun className="h-3.5 w-3.5 animate-pulse text-white" />
+                  ) : (
+                    <SunDim className="h-3.5 w-3.5" />
+                  )}
+                  <span className="hidden xl:inline">
+                    {isWakeLocked ? 'Pantalla Activa' : 'Pantalla Normal'}
+                  </span>
+                </Button>
+              )}
+
               {/* Botón Pantalla Completa Rápido */}
               <Button
                 variant="outline"
@@ -1543,8 +1632,10 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
       <HolyricsBridgeModal
         open={isHolyricsModalOpen}
         onOpenChange={setIsHolyricsModalOpen}
-        songContent={song?.content}
+        songId={song?.id}
         songTitle={song?.title}
+        songContent={song?.content}
+        artist={song?.artist_rel?.name || song?.artist}
       />
 
       {/* Modal de Impresión */}
