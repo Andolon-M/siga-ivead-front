@@ -479,10 +479,11 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
 
     // Eventos de reproducción Ableton (Play / Stop)
     socket.on('live_sync:playback', (payload: any) => {
+      const isCurrentSong = payload.songId && String(payload.songId) === String(song?.id);
       holyricsBridgeService.handlePlaybackState({
         isPlaying: Boolean(payload.isPlaying),
-        songId: payload.songId ? String(payload.songId) : (song?.id ? String(song.id) : undefined),
-        songTitle: song?.title,
+        songId: payload.songId ? String(payload.songId) : (isCurrentSong ? String(song?.id) : undefined),
+        songTitle: payload.songTitle || (isCurrentSong ? song?.title : undefined),
       });
     });
 

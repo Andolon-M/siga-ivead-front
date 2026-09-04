@@ -342,7 +342,15 @@ class HolyricsBridgeService {
 
       // 2. Determinar qué canción abrir en Holyrics
       const desiredSongTitle = targetSubSong || songTitle;
-      const isSongChange = this.activeSongId !== songId || (targetSubSong && this.activeHolyricsTitle !== targetSubSong);
+      const isTitleMismatch = Boolean(
+        desiredSongTitle &&
+        this.activeHolyricsTitle &&
+        normalizeForMatch(cleanSongTitle(this.activeHolyricsTitle)) !== normalizeForMatch(cleanSongTitle(desiredSongTitle))
+      );
+      const isSongChange =
+        this.activeSongId !== songId ||
+        isTitleMismatch ||
+        Boolean(targetSubSong && this.activeHolyricsTitle !== targetSubSong);
 
       if (isSongChange) {
         await this.openSong(songId, desiredSongTitle, targetSubSong);
@@ -410,11 +418,13 @@ class HolyricsBridgeService {
     if (!this.config.enabled || !this.config.autoTrigger) return;
 
     if (payload.isPlaying) {
-      this.addLog('info', '▶️ Ableton Play: abriendo canción...');
-      if (payload.songId) {
-        await this.openSong(String(payload.songId), payload.songTitle || '');
+      if (payload.songId && payload.songTitle) {
+        this.addLog('info', `▶️ Ableton Play: cargando "${payload.songTitle}" (#${payload.songId})...`);
+        await this.openSong(String(payload.songId), payload.songTitle);
         await this.delay(200);
         await this.api('SetF9', { enable: true });
+      } else if (payload.songId) {
+        this.addLog('info', `▶️ Ableton Play: canción #${payload.songId} detectada, esperando primer trigger...`);
       }
     } else {
       this.addLog('info', '⏹️ Ableton Stop: cerrando presentación');
