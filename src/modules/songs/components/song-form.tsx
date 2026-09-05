@@ -193,41 +193,21 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
   };
 
   // Insertar etiqueta de sección inteligente calculando el siguiente correlativo y en la posición del cursor
-  const insertSmartSectionTag = (type: 'intro' | 'verso' | 'coro' | 'puente' | 'precoro' | 'outro' | 'solo') => {
+  const insertSmartSectionTag = (label: string) => {
     const currentContent = formData.content || '';
-    let tagLabel = '';
+    const cleanLabel = label.trim().toUpperCase();
 
-    if (type === 'verso') {
-      const matches = Array.from(currentContent.matchAll(/\[(?:verso|verse|estrofa)\s*(\d+)?\]/gi));
+    // Buscar si ya existen etiquetas iguales en el contenido: [LABEL] o [LABEL 1], [LABEL 2]...
+    const escaped = cleanLabel.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+    const matches = Array.from(currentContent.matchAll(new RegExp(`\\[${escaped}(?:\\s+(\\d+))?\\]`, 'gi')));
+
+    let tagLabel = cleanLabel;
+    if (matches.length > 0) {
       const numbers = matches.map((m) => (m[1] ? parseInt(m[1], 10) : 1));
-      const nextNum = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
-      tagLabel = `VERSO ${nextNum}`;
-    } else if (type === 'coro') {
-      const matches = Array.from(currentContent.matchAll(/\[(?:coro|chorus|estribillo)\s*(\d+)?\]/gi));
-      const numbers = matches.map((m) => (m[1] ? parseInt(m[1], 10) : 1));
-      if (numbers.length === 0) {
-        tagLabel = 'CORO';
-      } else {
-        const nextNum = Math.max(...numbers) + 1;
-        tagLabel = `CORO ${nextNum}`;
-      }
-    } else if (type === 'puente') {
-      const matches = Array.from(currentContent.matchAll(/\[(?:puente|bridge)\s*(\d+)?\]/gi));
-      const numbers = matches.map((m) => (m[1] ? parseInt(m[1], 10) : 1));
-      if (numbers.length === 0) {
-        tagLabel = 'PUENTE';
-      } else {
-        const nextNum = Math.max(...numbers) + 1;
-        tagLabel = `PUENTE ${nextNum}`;
-      }
-    } else if (type === 'precoro') {
-      tagLabel = 'PRE-CORO';
-    } else if (type === 'intro') {
-      tagLabel = 'INTRO';
-    } else if (type === 'outro') {
-      tagLabel = 'OUTRO';
-    } else if (type === 'solo') {
-      tagLabel = 'SOLO';
+      const nextNum = Math.max(...numbers) + 1;
+      tagLabel = `${cleanLabel} ${nextNum}`;
+    } else if (cleanLabel === 'VERSO') {
+      tagLabel = 'VERSO 1';
     }
 
     const tagToInsert = `[${tagLabel}]`;
@@ -615,7 +595,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs px-2 hover:bg-primary/10 hover:text-primary"
-                  onClick={() => insertSmartSectionTag('intro')}
+                  onClick={() => insertSmartSectionTag('INTRO')}
                   title="Insertar etiqueta [INTRO] en el cursor"
                 >
                   + Intro
@@ -625,7 +605,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs px-2 font-medium hover:bg-emerald-500/10 hover:text-emerald-600"
-                  onClick={() => insertSmartSectionTag('verso')}
+                  onClick={() => insertSmartSectionTag('VERSO')}
                   title="Calcula automáticamente el siguiente número: [VERSO 1], [VERSO 2]..."
                 >
                   + Verso
@@ -635,7 +615,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs px-2 font-medium hover:bg-blue-500/10 hover:text-blue-600"
-                  onClick={() => insertSmartSectionTag('coro')}
+                  onClick={() => insertSmartSectionTag('CORO')}
                   title="Inserta [CORO], [CORO 2] en el cursor"
                 >
                   + Coro
@@ -645,7 +625,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs px-2 hover:bg-indigo-500/10 hover:text-indigo-600"
-                  onClick={() => insertSmartSectionTag('precoro')}
+                  onClick={() => insertSmartSectionTag('PRE-CORO')}
                   title="Inserta [PRE-CORO] en el cursor"
                 >
                   + Pre-Coro
@@ -655,7 +635,7 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs px-2 font-medium hover:bg-amber-500/10 hover:text-amber-600"
-                  onClick={() => insertSmartSectionTag('puente')}
+                  onClick={() => insertSmartSectionTag('PUENTE')}
                   title="Inserta [PUENTE], [PUENTE 2] en el cursor"
                 >
                   + Puente
@@ -664,8 +644,28 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-7 text-xs px-2 font-medium hover:bg-sky-500/10 hover:text-sky-600"
+                  onClick={() => insertSmartSectionTag('TAG')}
+                  title="Inserta [TAG], [TAG 2] en el cursor"
+                >
+                  + Tag
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 hover:bg-teal-500/10 hover:text-teal-600"
+                  onClick={() => insertSmartSectionTag('INSTRUMENTAL')}
+                  title="Inserta [INSTRUMENTAL] en el cursor"
+                >
+                  + Instrumental
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   className="h-7 text-xs px-2 hover:bg-purple-500/10 hover:text-purple-600"
-                  onClick={() => insertSmartSectionTag('solo')}
+                  onClick={() => insertSmartSectionTag('SOLO')}
                   title="Inserta [SOLO] en el cursor"
                 >
                   + Solo
@@ -675,10 +675,20 @@ export function SongForm({ initialData, isEditing = false }: SongFormProps) {
                   variant="outline"
                   size="sm"
                   className="h-7 text-xs px-2 hover:bg-muted"
-                  onClick={() => insertSmartSectionTag('outro')}
+                  onClick={() => insertSmartSectionTag('OUTRO')}
                   title="Inserta [OUTRO] en el cursor"
                 >
                   + Outro
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2 hover:bg-rose-500/10 hover:text-rose-600"
+                  onClick={() => insertSmartSectionTag('FINAL')}
+                  title="Inserta [FINAL] en el cursor"
+                >
+                  + Final
                 </Button>
               </div>
 

@@ -375,10 +375,18 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
 
       setTimeout(() => {
         const targetKey = getCanonicalSectionKey(liveState.sectionSlug || liveState.section || liveState.normalizedSection);
+        const targetParent = targetKey.replace(/\.\d+$/, '');
+        const targetBase = targetParent.replace(/1$/, '');
         const targetEl =
           document.getElementById(`song-section-${targetKey}`) ||
+          (targetParent ? document.getElementById(`song-section-${targetParent}`) : null) ||
+          (targetBase ? document.getElementById(`song-section-${targetBase}`) : null) ||
           document.querySelector(`[data-section-key="${targetKey}"]`) ||
-          document.querySelector(`[data-section-slug="${targetKey}"]`);
+          (targetParent ? document.querySelector(`[data-section-key="${targetParent}"]`) : null) ||
+          (targetBase ? document.querySelector(`[data-section-key="${targetBase}"]`) : null) ||
+          document.querySelector(`[data-section-slug="${targetKey}"]`) ||
+          (targetParent ? document.querySelector(`[data-section-slug="${targetParent}"]`) : null) ||
+          (targetBase ? document.querySelector(`[data-section-slug="${targetBase}"]`) : null);
 
         if (targetEl) {
           isAutoScrollingRef.current = true;
@@ -420,10 +428,18 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
         if (isSameSong && (state.sectionSlug || state.section)) {
           setTimeout(() => {
             const targetKey = getCanonicalSectionKey(state.sectionSlug || state.section || state.normalizedSection);
+            const targetParent = targetKey.replace(/\.\d+$/, '');
+            const targetBase = targetParent.replace(/1$/, '');
             const targetEl =
               document.getElementById(`song-section-${targetKey}`) ||
+              (targetParent ? document.getElementById(`song-section-${targetParent}`) : null) ||
+              (targetBase ? document.getElementById(`song-section-${targetBase}`) : null) ||
               document.querySelector(`[data-section-key="${targetKey}"]`) ||
-              document.querySelector(`[data-section-slug="${targetKey}"]`);
+              (targetParent ? document.querySelector(`[data-section-key="${targetParent}"]`) : null) ||
+              (targetBase ? document.querySelector(`[data-section-key="${targetBase}"]`) : null) ||
+              document.querySelector(`[data-section-slug="${targetKey}"]`) ||
+              (targetParent ? document.querySelector(`[data-section-slug="${targetParent}"]`) : null) ||
+              (targetBase ? document.querySelector(`[data-section-slug="${targetBase}"]`) : null);
 
             if (targetEl) {
               isAutoScrollingRef.current = true;
@@ -1561,7 +1577,7 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
                       title="Siguiendo automáticamente a Ableton Live"
                     >
                       <Radio className="h-3 w-3 animate-pulse" />
-                      <span>En Vivo: {liveState.normalizedSection}</span>
+                      <span>En Vivo: {(liveState.normalizedSection || liveState.section).toUpperCase()}</span>
                     </Badge>
                   ) : (
                     <Button
@@ -1572,7 +1588,7 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
                       title="Haz clic para volver a sincronizarte con la banda"
                     >
                       <Radio className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                      <span>Acoplar a En Vivo ({liveState.normalizedSection})</span>
+                      <span>Acoplar a En Vivo ({(liveState.normalizedSection || liveState.section).toUpperCase()})</span>
                     </Button>
                   )
                 ) : (
@@ -1610,7 +1626,7 @@ export function SongDetailPage({ isPublicMode }: SongDetailPageProps = {}) {
             className="rounded-full shadow-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2.5 sm:py-3 border-2 border-white/40 gap-2 flex items-center hover:scale-105 active:scale-95 transition-all"
           >
             <Radio className="h-4 w-4 animate-pulse text-white" />
-            <span>Acoplar a En Vivo ({liveState.normalizedSection})</span>
+            <span>Acoplar a ({(liveState.normalizedSection || liveState.section).toUpperCase()})</span>
           </Button>
         </div>
       )}

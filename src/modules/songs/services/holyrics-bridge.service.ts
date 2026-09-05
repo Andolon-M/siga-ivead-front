@@ -328,16 +328,14 @@ class HolyricsBridgeService {
       let cleanSlideName = rawSection.toLowerCase().trim();
 
       const bracketMatch = rawSection.match(/^\[([^\]]+)\]\s*(.*)$/);
-      const prefixMatch = rawSection.match(/^(.+?)\s*[:\-]\s*(verso|verse|coro|chorus|puente|bridge|intro|outro|pre-coro|precoro|solo|instrumental|estrofa|slide|diapositiva)(.*)$/i);
+      const prefixMatch = rawSection.match(/^(.+?)\s*[:\-]\s*([a-zA-ZÀ-ÿ0-9\.\s]+)$/i);
 
       if (bracketMatch) {
         targetSubSong = bracketMatch[1].trim();
         cleanSlideName = bracketMatch[2].toLowerCase().trim() || cleanSlideName;
       } else if (prefixMatch) {
         targetSubSong = prefixMatch[1].trim();
-        const sec = prefixMatch[2].trim();
-        const num = prefixMatch[3] ? prefixMatch[3].trim() : '';
-        cleanSlideName = `${sec} ${num}`.toLowerCase().trim();
+        cleanSlideName = prefixMatch[2].toLowerCase().trim();
       }
 
       // 2. Determinar qué canción abrir en Holyrics
@@ -365,8 +363,30 @@ class HolyricsBridgeService {
       }
 
       // 4. Enviar el nombre del clip como etiqueta de Holyrics
-      this.addLog('info', `🔍 Buscando etiqueta: "${cleanSlideName}"`);
-      let res = await this.api('ActionGoToSlideDescription', { name: cleanSlideName });
+      const candidateNames = [cleanSlideName];
+      if (cleanSlideName.includes('.')) {
+        // Si Ableton envía "tag 2.4", pero en Holyrics existe "tag 2" o "tag 2.1"
+        const parentName = cleanSlideName.replace(/\.\d+$/, '');
+        candidateNames.push(parentName);
+        if (parentName && !cleanSlideName.endsWith('.1')) {
+          candidateNames.push(`${parentName}.1`);
+        }
+      } else {
+        // Si Ableton envía "tag 1" o "tag", en Holyrics las diapositivas son "tag 1.1"
+        const hasNumber = /\d+$/.test(cleanSlideName);
+        const subIndexCandidate = hasNumber ? `${cleanSlideName}.1` : `${cleanSlideName} 1.1`;
+        candidateNames.push(subIndexCandidate);
+      }
+
+      let res: { ok: boolean; data?: any; error?: string } = { ok: false, error: '' };
+      for (const nameToTry of candidateNames) {
+        this.addLog('info', `🔍 Buscando etiqueta: "${nameToTry}"`);
+        res = await this.api('ActionGoToSlideDescription', { name: nameToTry });
+        if (res.ok) {
+          cleanSlideName = nameToTry;
+          break;
+        }
+      }
 
       // Si falló y la canción es un Medley (ej: "Te doy gloria / Vamos a cantar"):
       // Es posible que el slide pertenezca a la otra sub-canción del medley

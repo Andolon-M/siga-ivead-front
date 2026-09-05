@@ -27,46 +27,36 @@ export function formatSongForHolyrics(rawContent: string): string {
   const flushCurrentLyrics = () => {
     if (currentLyricsLines.length === 0) return;
 
-    // Determinar nombre canónico de la sección base
-    const lowerSec = currentSectionName.toLowerCase().replace(/^\[|\]$/g, '').trim();
+    // 1. Limpiar corchetes y paréntesis, dejando espacios simples en minúsculas
+    const cleanSec = currentSectionName
+      .replace(/[\[\]\(\)]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
 
-    // Verso
-    const vMatch = lowerSec.match(/^(?:verso|verse|estrofa)[\s\-_]*(\d+)?/i);
-    // Coro
-    const cMatch = lowerSec.match(/^(?:coro|chorus|estribillo)[\s\-_]*(\d+)?/i);
-    // Puente
-    const pMatch = lowerSec.match(/^(?:puente|bridge)[\s\-_]*(\d+)?/i);
+    // 2. Determinar la base genérica de la sección:
+    // Si ya tiene subíndice tipo "tag 1.1" -> la base es "tag 1"
+    // Si tiene número mayor tipo "verso 2" o "tag 1" -> la base es esa misma
+    // Si no tiene ningún número tipo "tag", "coro", "puente" -> se convierte a "<nombre> 1"
+    let baseTag: string;
+    const subIndexMatch = cleanSec.match(/^(.*?)\s*(\d+)\.\d+$/);
+    const numMatch = cleanSec.match(/^(.*?)\s*(\d+)$/);
 
-    let baseTag = 'verso 1';
-    if (vMatch) {
-      baseTag = `verso ${vMatch[1] || '1'}`;
-    } else if (cMatch) {
-      baseTag = `coro ${cMatch[1] || '1'}`;
-    } else if (pMatch) {
-      baseTag = `puente ${pMatch[1] || '1'}`;
-    } else if (lowerSec.startsWith('pre-coro') || lowerSec.startsWith('precoro') || lowerSec.startsWith('pre coro')) {
-      baseTag = 'pre-coro';
-    } else if (lowerSec.startsWith('intro')) {
-      baseTag = 'intro';
-    } else if (lowerSec.startsWith('outro') || lowerSec.startsWith('final')) {
-      baseTag = 'outro';
-    } else if (lowerSec.startsWith('solo') || lowerSec.startsWith('instrumental')) {
-      baseTag = 'solo';
+    if (subIndexMatch) {
+      baseTag = `${subIndexMatch[1].trim()} ${subIndexMatch[2]}`.trim();
+    } else if (numMatch) {
+      baseTag = `${numMatch[1].trim()} ${numMatch[2]}`.trim();
     } else {
-      baseTag = lowerSec;
+      baseTag = `${cleanSec} 1`.trim();
     }
 
-    // Dividir las líneas de la estrofa en grupos de 2 líneas por diapositiva
+    // 3. Dividir las líneas de la letra en grupos de 2 líneas por diapositiva
     const chunkSize = 2;
     let slideSubIndex = 1;
 
     for (let i = 0; i < currentLyricsLines.length; i += chunkSize) {
       const chunk = currentLyricsLines.slice(i, i + chunkSize);
-      const tag = baseTag.includes(' ') && !baseTag.startsWith('pre') 
-        ? `${baseTag}.${slideSubIndex}` 
-        : (baseTag === 'pre-coro' || baseTag === 'intro' || baseTag === 'outro' || baseTag === 'solo'
-            ? `${baseTag} ${slideSubIndex}`
-            : `${baseTag} 1.${slideSubIndex}`);
+      const tag = `${baseTag}.${slideSubIndex}`;
 
       outputSlides.push(`##(${tag})\n${chunk.join('\n')}`);
       slideSubIndex++;

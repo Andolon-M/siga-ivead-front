@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { parseSongLines, filterVisibleSongLines } from '../utils/chord-transposer';
 import type { ParsedLine } from '../types';
-import { getCanonicalSectionKey } from '../types/live-sync.types';
+import { getCanonicalSectionKey, isSectionMatch } from '../types/live-sync.types';
 
 interface ChordSheetViewerProps {
   content: string;
@@ -250,15 +250,7 @@ export function ChordSheetViewer({
       >
         {sectionBlocks.map((block, blockIdx) => {
           const blockKey = getCanonicalSectionKey(block.name || block.slug);
-          const isActive = Boolean(
-            targetKey && blockKey && (
-              targetKey === blockKey ||
-              (targetKey === 'coro1' && blockKey === 'coro') ||
-              (targetKey === 'coro' && blockKey === 'coro1') ||
-              (targetKey === 'puente1' && blockKey === 'puente') ||
-              (targetKey === 'puente' && blockKey === 'puente1')
-            )
-          );
+          const isActive = isSectionMatch(targetKey, blockKey);
 
           // Procesar las líneas del bloque en parejas o elementos individuales
           const processedItems = processSectionLines(block.lines);

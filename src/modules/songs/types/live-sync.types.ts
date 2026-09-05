@@ -44,43 +44,60 @@ export interface HolyricsConfig {
  * "Puente 1.2"  -> "puente"
  * "Puente 2"    -> "puente2"
  */
+/**
+ * Normaliza nombres de sección a claves canónicas únicas para emparejar eventos
+ * en tiempo real de Ableton Live con las secciones del visor de acordes/letras.
+ * 
+ * Soporta de manera universal:
+ * - Etiquetas estándar: Verso, Coro, Puente, Pre-Coro, Intro, Outro, Final, Instrumental, Solo.
+ * - Etiquetas personalizadas: Tag, Ministración, Espontáneo, Interludio, Subida, etc.
+ * - Sub-diapositivas y sub-índices de Ableton: ej. "Tag 1.1", "Tag 1.2", "Tag .2", "Tag 1", "Verso 2.1"
+ * - Desacentuación automática (ej: "Ministración" <-> "ministracion").
+ * - Sin conversiones forzadas: Instrumental NO cambia a Solo, Final NO cambia a Outro.
+ */
+/**
+ * Normaliza nombres de sección a minúsculas y sin espacios para comparación directa.
+ * Elimina corchetes, paréntesis y guiones para evitar formatos como "tag-1-2".
+ * Ejemplos:
+ * "TAG 2.4" -> "tag2.4"
+ * "[TAG 2]" -> "tag2"
+ * "tag 1"   -> "tag1"
+ * "tag"     -> "tag"
+ */
 export function getCanonicalSectionKey(rawSection: string): string {
   if (!rawSection) return '';
-  const cleaned = rawSection.trim().replace(/^\[|\]$/g, '').toLowerCase().trim();
+  return rawSection
+    .trim()
+    .toLowerCase()
+    .replace(/[\[\]\(\)\-_]/g, '')
+    .replace(/\s+/g, '');
+}
 
-  // 1. Verso / Verse / Estrofa (soporta "verso 1", "verso-1", "verso 2", "verso-2", "verso 2.1", "verso 2.2")
-  const vMatch = cleaned.match(/^(?:verso|verse|estrofa)[\s\-_]*(\d+)?(?:[\.\-:\s]+(\d+|[a-d]))?$/i);
-  if (vMatch) {
-    const mainNum = vMatch[1] || '1';
-    return `verso${mainNum}`;
+/**
+ * Compara la sección activa recibida (ej: Ableton "tag 2.4") contra una sección de la hoja (ej: "[TAG 2]" -> "tag2").
+ * Regla:
+ * - En la base de datos las canciones se guardan como bloques principales: "tag 1", "tag 2", "coro", "verso 1".
+ * - Ableton envía sub-secciones como "tag 2.4", "tag 1.2", "coro 1.1".
+ * - Se compara en minúsculas y sin espacios.
+ * - "tag 2.4" se empareja directamente con el bloque "tag 2".
+ * - "tag 1.2" se empareja con "tag 1", o con "tag" si la sección en la hoja no tiene número.
+ */
+export function isSectionMatch(targetKey: string, blockKey: string): boolean {
+  if (!targetKey || !blockKey) return false;
+  if (targetKey === blockKey) return true;
+
+  // 1. Quitar subíndice decimal: "tag2.4" -> "tag2"
+  const targetParent = targetKey.replace(/\.\d+$/, '');
+  if (targetParent === blockKey) return true;
+
+  // 2. Si el bloque en la hoja es genérico sin número (ej: [TAG] -> "tag") y Ableton envía "tag1.2" o "tag1"
+  const targetBase = targetParent.replace(/1$/, '');
+  const blockBase = blockKey.replace(/1$/, '');
+  if (targetBase && blockBase && targetBase === blockBase) {
+    return true;
   }
 
-  // 2. Coro / Chorus / Estribillo (soporta "coro", "coro 1", "coro-1", "coro 2", "coro-2", "coro 1.1")
-  const cMatch = cleaned.match(/^(?:coro|chorus|estribillo)[\s\-_]*(\d+)?(?:[\.\-:\s]+(\d+|[a-d]))?$/i);
-  if (cMatch) {
-    const mainNum = cMatch[1] && cMatch[1] !== '1' ? cMatch[1] : '';
-    return `coro${mainNum}`;
-  }
-
-  // 3. Puente / Bridge (soporta "puente", "puente 1", "puente-1", "puente 2", "puente 1.2")
-  const pMatch = cleaned.match(/^(?:puente|bridge)[\s\-_]*(\d+)?(?:[\.\-:\s]+(\d+|[a-d]))?$/i);
-  if (pMatch) {
-    const mainNum = pMatch[1] && pMatch[1] !== '1' ? pMatch[1] : '';
-    return `puente${mainNum}`;
-  }
-
-  // 4. Pre-Coro
-  if (cleaned.startsWith('pre-coro') || cleaned.startsWith('precoro') || cleaned.startsWith('pre coro')) {
-    return 'precoro';
-  }
-
-  // 5. Intro / Outro / Solo / Instrumental
-  if (cleaned.startsWith('intro')) return 'intro';
-  if (cleaned.startsWith('outro') || cleaned.startsWith('final')) return 'outro';
-  if (cleaned.startsWith('solo') || cleaned.startsWith('instrumental')) return 'solo';
-
-  // Fallback: remover todo lo que no sea alfanumérico
-  return cleaned.replace(/[^a-z0-9]/g, '');
+  return false;
 }
 
 /**
@@ -90,3 +107,4 @@ export function normalizeSectionSlug(rawSection: string): string {
   if (!rawSection) return 'general';
   return getCanonicalSectionKey(rawSection);
 }
+

@@ -161,53 +161,25 @@ export function isChordLine(line: string): boolean {
 }
 
 /**
- * Determina si una etiqueta entre corchetes o línea es un encabezado de sección
+ * Determina si una etiqueta entre corchetes es un encabezado de sección.
+ * Regla genérica: Cualquier etiqueta que no sea un acorde musical aislado es un encabezado de sección.
  */
 export function isSectionHeaderTag(tag: string): boolean {
-  const lower = tag.toLowerCase().trim();
-  return (
-    lower.startsWith('intro') ||
-    lower.startsWith('verso') ||
-    lower.startsWith('verse') ||
-    lower.startsWith('estrofa') ||
-    lower.startsWith('coro') ||
-    lower.startsWith('chorus') ||
-    lower.startsWith('estribillo') ||
-    lower.startsWith('primera parte') ||
-    lower.startsWith('segunda parte') ||
-    lower.startsWith('tercera parte') ||
-    lower.startsWith('parte 1') ||
-    lower.startsWith('parte 2') ||
-    lower.startsWith('parte 3') ||
-    lower.startsWith('pre-coro') ||
-    lower.startsWith('pre coro') ||
-    lower.startsWith('puente') ||
-    lower.startsWith('bridge') ||
-    lower.startsWith('solo') ||
-    lower.startsWith('interludio') ||
-    lower.startsWith('interlude') ||
-    lower.startsWith('outro') ||
-    lower.startsWith('final') ||
-    lower.startsWith('instrumental') ||
-    lower.startsWith('tag') ||
-    lower === 'acordes' ||
-    lower.startsWith('acordes:') ||
-    lower.startsWith('bajo') ||
-    lower.startsWith('punteo') ||
-    lower.startsWith('notas') ||
-    lower.startsWith('riff') ||
-    lower.startsWith('todos')
-  );
+  const clean = tag.replace(/^[(\[]+|[\)\]]+$/g, '').trim();
+  if (!clean) return false;
+  return !isSingleChord(clean);
 }
 
 /**
- * Determina si una línea es un encabezado de sección sin corchetes
+ * Determina si una línea es un encabezado de sección.
+ * REGLA ESTRICTA: Solo se consideran encabezados de sección aquellas líneas
+ * que estén delimitadas por corchetes [...] (ej: [CORO], [VERSO 1], [(PUENTE)]).
+ * El texto plano sin corchetes nunca es considerado sección.
  */
 export function isSectionOrInfoLine(line: string): boolean {
   const trimmed = line.trim();
   if (!trimmed) return false;
-  if (trimmed.startsWith('[') && trimmed.endsWith(']')) return true;
-  return isSectionHeaderTag(trimmed) || trimmed.endsWith(':');
+  return trimmed.startsWith('[') && trimmed.endsWith(']');
 }
 
 /**
@@ -417,28 +389,30 @@ export function parseSongLines(content: string, semitones = 0): ParsedLine[] {
       continue;
     }
 
-    // 2. Encabezado de sección [Verso 1], [Coro], [Intro], etc.
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-      const inside = trimmed.slice(1, -1).trim();
-      result.push({
-        type: 'section',
-        text: trimmed,
-        sectionName: inside,
-        isSectionHeader: true,
-      });
-      continue;
-    }
+    // 2. Encabezado de sección entre corchetes: [Verso 1], [Coro], [(Puente)], etc.
+    // Soporta tanto línea exclusiva de sección como secciones de una línea con acordes después (ej: "[(puente)]  C  G  Am")
+    const sectionMatch = trimmed.match(/^\[\s*\(?([^\]\)]+)\)?\s*\]\s*(.*)$/);
+    if (sectionMatch) {
+      const inside = sectionMatch[1].trim().replace(/^\(|\)$/g, '').trim();
+      const restOfLine = sectionMatch[2].trim();
 
-    // 2.1. Encabezado descriptivo sin corchetes (ej: "acordes", "Acordes:Bajo(puntos):", "Bajo:")
-    if (isSectionOrInfoLine(trimmed) && !isChordLine(trimmed) && !isNoteOrRiffLine(trimmed)) {
-      const inside = trimmed.replace(/[:]+$/, '').trim();
-      result.push({
-        type: 'section',
-        text: `[${inside}]`,
-        sectionName: inside,
-        isSectionHeader: true,
-      });
-      continue;
+      // Descartar falsos positivos si es un acorde individual pegado a la letra (formato bracketed antiguo tipo [G]Letra)
+      const isSoloChord = isSingleChord(inside);
+      if (!isSoloChord || !restOfLine) {
+        const formattedName = inside.toUpperCase();
+        result.push({
+          type: 'section',
+          text: `[${formattedName}]`,
+          sectionName: formattedName,
+          isSectionHeader: true,
+        });
+
+        // Si en la misma línea había acordes/letra posterior (ej: "[(puente)] C G Am"):
+        if (restOfLine) {
+          rawLines.splice(i + 1, 0, restOfLine);
+        }
+        continue;
+      }
     }
 
     // 3. Comentario (# o //)
@@ -522,20 +496,24 @@ export function filterVisibleSongLines(lines: ParsedLine[], showChords: boolean)
       continue;
     }
 
-    // Si es encabezado de sección, verificar si tiene letra o comentarios debajo
+    // Si es encabezado de sección, verificar si tiene letra o si es una sección instrumental/guía con contenido previo
     if (line.type === 'section') {
       let hasVisibleLyrics = false;
+      let hasAnyContent = false;
       for (let j = i + 1; j < lines.length; j++) {
         const next = lines[j];
         if (next.type === 'section') break;
-        if ((next.type === 'lyrics' || next.type === 'comment') && next.text.trim()) {
-          hasVisibleLyrics = true;
-          break;
+        if (next.text.trim()) {
+          hasAnyContent = true;
+          if (next.type === 'lyrics' || next.type === 'comment') {
+            hasVisibleLyrics = true;
+            break;
+          }
         }
       }
 
-      if (!hasVisibleLyrics) {
-        // La sección quedó vacía (solo tenía acordes o notas instrumentales)
+      // Si no tiene letra y tampoco tenía ningún acorde o contenido debajo, se descarta
+      if (!hasVisibleLyrics && !hasAnyContent) {
         continue;
       }
     }
@@ -560,17 +538,33 @@ export function filterVisibleSongLines(lines: ParsedLine[], showChords: boolean)
 }
 
 /**
- * Verifica si el contenido tiene corchetes de acordes reales antiguos
+ * Verifica si el contenido tiene corchetes de acordes reales antiguos embebidos en la letra (ej: "[G]Sublime [C]gracia")
  */
 export function hasChordBrackets(content: string): boolean {
-  const regex = /\[([^\]]+)\]/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(content)) !== null) {
-    const tag = match[1].trim();
-    if (!isSectionHeaderTag(tag)) {
-      const tokens = tag.split(/\s+/);
-      if (tokens.some((t) => isSingleChord(t))) {
-        return true;
+  if (!content || !content.includes('[')) return false;
+
+  const lines = content.split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Si la línea entera es una sección entre corchetes (ej: [VERSO 1], [TAG], [(PUENTE)])
+    if (/^\[\s*\(?[^\]\)]+\)?\s*\]$/.test(trimmed)) {
+      const inside = trimmed.replace(/^\[\s*\(?|\)?\s*\]$/g, '').trim();
+      if (!isSingleChord(inside)) {
+        continue;
+      }
+    }
+
+    const regex = /\[([^\]]+)\]/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(line)) !== null) {
+      const tag = match[1].trim();
+      if (!isSectionHeaderTag(tag)) {
+        const tokens = tag.split(/\s+/);
+        if (tokens.some((t) => isSingleChord(t))) {
+          return true;
+        }
       }
     }
   }
