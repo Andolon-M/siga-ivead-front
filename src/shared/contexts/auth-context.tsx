@@ -47,14 +47,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("Error al cargar usuario:", error)
       setUser(null)
       authService.clearAuth()
+      if (window.location.pathname !== "/login") {
+        navigate("/login", { replace: true })
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Cargar usuario al montar el componente
+  // Cargar usuario al montar el componente y revalidar al cambiar de pestaña
   useEffect(() => {
     loadUser()
+
+    const handleFocus = () => {
+      if (authService.getToken()) {
+        authService.getMe().catch(() => {
+          setUser(null)
+          authService.clearAuth()
+          if (window.location.pathname !== "/login") {
+            navigate("/login", { replace: true })
+          }
+        })
+      }
+    }
+
+    window.addEventListener("focus", handleFocus)
+    return () => window.removeEventListener("focus", handleFocus)
   }, [])
 
   // Login: guardar token y cargar usuario
