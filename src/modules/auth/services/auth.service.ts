@@ -16,9 +16,13 @@ import type {
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResult> {
+    const payload = {
+      ...credentials,
+      trustDevice: Boolean(credentials.trustDevice ?? credentials.rememberMe)
+    }
     const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
       API_ENDPOINTS.AUTH.LOGIN,
-      credentials
+      payload
     )
     
     const data = response.data.data

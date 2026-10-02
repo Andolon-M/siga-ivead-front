@@ -34,11 +34,16 @@ export function LoginPage() {
     setIsLoading(true)
     
     try {
-      const result = await authService.login(formData)
+      const willTrust = Boolean(formData.rememberMe)
+      const result = await authService.login({
+        ...formData,
+        trustDevice: willTrust
+      })
 
       // Si el backend solicita verificación de segundo factor (2FA)
       if (result.requires2FA && result.challengeToken) {
         setChallengeToken(result.challengeToken)
+        setTrustDevice(willTrust)
         setRequires2FA(true)
         setIsLoading(false)
         return
@@ -200,17 +205,27 @@ export function LoginPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
               <Checkbox
                 id="remember"
                 checked={formData.rememberMe}
-                onCheckedChange={(checked) => setFormData({ ...formData, rememberMe: checked as boolean })}
+                onCheckedChange={(checked) =>
+                  setFormData({
+                    ...formData,
+                    rememberMe: checked as boolean,
+                    trustDevice: checked as boolean,
+                  })
+                }
+                className="mt-0.5"
               />
-              <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                Recordarme
+              <Label htmlFor="remember" className="text-sm font-normal cursor-pointer leading-tight">
+                Recordarme en este dispositivo
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  Confiar en este equipo por 30 días
+                </span>
               </Label>
             </div>
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline shrink-0">
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
