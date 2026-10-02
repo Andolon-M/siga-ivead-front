@@ -1,4 +1,5 @@
-import { Search, Menu, LogOut } from "lucide-react"
+import { Search, Menu, LogOut, ShieldCheck } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 import { Input } from "@/shared/components/ui/input"
 import { Button } from "@/shared/components/ui/button"
 import { ThemeToggle } from "@/shared/components/theme-toggle"
@@ -28,6 +29,7 @@ export function AppHeader({
   searchPlaceholder = "Buscar...",
 }: AppHeaderProps) {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
 
   const handleLogout = async () => {
     await logout()
@@ -82,6 +84,11 @@ export function AppHeader({
                 </p>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/admin/profile")} className="cursor-pointer">
+              <ShieldCheck className="mr-2 h-4 w-4 text-primary" />
+              <span>Mi Perfil y Seguridad</span>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 cursor-pointer">
               <LogOut className="mr-2 h-4 w-4" />

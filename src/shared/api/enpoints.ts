@@ -5,11 +5,21 @@ export const API_ENDPOINTS = {
     LOGIN: "/auth/login",
     REGISTER: "/auth/register",
     LOGOUT: "/auth/logout",
-    REFRESH_TOKEN: "/auth/refresh",
+    REFRESH_TOKEN: "/auth/refresh-token",
     FORGOT_PASSWORD: "/auth/request-reset",
     RESET_PASSWORD: "/auth/reset-password",
     VERIFY_TOKEN: (token: string) => `/auth/verify-token/${token}`,
     ME: "/auth/me",
+    // Sesiones
+    SESSIONS: "/auth/sessions",
+    REVOKE_SESSION: (id: string) => `/auth/sessions/${id}`,
+    REVOKE_OTHER_SESSIONS: "/auth/sessions/revoke-others",
+    // 2FA
+    TWO_FACTOR_SETUP: "/auth/2fa/setup",
+    TWO_FACTOR_ENABLE: "/auth/2fa/enable",
+    TWO_FACTOR_DISABLE: "/auth/2fa/disable",
+    TWO_FACTOR_STATUS: "/auth/2fa/status",
+    TWO_FACTOR_VERIFY: "/auth/2fa/verify",
   },
   
   // Users

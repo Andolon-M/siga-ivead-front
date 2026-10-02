@@ -2,6 +2,8 @@ export interface LoginCredentials {
   email: string
   password: string
   rememberMe?: boolean
+  trustDevice?: boolean
+  deviceId?: string
 }
 
 export interface RegisterData {
@@ -33,7 +35,60 @@ export interface User {
 }
 
 export interface AuthResponse {
-  token: string
+  token?: string
+  requires2FA?: boolean
+  challengeToken?: string
+  isTrustedDevice?: boolean
+  expiresAt?: string
+  user?: {
+    id: string
+    email: string
+    roleId: string
+  }
+}
+
+export interface LoginResult {
+  requires2FA: boolean
+  challengeToken?: string
+  token?: string
+  isTrustedDevice?: boolean
+  expiresAt?: string
+  user?: {
+    id: string
+    email: string
+    roleId: string
+  }
+}
+
+export interface UserSession {
+  id: string
+  deviceId: string
+  deviceName: string
+  browser: string
+  os: string
+  deviceType: string
+  ipAddress: string
+  isTrusted: boolean
+  lastActive: string
+  expiresAt: string
+  createdAt: string
+  isCurrent: boolean
+}
+
+export interface TwoFactorSetupData {
+  secret: string
+  qrCodeUrl: string
+  otpauthUrl: string
+}
+
+export interface TwoFactorEnableResult {
+  message: string
+  backupCodes: string[]
+}
+
+export interface TwoFactorStatus {
+  isEnabled: boolean
+  confirmedAt: string | null
 }
 
 export interface AuthMeResponse {
@@ -58,4 +113,3 @@ export interface VerifyTokenResponse {
   valid: boolean
   message: string
 }
-

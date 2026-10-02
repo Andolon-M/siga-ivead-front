@@ -29,11 +29,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Función para cargar los datos del usuario
   const loadUser = async () => {
     try {
-      const token = authService.getToken()
+      let token = authService.getToken()
       
+      // Si no hay token en localStorage, intentar recuperar sesión con la cookie HttpOnly
       if (!token) {
-        setUser(null)
-        return
+        try {
+          token = await authService.refreshToken()
+        } catch {
+          setUser(null)
+          return
+        }
       }
 
       const userData = await authService.getMe()

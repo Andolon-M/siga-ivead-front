@@ -4,7 +4,7 @@ import { AdminLayout } from '@/shared/layouts/admin-layout'
 import { SaraLayout } from '@/shared/layouts/sara-layout'
 import { SongsLayout } from '@/shared/layouts/songs-layout'
 import { AdminDashboard } from '@/modules/dashboard/pages/dashboard'
-import { UsersPage } from '@/modules/users/pages'
+import { UsersPage, ProfileSecurityPage } from '@/modules/users/pages'
 import { MembersPage, MemberDetailPage } from '@/modules/members/pages'
 import { MinistriesPage, MinistryDetailPage } from '@/modules/ministries/pages'
 import { EventsPage, EventDetailPage } from '@/modules/events/pages'
@@ -71,6 +71,8 @@ export default function AppRouter() {
         }
       >
         <Route index element={<AdminDashboard />} />
+        <Route path="profile" element={<ProfileSecurityPage />} />
+        <Route path="security" element={<ProfileSecurityPage />} />
         <Route
           path="users"
           element={
