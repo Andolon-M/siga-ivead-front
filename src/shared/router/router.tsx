@@ -10,7 +10,7 @@ import { MinistriesPage, MinistryDetailPage } from '@/modules/ministries/pages'
 import { EventsPage, EventDetailPage } from '@/modules/events/pages'
 import { ServicesPage, SessionDetailPage } from '@/modules/services/pages'
 import { TeamsPage } from '@/modules/teams/pages'
-import { ReportsPage } from '@/modules/reports/pages'
+import { ReportsPage, WitnessSigningPage } from '@/modules/reports/pages'
 import { FilesPage } from '@/modules/files/pages'
 import { RolesPage } from '@/modules/roles/pages'
 import { MassMessagingPage } from '@/modules/mass-messaging/pages'
@@ -51,6 +51,9 @@ export default function AppRouter() {
       {/* Repertorio de Culto Público (Sin login / Para WhatsApp) */}
       <Route path="/p/setlist/:sessionId" element={<PublicSetlistPage />} />
       <Route path="/repertorio/:sessionId" element={<PublicSetlistPage />} />
+
+      {/* Firma Electrónica de Testigo (Pública / Para WhatsApp) */}
+      <Route path="/reportes/firmar/:token" element={<WitnessSigningPage />} />
 
       {/* Rutas de Autenticación - Solo para usuarios NO autenticados */}
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />

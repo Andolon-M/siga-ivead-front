@@ -265,5 +265,31 @@ export const API_ENDPOINTS = {
     DELETE_ARTIST: (id: string) => `/songs/artists/${id}`,
     PREFERENCES: (id: string) => `/songs/${id}/preferences`,
   },
+
+  // Finances / Contabilidad
+  FINANCES: {
+    DASHBOARD: "/finances/dashboard",
+    TITHERS_SEARCH: "/finances/tithers/search",
+    TITHERS: "/finances/tithers",
+    SESSIONS: "/finances/sessions",
+    SESSION_DETAIL: (id: string) => `/finances/sessions/${id}`,
+    SESSION_EXPORT_PDF: (id: string) => `/finances/sessions/${id}/export/pdf`,
+    DEPOSITS: "/finances/deposits",
+    DEPOSIT_DELETE: (id: string) => `/finances/deposits/${id}`,
+    EGRESSES: "/finances/egresses",
+    EGRESS_DELETE: (id: string) => `/finances/egresses/${id}`,
+    DEBTS: "/finances/debts",
+    WEEKLY_CURRENT: "/finances/reports/weekly/current",
+    WEEKLY_DETAIL: (id: string) => `/finances/reports/weekly/${id}`,
+    WEEKLY_LIST: "/finances/reports/weekly",
+    WEEKLY_REQUEST_SIGNATURE: (id: string) => `/finances/reports/weekly/${id}/request-signature`,
+    WEEKLY_EXPORT_EXCEL: (id: string) => `/finances/reports/weekly/${id}/export/excel`,
+    WEEKLY_EXPORT_PDF: (id: string) => `/finances/reports/weekly/${id}/export/pdf`,
+    MONTHLY_DETAIL: (id: string) => `/finances/reports/monthly/${id}`,
+    MONTHLY_LIST: "/finances/reports/monthly",
+    MONTHLY_EXPORT_EXCEL: (id: string) => `/finances/reports/monthly/${id}/export/excel`,
+    SIGNING_GET: (token: string) => `/finances/signing/${token}`,
+    SIGNING_SUBMIT: (token: string) => `/finances/signing/${token}`,
+  },
 }
 

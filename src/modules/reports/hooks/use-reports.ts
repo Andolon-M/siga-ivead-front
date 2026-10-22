@@ -21,9 +21,9 @@ export function useReports() {
         reportsService.getDeposits(),
         reportsService.getEgresses(),
       ])
-      setWeeklyReports(weeklyData)
-      setDeposits(depositsData)
-      setEgresses(egressesData)
+      setWeeklyReports(weeklyData.reports || [])
+      setDeposits(depositsData.deposits || [])
+      setEgresses(egressesData.egresses || [])
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Error al cargar reportes"))
     } finally {
