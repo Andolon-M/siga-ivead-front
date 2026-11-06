@@ -55,7 +55,7 @@ export function MassMessagingPage() {
 
   const hasImageHeader = useMemo(() => {
     return selectedTemplate?.components?.some(
-      (c) => c.type === "HEADER" && c.format === "IMAGE"
+      (c) => c.type?.toUpperCase() === "HEADER" && c.format?.toUpperCase() === "IMAGE"
     ) ?? false
   }, [selectedTemplate])
 
@@ -237,6 +237,11 @@ export function MassMessagingPage() {
       return
     }
 
+    if (hasImageHeader && !mediaUrl) {
+      alert("Esta plantilla requiere una imagen en la cabecera. Por favor sube una imagen antes de enviar.")
+      return
+    }
+
     const dedupedRecipients = dedupeRecipients(selectedRecipients, personalize)
     if (dedupedRecipients.length === 0) {
       alert("Debes seleccionar al menos un destinatario válido")
@@ -248,6 +253,7 @@ export function MassMessagingPage() {
       const response = await massMessagingService.sendTemplate({
         templateId: selectedTemplate.id,
         personalize,
+        mediaUrl: mediaUrl || undefined,
         recipients: dedupedRecipients,
       })
 
@@ -393,6 +399,58 @@ export function MassMessagingPage() {
                   ? "La plantilla incluye variable 'message'; se habilitan notas para personalización."
                   : "La plantilla no tiene variable 'message'; se enviará con personalize=0."}
               </p>
+
+              {hasImageHeader && (
+                <div className="mt-3 p-3 border rounded-md bg-muted/40 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">Imagen de Cabecera (Requerida por la plantilla)</span>
+                  </div>
+
+                  {mediaUrl ? (
+                    <div className="space-y-2">
+                      <div className="relative inline-block border rounded-md overflow-hidden bg-background">
+                        <img src={mediaUrl} alt="Preview cabecera" className="max-h-48 max-w-full object-contain rounded" />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2 h-7 px-2"
+                          onClick={() => setMediaUrl("")}
+                        >
+                          <X className="h-3.5 w-3.5 mr-1" /> Quitar
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground break-all">
+                        Almacenada: <a href={mediaUrl} target="_blank" rel="noreferrer" className="text-primary underline font-mono">{mediaUrl}</a>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          disabled={isUploadingMedia}
+                          onChange={handleFileUpload}
+                          className="max-w-xs cursor-pointer"
+                        />
+                        {isUploadingMedia && (
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Subiendo...
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Sube la imagen que se enviará en la cabecera del mensaje de WhatsApp para todos los destinatarios.
+                      </p>
+                      {mediaUploadError && (
+                        <p className="text-xs text-destructive font-medium">{mediaUploadError}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : null}
         </CardContent>
@@ -636,4 +694,3 @@ export function MassMessagingPage() {
     </div>
   )
 }
-
