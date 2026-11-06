@@ -39,6 +39,7 @@ export interface RecipientInput {
 export interface SendTemplatePayload {
   templateId: string
   personalize: 0 | 1
+  mediaUrl?: string
   recipients: RecipientInput[]
 }
 

@@ -55,6 +55,7 @@ export const API_ENDPOINTS = {
   // Mass Messaging
   MASS_MESSAGING: {
     SEND_TEMPLATE: "/mass-messaging/sendtemplate",
+    UPLOAD_MEDIA: "/mass-messaging/upload-media",
     STATUS: (requestId: string) => `/mass-messaging/requests/${requestId}/status`,
   },
   

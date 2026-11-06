@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Loader2, Plus, RefreshCw, Send, Trash2 } from "lucide-react"
+import { Image as ImageIcon, Loader2, Plus, RefreshCw, Send, Trash2, X } from "lucide-react"
 import type { Gender, MemberStatus } from "@/modules/members/types"
 import { useMetaTemplates } from "@/modules/meta-templates"
 import { useMembers } from "@/modules/members/hooks/use-members"
@@ -8,6 +8,7 @@ import { SearchInput } from "@/shared/components/search-input"
 import { Badge } from "@/shared/components/ui/badge"
 import { Button } from "@/shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Input } from "@/shared/components/ui/input"
 import { Label } from "@/shared/components/ui/label"
 import { Progress } from "@/shared/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select"
@@ -25,6 +26,9 @@ export function MassMessagingPage() {
   const { templates, loading: templatesLoading, error: templatesError, refetch: refetchTemplates } = useMetaTemplates()
 
   const [templateId, setTemplateId] = useState<string>("")
+  const [mediaUrl, setMediaUrl] = useState<string>("")
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false)
+  const [mediaUploadError, setMediaUploadError] = useState<string | null>(null)
   const [manualDialogOpen, setManualDialogOpen] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState("")
@@ -48,6 +52,43 @@ export function MassMessagingPage() {
     [templates, templateId]
   )
   const personalize = isTemplatePersonalizableByMessage(selectedTemplate) ? 1 : 0
+
+  const hasImageHeader = useMemo(() => {
+    return selectedTemplate?.components?.some(
+      (c) => c.type === "HEADER" && c.format === "IMAGE"
+    ) ?? false
+  }, [selectedTemplate])
+
+  useEffect(() => {
+    setMediaUrl("")
+    setMediaUploadError(null)
+  }, [templateId])
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      setMediaUploadError("Por favor selecciona un archivo de imagen (JPEG, PNG, WebP).")
+      return
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMediaUploadError("La imagen no debe superar los 10MB.")
+      return
+    }
+
+    try {
+      setIsUploadingMedia(true)
+      setMediaUploadError(null)
+      const result = await massMessagingService.uploadMedia(file)
+      setMediaUrl(result.url)
+    } catch (err: any) {
+      setMediaUploadError(err?.response?.data?.message || err?.message || "Error al subir la imagen a MinIO")
+    } finally {
+      setIsUploadingMedia(false)
+    }
+  }
 
   const memberFilters = useMemo(() => {
     const filters: {
@@ -540,7 +581,7 @@ export function MassMessagingPage() {
           <div className="flex flex-wrap gap-3 items-center">
             <Button
               onClick={handleSendCampaign}
-              disabled={!selectedTemplate || uniqueRecipientsPreview.length === 0 || isSending}
+              disabled={!selectedTemplate || uniqueRecipientsPreview.length === 0 || isSending || isUploadingMedia || (hasImageHeader && !mediaUrl)}
             >
               {isSending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
               Enviar campaña
